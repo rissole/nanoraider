@@ -121,34 +121,6 @@ export function CollectionScreen() {
         </div>
       </div>
 
-      {/* Prerequisites diagram */}
-      <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
-        <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest mb-3">Prerequisite Tree</h3>
-        <div className="flex flex-col items-center gap-2 text-xs">
-          <div className="flex gap-4">
-            {tier1.map((evo) => (
-              <div
-                className={`px-3 py-1 rounded border font-bold ${unlockedSet.has(evo.id) ? "border-green-500 text-green-400" : "border-gray-600 text-gray-500"}`}
-                key={evo.id}
-              >
-                {evo.name}
-              </div>
-            ))}
-          </div>
-          <div className="text-gray-600">↓ ↓</div>
-          <div className="flex gap-4">
-            {tier2.map((evo) => (
-              <div
-                className={`px-3 py-1 rounded border font-bold ${unlockedSet.has(evo.id) ? "border-blue-500 text-blue-400" : "border-gray-600 text-gray-500"}`}
-                key={evo.id}
-              >
-                {evo.name}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Tier 1 */}
       <div className="space-y-3">
         <h3 className="text-green-400 text-xs font-bold uppercase tracking-widest">Tier 1 — Foundation Paths</h3>
