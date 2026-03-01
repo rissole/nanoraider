@@ -1,20 +1,20 @@
-# NanoRaider - Evolution Collection & Progression System
+# NanoRaider - Legacy Paths Collection & Progression System
 
 ## Overview
 
-Every character run creates an **Evolution** - a permanent legacy that defines how that hero lived and died. Evolutions unlock new starting bonuses, vendors, mechanics, and energy capacity for future runs.
+Every character run creates a **Legacy Path** - a permanent legacy that defines how that hero lived and died. Legacy paths unlock new starting bonuses, vendors, mechanics, and energy capacity for future runs.
 
 **Core Philosophy:**
-- Each run discovers a new evolution based on your playstyle and choices
-- Evolutions unlock tangible mechanical benefits (not abstract points)
-- Higher tier evolutions require prerequisites from lower tiers
-- Knowledge transfers between evolutions create powerful synergies
-- Energy capacity grows with each evolution discovered
+- Each run discovers a new legacy path based on your playstyle and choices
+- Legacy paths unlock tangible mechanical benefits (not abstract points)
+- Higher tier paths require prerequisites from lower tiers
+- Knowledge transfers between paths create powerful synergies
+- Energy capacity grows with each path discovered
 
 **Energy Growth:**
 - Base energy: 50 per session
 - +5 energy per character death (automatic)
-- +10-50 energy per evolution discovered (tier-based)
+- +10-50 energy per legacy path discovered (tier-based)
 - By run 30+, you'll have 200+ energy capacity for marathon sessions
 
 ---

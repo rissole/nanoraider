@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { EVOLUTIONS } from "../../data/evolutions";
+import { ACTIVITIES } from "../../data/activities";
 import { useGameStore } from "../../store/gameStore";
 
 const CAUSE_LABELS = {
@@ -18,6 +19,7 @@ export function DeathScreen() {
 
   const summary = deathSummary;
   const causeInfo = CAUSE_LABELS[summary.cause];
+  const fatalActivityName = summary.fatalActivityId !== null ? ACTIVITIES[summary.fatalActivityId].name : null;
 
   const evolutionDef = summary.evolutionUnlocked !== null ? EVOLUTIONS[summary.evolutionUnlocked] : null;
   const almostDef = summary.almostUnlocked !== null ? EVOLUTIONS[summary.almostUnlocked] : null;
@@ -39,7 +41,7 @@ export function DeathScreen() {
             key={p}
             onClick={() => { setPhase(p); }}
           >
-            {p === "stats" ? "Legacy" : p === "evolution" ? "Evolution" : "Rewards"}
+            {p === "stats" ? "Legacy" : p === "evolution" ? "Path" : "Rewards"}
           </button>
         ))}
       </div>
@@ -54,10 +56,27 @@ export function DeathScreen() {
               <Stat label="In-Game Days" value={`${summary.inGameDay} / 18`} />
               <Stat label="Gold at Death" value={`${summary.gold}g`} />
               <Stat label="Total XP Earned" value={`${summary.totalXpGained}`} />
-              <Stat label="Raid Defeated" value={summary.raidDefeated ? "Yes ✓" : "No"} />
-              <Stat label="Boss Knowledge" value={`${Math.round(summary.bossKnowledgeSnapshot["molten_fury"] ?? 0)}%`} />
+              <Stat label="Raid Defeated" value={summary.defeatedRaids.length > 0 ? "Yes ✓" : "No"} />
+              <Stat label="Boss Knowledge" value={`${Math.round(summary.bossKnowledgeSnapshot["molten_fury"])}%`} />
             </div>
           </div>
+
+          {summary.cause === "combat" && summary.fatalActivityRisk !== null && summary.fatalRiskBand !== null && (
+            <div className="bg-gray-900 border border-red-900 rounded-lg p-4 space-y-2">
+              <h3 className="text-red-300 text-xs font-bold uppercase tracking-widest">Final Encounter</h3>
+              <p className="text-sm text-gray-300">
+                {fatalActivityName ?? "Combat activity"} had a{" "}
+                <span className="text-red-400 font-bold">{Math.round(summary.fatalActivityRisk * 100)}%</span> death risk ({summary.fatalRiskBand}).
+              </p>
+              {summary.fatalRiskHints.length > 0 && (
+                <ul className="text-xs text-gray-400 space-y-1">
+                  {summary.fatalRiskHints.map((hint) => (
+                    <li key={hint}>• {hint}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           {/* Personality reveal */}
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-3">
@@ -72,13 +91,13 @@ export function DeathScreen() {
         </div>
       )}
 
-      {/* Phase: Evolution */}
+      {/* Phase: Legacy Path */}
       {phase === "evolution" && (
         <div className="space-y-3">
           {evolutionDef !== null ? (
             <div className="bg-gray-900 border-2 border-yellow-500 rounded-lg p-5 space-y-4">
               <div className="text-center space-y-1">
-                <div className="text-xs text-yellow-400 uppercase tracking-widest font-bold">Evolution Unlocked!</div>
+                <div className="text-xs text-yellow-400 uppercase tracking-widest font-bold">Legacy Path Unlocked!</div>
                 <div className="text-3xl font-bold text-white">{evolutionDef.name}</div>
                 <div className="text-yellow-400 text-sm">Tier {evolutionDef.tier}</div>
               </div>
@@ -91,17 +110,17 @@ export function DeathScreen() {
               )}
               {evolutionDef.unlocksPath.length > 0 && (
                 <div className="text-xs text-gray-400">
-                  <span className="font-bold text-gray-300">Unlocks path to:</span>{" "}
-                  {evolutionDef.unlocksPath.map((id) => EVOLUTIONS[id]?.name ?? id).join(", ")}
+                  <span className="font-bold text-gray-300">Opens paths to:</span>{" "}
+                  {evolutionDef.unlocksPath.map((id) => EVOLUTIONS[id].name).join(", ")}
                 </div>
               )}
             </div>
           ) : (
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-5 space-y-3 text-center">
               <div className="text-gray-400 text-4xl">?</div>
-              <div className="text-gray-300 font-bold">No Evolution This Run</div>
+              <div className="text-gray-300 font-bold">No Legacy Path This Run</div>
               <p className="text-gray-500 text-sm">
-                You didn't meet the threshold for any evolution. Each run builds toward your legacy.
+                You didn&apos;t meet the threshold for any legacy path. Each run still builds your legacy.
               </p>
             </div>
           )}
@@ -118,7 +137,7 @@ export function DeathScreen() {
           {/* Collection progress */}
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Evolution Collection</span>
+              <span className="text-gray-400">Legacy Path Collection</span>
               <span className="text-purple-400 font-bold">{meta.unlockedEvolutions.length} / 4</span>
             </div>
             <div className="mt-2 h-2 bg-gray-800 rounded overflow-hidden">
@@ -157,13 +176,10 @@ export function DeathScreen() {
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-2">
             <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest">All Active Bonuses</h3>
             {meta.unlockedEvolutions.length === 0 ? (
-              <p className="text-gray-600 text-sm">Unlock evolutions to gain legacy bonuses.</p>
+              <p className="text-gray-600 text-sm">Unlock legacy paths to gain legacy bonuses.</p>
             ) : (
               meta.unlockedEvolutions.map((id) => {
                 const evo = EVOLUTIONS[id];
-                if (evo === undefined) {
-                  return null;
-                }
                 return (
                   <div className="text-sm" key={id}>
                     <span className="text-purple-400 font-bold">{evo.name}:</span>{" "}
@@ -205,15 +221,15 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function PersonalityBar({ stat, value }: { stat: string; value: number }) {
-  const MAX = 60;
+  const MAX = 80;
   const pct = Math.min(1, value / MAX);
   const colors: Record<string, string> = {
-    aggression: "bg-red-500",
-    wisdom: "bg-blue-500",
-    greed: "bg-yellow-500",
-    patience: "bg-green-500",
-    recklessness: "bg-orange-500",
-    cunning: "bg-purple-500",
+    combatStyle: "bg-red-500",
+    socialStyle: "bg-cyan-500",
+    economicFocus: "bg-yellow-500",
+    exploration: "bg-green-500",
+    preparation: "bg-blue-500",
+    ambition: "bg-purple-500",
   };
   const barColor = colors[stat] ?? "bg-gray-500";
 
@@ -233,7 +249,7 @@ function formatBonuses(evo: { bonuses: { energyBonus: number; startGold?: number
   if (evo.bonuses.energyBonus > 0) {
     parts.push(`+${evo.bonuses.energyBonus} max energy`);
   }
-  if ((evo.bonuses.startGold ?? 0) > 0) {
+  if ((evo.bonuses.startGold ?? 0) > 0 && evo.bonuses.startGold !== undefined) {
     parts.push(`+${evo.bonuses.startGold}g start gold`);
   }
   if ((evo.bonuses.combatBonus ?? 0) > 0) {
@@ -242,7 +258,7 @@ function formatBonuses(evo: { bonuses: { energyBonus: number; startGold?: number
   if ((evo.bonuses.bossKnowledgeBonus ?? 0) > 0) {
     parts.push(`+${Math.round((evo.bonuses.bossKnowledgeBonus ?? 0) * 100)}% boss knowledge`);
   }
-  if ((evo.bonuses.knowledgeTransferMultiplier ?? 1) > 1) {
+  if ((evo.bonuses.knowledgeTransferMultiplier ?? 1) > 1 && evo.bonuses.knowledgeTransferMultiplier !== undefined) {
     parts.push(`${evo.bonuses.knowledgeTransferMultiplier}x study gains`);
   }
   return parts.join(", ");

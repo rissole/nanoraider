@@ -9,8 +9,8 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They lived for the thrill of battle. Their legacy inspires future warriors.",
     prerequisites: [],
     unlockCondition: {
-      minAggression: 40,
-      minRecklessness: 20,
+      minCoreStats: { strength: 28, stamina: 20 },
+      minPersonality: { combatStyle: 30, ambition: 20 },
     },
     bonuses: {
       energyBonus: 10,
@@ -28,7 +28,8 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They understood that gold is power. Their fortune funds future heroes.",
     prerequisites: [],
     unlockCondition: {
-      minGreed: 40,
+      minCoreStats: { charismaInfluence: 20 },
+      minPersonality: { economicFocus: 32 },
       minGoldAtDeath: 500,
     },
     bonuses: {
@@ -47,8 +48,9 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They believed preparation was everything. Their research guides future heroes.",
     prerequisites: [],
     unlockCondition: {
-      minWisdom: 40,
-      minBossKnowledge: 30,
+      minCoreStats: { intelligence: 26 },
+      minPersonality: { preparation: 30 },
+      minBossKnowledge: { molten_fury: 30 },
     },
     bonuses: {
       energyBonus: 10,
@@ -67,9 +69,9 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They came so close to ultimate victory. Their near-triumph inspires legends.",
     prerequisites: ["berserker", "scholar"],
     unlockCondition: {
-      mustDefeatRaid: true,
-      minAggression: 30,
-      minWisdom: 20,
+      mustDefeatRaids: ["molten_fury"],
+      minCoreStats: { strength: 32, intelligence: 24 },
+      minPersonality: { combatStyle: 24, preparation: 20, ambition: 24 },
     },
     bonuses: {
       energyBonus: 15,

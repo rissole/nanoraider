@@ -1,6 +1,66 @@
+// ─── Dimensions ────────────────────────────────────────────────────────────────
+
+export type CoreStatKey = "strength" | "agility" | "intelligence" | "stamina" | "charismaInfluence";
+
+export interface CoreStats {
+  strength: number;
+  agility: number;
+  intelligence: number;
+  stamina: number;
+  charismaInfluence: number;
+}
+
+export type PersonalityAxisKey =
+  | "combatStyle"
+  | "socialStyle"
+  | "economicFocus"
+  | "exploration"
+  | "preparation"
+  | "ambition";
+
+export interface PersonalityAxes {
+  combatStyle: number; // cautious(-) ↔ reckless(+)
+  socialStyle: number; // solo(-) ↔ social(+)
+  economicFocus: number; // combat(-) ↔ economic(+)
+  exploration: number; // focused(-) ↔ wanderer(+)
+  preparation: number; // improviser(-) ↔ methodical(+)
+  ambition: number; // survivor(-) ↔ glory-seeker(+)
+}
+
+export type FactionId = "adventurers_guild" | "scholomance_order";
+export type BossId = "molten_fury";
+
+export interface SecondaryDimensions {
+  reputation: Record<FactionId, number>;
+  bossKnowledge: Record<BossId, number>; // 0-100
+}
+
+export interface DimensionDeltas {
+  coreStats?: Partial<Record<CoreStatKey, number>>;
+  personality?: Partial<Record<PersonalityAxisKey, number>>;
+  reputation?: Partial<Record<FactionId, number>>;
+  bossKnowledge?: Partial<Record<BossId, number>>;
+}
+
 // ─── Activity ────────────────────────────────────────────────────────────────
 
-export type ActivityId = "quest" | "dungeon_scholomance" | "dungeon_blackrock" | "farm_gold" | "study_boss" | "raid_molten_fury";
+export type ActivityId =
+  | "quest"
+  | "dungeon_scholomance"
+  | "dungeon_blackrock"
+  | "farm_gold"
+  | "study_boss"
+  | "raid_molten_fury"
+  | "host_guild_meeting"
+  | "black_market_trading";
+
+export interface UnlockConditions {
+  minLevel?: number;
+  minCoreStats?: Partial<Record<CoreStatKey, number>>;
+  minPersonality?: Partial<Record<PersonalityAxisKey, number>>;
+  minReputation?: Partial<Record<FactionId, number>>;
+  minBossKnowledge?: Partial<Record<BossId, number>>;
+}
 
 export interface ActivityDefinition {
   id: ActivityId;
@@ -8,11 +68,19 @@ export interface ActivityDefinition {
   description: string;
   energyCost: number;
   durationHours: number;
-  category: "combat" | "economic" | "knowledge" | "general";
-  personalityDeltas: Partial<PersonalityStats>;
+  category: "combat" | "economic" | "knowledge" | "social" | "general";
+  effects: DimensionDeltas;
   outcomes: ActivityOutcomeTable;
-  minLevel: number;
+  unlockConditions?: UnlockConditions;
   deathRisk: number; // 0–1
+  riskProfile?: {
+    coreStats?: Partial<Record<CoreStatKey, number>>;
+    gearFactor?: number;
+    prepFactor?: number;
+    knowledgeFactor?: number;
+    minRisk?: number;
+    maxRisk?: number;
+  };
 }
 
 export interface ActivityOutcomeTable {
@@ -26,6 +94,37 @@ export interface ActivityOutcomeTable {
 export interface LootDrop {
   itemId: string;
   chance: number; // 0–1
+}
+
+// ─── Daily Events ─────────────────────────────────────────────────────────────
+
+export type DailyEventId =
+  | "militia_training"
+  | "traveling_merchant"
+  | "scholar_lecture"
+  | "guild_conflict";
+
+export interface DailyEventChoice {
+  id: string;
+  label: string;
+  description: string;
+  effects: DimensionDeltas;
+  xpGain?: number;
+  goldGain?: number;
+}
+
+export interface DailyEventDefinition {
+  id: DailyEventId;
+  title: string;
+  description: string;
+  minDay: number;
+  maxDay?: number;
+  weight: number;
+  choices: DailyEventChoice[];
+}
+
+export interface PendingDailyEvent {
+  eventId: DailyEventId;
 }
 
 // ─── Gear ─────────────────────────────────────────────────────────────────────
@@ -42,21 +141,18 @@ export interface GearItem {
   description: string;
 }
 
-// ─── Personality ─────────────────────────────────────────────────────────────
-
-export interface PersonalityStats {
-  aggression: number;   // combat-focused choices
-  wisdom: number;       // study / preparation
-  greed: number;        // gold-farming, economic focus
-  cunning: number;      // risky / sneaky play
-  patience: number;     // methodical, slow-burn prep
-  recklessness: number; // high-risk content, skip prep
-}
-
 // ─── Evolution ───────────────────────────────────────────────────────────────
 
 export type EvolutionId = "berserker" | "merchant" | "scholar" | "raid_legend";
 export type EvolutionTier = 1 | 2 | 3;
+
+export interface EvolutionUnlockCondition {
+  minCoreStats?: Partial<Record<CoreStatKey, number>>;
+  minPersonality?: Partial<Record<PersonalityAxisKey, number>>;
+  minGoldAtDeath?: number;
+  minBossKnowledge?: Partial<Record<BossId, number>>;
+  mustDefeatRaids?: BossId[];
+}
 
 export interface EvolutionDefinition {
   id: EvolutionId;
@@ -71,37 +167,15 @@ export interface EvolutionDefinition {
   unlocksPath: EvolutionId[]; // evolutions this is a prereq for
 }
 
-export interface EvolutionUnlockCondition {
-  // Personality thresholds (must reach this score)
-  minAggression?: number;
-  minWisdom?: number;
-  minGreed?: number;
-  minRecklessness?: number;
-  // Achievement conditions
-  minGoldAtDeath?: number;
-  minBossKnowledge?: number; // 0–100
-  mustDefeatRaid?: boolean;
-}
-
 export interface EvolutionBonuses {
-  energyBonus: number;       // permanent max energy increase
-  startGold?: number;        // gold on new run start
-  combatBonus?: number;      // % damage increase (0.1 = 10%)
+  energyBonus: number; // permanent max energy increase
+  startGold?: number; // gold on new run start
+  combatBonus?: number; // % damage increase (0.1 = 10%)
   bossKnowledgeBonus?: number; // % boss knowledge on new hero (0.05 = 5%)
   knowledgeTransferMultiplier?: number; // multiplier on study gains
 }
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
-
-export type HeroClass = "warrior" | "mage" | "healer";
-
-export interface HeroNurtureChoice {
-  question: string;
-  optionA: string;
-  optionB: string;
-  choiceAClass: HeroClass;
-  choiceBClass: HeroClass;
-}
 
 export interface GearSlots {
   helmet: GearItem | null;
@@ -116,21 +190,17 @@ export interface GearSlots {
 
 export interface Hero {
   name: string;
-  heroClass: HeroClass;
   level: number;
   xp: number;
   xpToNextLevel: number;
-  inGameDay: number;   // 1–18+
+  inGameDay: number; // 1–18+
   gold: number;
   gear: GearSlots;
-  // Hidden during run, revealed on death
-  personality: PersonalityStats;
-  // Boss knowledge (0–100 per boss)
-  bossKnowledge: Record<string, number>;
-  // Activities done this day (for lockout logic)
+  coreStats: CoreStats;
+  personality: PersonalityAxes;
+  secondary: SecondaryDimensions;
   completedActivitiesToday: ActivityId[];
-  // Raids attempted (day → boss id)
-  raidLockouts: Record<string, number>; // bossId → dayAttempted
+  raidLockouts: Partial<Record<BossId, number>>; // bossId -> day attempted
 }
 
 // ─── Run State ────────────────────────────────────────────────────────────────
@@ -139,26 +209,23 @@ export type GameScreen =
   | "main_menu"
   | "hero_creation"
   | "planning"
-  | "executing"
+  | "daily_event"
   | "day_results"
   | "death"
   | "collection"
   | "upgrades";
 
-export interface PlannedActivity {
-  activityId: ActivityId;
-  slot: number; // order in the day
-}
-
 export interface DayResult {
   day: number;
   activitiesResolved: ResolvedActivity[];
+  eventsResolved: ResolvedDailyEvent[];
   totalXp: number;
   totalGold: number;
   lootObtained: GearItem[];
   heroSurvived: boolean;
   deathCause?: "combat" | "old_age";
-  personalitySnapshot: PersonalityStats;
+  personalitySnapshot: PersonalityAxes;
+  coreStatsSnapshot: CoreStats;
 }
 
 export interface ResolvedActivity {
@@ -167,18 +234,45 @@ export interface ResolvedActivity {
   goldGained: number;
   lootDropped: GearItem[];
   died: boolean;
-  personalityDeltas: Partial<PersonalityStats>;
+  appliedEffects: DimensionDeltas;
+  effectiveDeathRisk: number;
+  riskBand: RiskBand;
+  riskBreakdown: ActivityRiskBreakdown | null;
+  riskHints: string[];
+}
+
+export type RiskBand = "safe" | "manageable" | "dangerous" | "lethal";
+
+export interface ActivityRiskBreakdown {
+  baseRisk: number;
+  coreStatMitigation: number;
+  gearMitigation: number;
+  prepMitigation: number;
+  knowledgeMitigation: number;
+  metaMitigation: number;
+  agePenalty: number;
+  recklessPressure: number;
+  finalRisk: number;
+  riskBand: RiskBand;
+}
+
+export interface ResolvedDailyEvent {
+  eventId: DailyEventId;
+  choiceId: string;
+  xpGained: number;
+  goldGained: number;
+  appliedEffects: DimensionDeltas;
 }
 
 // ─── Meta-Progression (persists across runs) ──────────────────────────────────
 
 export interface MetaProgression {
   totalRuns: number;
-  maxEnergy: number;                    // starts at 50, grows permanently
+  maxEnergy: number; // starts at 50, grows permanently
   achievementPoints: number;
-  unlockedEvolutions: EvolutionId[];    // Pokédex collection
-  evolutionBonuses: EvolutionBonuses;  // stacked from all unlocked evolutions
-  bossKnowledgeBank: Record<string, number>; // persists across runs
+  unlockedEvolutions: EvolutionId[]; // Pokédex collection
+  evolutionBonuses: EvolutionBonuses; // stacked from all unlocked evolutions
+  bossKnowledgeBank: Partial<Record<BossId, number>>; // persists across runs
   apUpgrades: APUpgradeId[];
 }
 

@@ -1,10 +1,11 @@
-import type { Hero } from "../data/types";
+import type { GearSlot, Hero } from "../data/types";
 import { EnergyBar } from "./EnergyBar";
 
 interface HeroStatusProps {
   hero: Hero;
   maxEnergy: number;
   energyUsedToday: number;
+  onRename?: (name: string) => void;
 }
 
 const RARITY_COLOR: Record<string, string> = {
@@ -14,7 +15,7 @@ const RARITY_COLOR: Record<string, string> = {
   purple: "text-purple-400",
 };
 
-const SLOT_LABELS: Record<string, string> = {
+const SLOT_LABELS: Record<GearSlot, string> = {
   helmet: "Head",
   chest: "Chest",
   gloves: "Hands",
@@ -25,14 +26,14 @@ const SLOT_LABELS: Record<string, string> = {
   accessory: "Trinket",
 };
 
-export function HeroStatus({ hero, maxEnergy, energyUsedToday }: HeroStatusProps) {
+export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroStatusProps) {
   const energyRemaining = maxEnergy - energyUsedToday;
 
   const agePhase = (() => {
-    if (hero.inGameDay <= 5) return { label: "Young", color: "text-green-400" };
-    if (hero.inGameDay <= 9) return { label: "Prime", color: "text-blue-400" };
-    if (hero.inGameDay <= 12) return { label: "Experienced", color: "text-yellow-400" };
-    if (hero.inGameDay <= 15) return { label: "Aging", color: "text-orange-400" };
+    if (hero.inGameDay <= 5) {return { label: "Young", color: "text-green-400" };}
+    if (hero.inGameDay <= 9) {return { label: "Prime", color: "text-blue-400" };}
+    if (hero.inGameDay <= 12) {return { label: "Experienced", color: "text-yellow-400" };}
+    if (hero.inGameDay <= 15) {return { label: "Aging", color: "text-orange-400" };}
     return { label: "Elderly", color: "text-red-400" };
   })();
 
@@ -41,8 +42,22 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday }: HeroStatusProps
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-white font-bold text-lg">{hero.name}</h2>
-          <span className="text-gray-400 text-xs capitalize">{hero.heroClass} · Lv.{hero.level}</span>
+          <button
+            className="text-white font-bold text-lg hover:text-yellow-300 transition-colors"
+            onClick={() => {
+              if (onRename === undefined) {
+                return;
+              }
+              const next = window.prompt("Rename hero", hero.name);
+              if (next !== null) {
+                onRename(next);
+              }
+            }}
+            type="button"
+          >
+            {hero.name}
+          </button>
+          <span className="block mt-1 text-gray-400 text-xs capitalize">Blank Slate · Lv.{hero.level}</span>
         </div>
         <div className="text-right">
           <div className={`font-bold text-sm ${agePhase.color}`}>{agePhase.label}</div>
@@ -66,7 +81,7 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday }: HeroStatusProps
       </div>
 
       {/* Stats row */}
-      <div className="flex gap-4 text-sm">
+      <div className="flex flex-wrap gap-4 text-sm">
         <div className="flex items-center gap-1">
           <span className="text-yellow-400">◈</span>
           <span className="text-white font-bold">{hero.gold}g</span>
@@ -74,19 +89,22 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday }: HeroStatusProps
         <div className="flex items-center gap-1">
           <span className="text-cyan-400">◉</span>
           <span className="text-gray-300">
-            Boss Knowledge: <span className="text-cyan-400 font-bold">{Math.round(hero.bossKnowledge["molten_fury"] ?? 0)}%</span>
+            Boss Knowledge: <span className="text-cyan-400 font-bold">{Math.round(hero.secondary.bossKnowledge["molten_fury"])}%</span>
           </span>
+        </div>
+        <div className="text-gray-400 text-xs">
+          STR {hero.coreStats.strength} · AGI {hero.coreStats.agility} · INT {hero.coreStats.intelligence} · STA {hero.coreStats.stamina} · CHR {hero.coreStats.charismaInfluence}
         </div>
       </div>
 
       {/* Gear slots */}
       <div className="grid grid-cols-4 gap-1">
-        {(Object.entries(SLOT_LABELS) as [keyof typeof SLOT_LABELS, string][]).map(([slot, label]) => {
-          const item = hero.gear[slot as keyof typeof hero.gear];
+        {(Object.entries(SLOT_LABELS) as [GearSlot, string][]).map(([slot, label]) => {
+          const item = hero.gear[slot];
           return (
             <div
-              key={slot}
               className="bg-gray-800 border border-gray-700 rounded p-1 text-center"
+              key={slot}
               title={item !== null ? item.name : "Empty"}
             >
               <div className="text-gray-500 text-xs">{label}</div>

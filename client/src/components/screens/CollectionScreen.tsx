@@ -44,7 +44,7 @@ function EvolutionCard({ evolutionId, unlocked, collectionUnlocked }: EvolutionC
               {prereqsMet ? "✓" : "✗"} Requires:{" "}
             </span>
             <span className="text-gray-500">
-              {evo.prerequisites.map((p) => EVOLUTIONS[p]?.name ?? p).join(" + ")}
+              {evo.prerequisites.map((p) => EVOLUTIONS[p].name).join(" + ")}
             </span>
           </div>
         )}
@@ -74,7 +74,7 @@ function EvolutionCard({ evolutionId, unlocked, collectionUnlocked }: EvolutionC
       {evo.unlocksPath.length > 0 && (
         <div className="text-xs text-gray-500 border-t border-gray-700 pt-2">
           <span className="font-bold text-gray-400">Unlocks path to:</span>{" "}
-          {evo.unlocksPath.map((id) => EVOLUTIONS[id]?.name ?? id).join(", ")}
+          {evo.unlocksPath.map((id) => EVOLUTIONS[id].name).join(", ")}
         </div>
       )}
     </div>
@@ -95,8 +95,8 @@ export function CollectionScreen() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-yellow-400 font-bold text-xl">Evolution Collection</h2>
-          <p className="text-gray-400 text-sm">Discover your hero's legacy</p>
+          <h2 className="text-yellow-400 font-bold text-xl">Legacy Paths</h2>
+          <p className="text-gray-400 text-sm">Discover your hero&apos;s legacy</p>
         </div>
         <button
           className="text-gray-400 hover:text-gray-200 text-sm"
@@ -110,7 +110,7 @@ export function CollectionScreen() {
       <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-gray-300 font-bold">Collection Progress</span>
-          <span className="text-purple-400 font-bold">{unlockedCount} / {totalCount} Evolutions</span>
+          <span className="text-purple-400 font-bold">{unlockedCount} / {totalCount} Paths</span>
         </div>
         <div className="h-3 bg-gray-800 rounded overflow-hidden">
           <div className="h-full bg-gradient-to-r from-purple-600 to-yellow-500" style={{ width: `${(unlockedCount / totalCount) * 100}%` }} />
@@ -151,7 +151,7 @@ export function CollectionScreen() {
 
       {/* Tier 1 */}
       <div className="space-y-3">
-        <h3 className="text-green-400 text-xs font-bold uppercase tracking-widest">Tier 1 — Foundation Evolutions</h3>
+        <h3 className="text-green-400 text-xs font-bold uppercase tracking-widest">Tier 1 — Foundation Paths</h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {tier1.map((evo) => (
             <EvolutionCard
@@ -166,7 +166,7 @@ export function CollectionScreen() {
 
       {/* Tier 2 */}
       <div className="space-y-3">
-        <h3 className="text-blue-400 text-xs font-bold uppercase tracking-widest">Tier 2 — Specialist Evolutions</h3>
+        <h3 className="text-blue-400 text-xs font-bold uppercase tracking-widest">Tier 2 — Specialist Paths</h3>
         <div className="grid grid-cols-1 gap-3">
           {tier2.map((evo) => (
             <EvolutionCard

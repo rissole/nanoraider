@@ -6,6 +6,7 @@ import { DayResults } from "./components/screens/DayResults";
 import { DeathScreen } from "./components/screens/DeathScreen";
 import { CollectionScreen } from "./components/screens/CollectionScreen";
 import { UpgradesScreen } from "./components/screens/UpgradesScreen";
+import { DailyEventScreen } from "./components/screens/DailyEventScreen";
 
 export default function App() {
   const screen = useGameStore((s) => s.screen);
@@ -15,7 +16,7 @@ export default function App() {
       {screen === "main_menu" && <MainMenu />}
       {screen === "hero_creation" && <HeroCreation />}
       {screen === "planning" && <PlanningScreen />}
-      {screen === "executing" && <PlanningScreen />}
+      {screen === "daily_event" && <DailyEventScreen />}
       {screen === "day_results" && <DayResults />}
       {screen === "death" && <DeathScreen />}
       {screen === "collection" && <CollectionScreen />}

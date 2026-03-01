@@ -2,54 +2,54 @@
 
 ## Core Fantasy
 
-**"Discover what your hero becomes. Every playstyle unlocks a new evolution. Gotta catch 'em all."**
+**"Discover what your hero becomes. Every playstyle unlocks a new legacy path. Collect them all."**
 
-You raise heroes in a simulated MMO world, but here's the twist: **your choices shape what they evolve into**. Farm dungeons obsessively? Your hero becomes a combat-focused Dungeon Delver. Chase gold and flip items? They evolve into a shrewd Merchant Lord. Mix crafting with raid prep? Unlock the rare Artisan Raider.
+You raise heroes in a simulated MMO world, but here's the twist: **your choices shape their legacy path**. Farm dungeons obsessively? Your hero becomes a combat-focused Dungeon Delver. Chase gold and flip items? They become a shrewd Merchant Lord. Mix crafting with raid prep? Unlock the rare Artisan Raider.
 
-Each evolution you discover is permanently recorded in your collection—**30+ unique hero types to find, Pokédex-style**. Ultimate evolutions require prerequisites: you can't unlock the legendary Master Raider until you've discovered the Master Crafter evolution and earned their blueprint knowledge.
+Each legacy path you discover is permanently recorded in your collection—**30+ unique hero types to find, Pokédex-style**. Ultimate paths require prerequisites: you can't unlock the legendary Master Raider until you've discovered the Master Crafter path and earned their blueprint knowledge.
 
-When a hero dies, their evolution unlocks become tools and knowledge for future heroes. You're not just raising one character—you're building a legacy of discoveries that compound across runs.
+When a hero dies, their legacy path unlocks become tools and knowledge for future heroes. You're not just raising one character—you're building a legacy of discoveries that compound across runs.
 
 ## The Hook
 
-- **Pokédex-style evolution collection** - 30+ unique hero types to discover, each with distinct abilities and playstyles
-- **Your playstyle = your evolution** - Farm dungeons → combat specialist, flip items → merchant, craft gear → artisan (not predetermined classes)
-- **Evolution unlocks are progression** - Each new evolution grants tools/knowledge/bonuses for future heroes
-- **Evolution prerequisites create depth** - Ultimate evolutions require specific prior discoveries (e.g., Ultimate Raider needs Master Crafter blueprints)
-- **Can't pay to win** - You need actual evolution unlocks through play; no shortcut to discovering new types
+- **Pokédex-style legacy path collection** - 30+ unique hero types to discover, each with distinct abilities and playstyles
+- **Your playstyle = your path** - Farm dungeons → combat specialist, flip items → merchant, craft gear → artisan (not predetermined classes)
+- **Legacy path unlocks are progression** - Each new path grants tools/knowledge/bonuses for future heroes
+- **Path prerequisites create depth** - Ultimate paths require specific prior discoveries (e.g., Ultimate Raider needs Master Crafter blueprints)
+- **Can't pay to win** - You need actual legacy path unlocks through play; no shortcut to discovering new types
 - **Energy supports discovery** - Veterans with more max energy can experiment faster, but everyone discovers at their own pace
-- **Every run teaches** - Death grants +5 max energy + Achievement Points, making next run longer AND revealing new evolution paths
+- **Every run teaches** - Death grants +5 max energy + Achievement Points, making next run longer AND revealing new legacy paths
 - **Roguelike meta-progression** - Each hero benefits from previous heroes' discoveries, creating compounding strategies
 
 ## Design Pillars
 
 ### 1. Discovery Over Optimization
-The core loop is discovering new evolutions, not min-maxing one build. "What happens if I focus purely on crafting this run?" unlocks new hero types and abilities. Collection drives engagement—filling out your evolution codex is the meta-goal.
+The core loop is discovering new legacy paths, not min-maxing one build. "What happens if I focus purely on crafting this run?" unlocks new hero types and abilities. Collection drives engagement—filling out your legacy codex is the meta-goal.
 
 **Anti-pattern:** Generic idle game where optimization is the only goal, or games where content is gated behind timers rather than discovery
 
 ### 2. Personality Emerges From Playstyle
-Heroes aren't preset classes—they become what you make them. Your decisions (dungeon spam, gold farming, social activities, crafting focus) organically shape their evolution path. The game reads your playstyle and evolves your hero accordingly, creating emergent narratives.
+Heroes aren't preset classes—they become what you make them. Your decisions (dungeon spam, gold farming, social activities, crafting focus) organically shape their legacy path. The game reads your playstyle and reflects it in your hero's legend, creating emergent narratives.
 
 **Anti-pattern:** Rigid class systems where choices don't matter, or games where "personality" is just flavor text
 
 ### 3. Knowledge Transfer Creates Progression
-Each evolution you unlock becomes a tool for future heroes. Discovered the Master Crafter? Now all heroes can use their blueprints. Found the Lore Keeper? Future heroes start with boss knowledge. Your collection compounds into power, creating a satisfying progression tree.
+Each legacy path you unlock becomes a tool for future heroes. Discovered the Master Crafter? Now all heroes can use their blueprints. Found the Lore Keeper? Future heroes start with boss knowledge. Your collection compounds into power, creating a satisfying progression tree.
 
 **Anti-pattern:** Runs that feel isolated with no meaningful meta-progression, or abstract upgrades with no thematic connection
 
 ### 4. Prerequisites Create Strategic Depth
-Ultimate evolutions require specific prior discoveries, creating long-term goals. You can't stumble into the legendary evolutions—you need to deliberately pursue prerequisite paths. This creates "Aha!" moments when players realize evolution combos unlock new possibilities.
+Ultimate legacy paths require specific prior discoveries, creating long-term goals. You can't stumble into the legendary paths—you need to deliberately pursue prerequisite paths. This creates "Aha!" moments when players realize path combos unlock new possibilities.
 
 **Anti-pattern:** All content accessible immediately, or arbitrary gates that don't reward exploration
 
 ### 5. Energy Supports Discovery (But Isn't The Point)
-Energy still matters—veterans with higher max energy can experiment with evolution paths faster. BUT energy is the support system, not the core progression. You progress by discovering evolutions (requires play), not by accumulating abstract resources (can be monetized unfairly).
+Energy still matters—veterans with higher max energy can experiment with legacy paths faster. BUT energy is the support system, not the core progression. You progress by discovering paths (requires play), not by accumulating abstract resources (can be monetized unfairly).
 
 **Anti-pattern:** Pure energy-gated progression that can be pay-to-win, or systems where energy feels punishing rather than enabling
 
 ### 6. Cozy Collection with Hardcore Stakes
-Accessible Pokédex-style collection mechanics (filling out your evolution codex is satisfying and visual) mask roguelike depth. Permadeath creates tension, but discovering new evolutions creates excitement. The game celebrates both "gotta catch 'em all" collectors and strategic optimizers.
+Accessible Pokédex-style collection mechanics (filling out your legacy codex is satisfying and visual) mask roguelike depth. Permadeath creates tension, but discovering new paths creates excitement. The game celebrates both collectors and strategic optimizers.
 
 **Anti-pattern:** Either too casual (no meaningful choices) or too punishing (progression feels impossible)
 
@@ -93,4 +93,4 @@ Accessible Pokédex-style collection mechanics (filling out your evolution codex
 
 ## One-Sentence Pitch
 
-**"A roguelike evolution collector where your MMO playstyle shapes what hero type you become—discover 30+ unique evolutions, Pokédex-style."**
+**"A roguelike legacy-path collector where your MMO playstyle shapes what hero type you become—discover 30+ unique paths, Pokédex-style."**

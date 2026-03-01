@@ -2,14 +2,14 @@
 
 ## Content Design Philosophy
 
-**Content serves evolution discovery.** Every activity, zone, dungeon, and raid exists primarily to:
+**Content serves legacy path discovery.** Every activity, zone, dungeon, and raid exists primarily to:
 1. **Track personality traits** - Your choices reveal who your hero is becoming
-2. **Enable evolution unlocks** - Different paths unlock different evolutions
-3. **Create collection moments** - Death reveals which evolution you unlocked, Pokédex-style
+2. **Enable path unlocks** - Different playstyles unlock different legacy paths
+3. **Create collection moments** - Death reveals which path you unlocked, Pokédex-style
 
-Content is NOT just about gear progression - it's about discovering your playstyle through death and collecting evolutions across multiple runs. Each activity contributes to hidden personality stats (Aggression, Cunning, Wisdom, Greed, etc.) that determine which evolution you unlock when you die.
+Content is NOT just about gear progression - it's about discovering your playstyle through death and collecting legacy paths across multiple runs. Each activity contributes to hidden personality stats (Aggression, Cunning, Wisdom, Greed, etc.) that determine which path you unlock when you die.
 
-**The core loop is:** Play → Die → Discover Evolution → Learn Prerequisites → Plan Next Run → Collect Them All
+**The core loop is:** Play → Die → Discover Legacy Path → Learn Prerequisites → Plan Next Run → Collect Them All
 
 ---
 
@@ -17,7 +17,7 @@ Content is NOT just about gear progression - it's about discovering your playsty
 
 Content is structured in a vertical progression: Zones → Dungeons → Raids
 
-Players move through leveling zones (1-10, 11-20, 21-30), then farm dungeons for Pre-BiS gear, then attempt raid bosses for BiS gear. **But more importantly, every choice you make influences which evolution you'll unlock on death.**
+Players move through leveling zones (1-10, 11-20, 21-30), then farm dungeons for Pre-BiS gear, then attempt raid bosses for BiS gear. **But more importantly, every choice you make influences which legacy path you'll unlock on death.**
 
 ---
 
@@ -40,7 +40,7 @@ Each zone has:
 - **Travel Time:** N/A (starting zone)
 - **Key NPCs:** Mentor NPCs that influence early class choices
 - **Loot:** Gray/Green starter gear
-- **Evolution Influence:** Balanced (no strong personality traits yet)
+- **Legacy Path Influence:** Balanced (no strong personality traits yet)
 
 #### **2. Stonepeak Mountains (Levels 8-15)**
 - **Theme:** Dwarven mining town, rugged terrain
@@ -48,7 +48,7 @@ Each zone has:
 - **Travel Time:** 1h from Greenhollow
 - **Reputation Reward:** Discount on mining profession
 - **Loot:** Green gear with Strength/Stamina focus
-- **Evolution Influence:** Good for Master Crafter (crafting focus) or Berserker (combat focus)
+- **Legacy Path Influence:** Good for Master Crafter (crafting focus) or Berserker (combat focus)
 
 #### **3. Twilight Forest (Levels 12-18)**
 - **Theme:** Enchanted forest, mystical creatures
@@ -56,7 +56,7 @@ Each zone has:
 - **Travel Time:** 2h from Greenhollow, 1.5h from Stonepeak
 - **Reputation Reward:** Alchemy recipes
 - **Loot:** Green gear with Intelligence/Crit focus
-- **Evolution Influence:** Good for Scholar (wisdom focus) or Alchemist (crafting + herbalism)
+- **Legacy Path Influence:** Good for Scholar (wisdom focus) or Alchemist (crafting + herbalism)
 
 #### **4. Dustshore Bay (Levels 16-22)**
 - **Theme:** Coastal port town, pirate conflicts
@@ -64,7 +64,7 @@ Each zone has:
 - **Travel Time:** 2h from Twilight Forest
 - **Reputation Reward:** Mount discount (400g instead of 500g)
 - **Loot:** Green gear with Agility focus
-- **Evolution Influence:** Good for Merchant (gold focus) or Treasure Hunter (rare drops)
+- **Legacy Path Influence:** Good for Merchant (gold focus) or Treasure Hunter (rare drops)
 
 #### **5. Ashfall Wastes (Levels 20-26)**
 - **Theme:** Volcanic badlands, dangerous creatures
@@ -72,7 +72,7 @@ Each zone has:
 - **Travel Time:** 3h from Dustshore Bay
 - **Reputation Reward:** Fire resistance gear (useful for raids)
 - **Loot:** Green/Blue gear, crafting materials
-- **Evolution Influence:** Good for Berserker (high risk combat) or Survivor (dangerous zones)
+- **Legacy Path Influence:** Good for Berserker (high risk combat) or Survivor (dangerous zones)
 
 #### **6. Shadowspire Citadel (Levels 25-30)**
 - **Theme:** Dark fortress, undead/demonic enemies
@@ -80,7 +80,7 @@ Each zone has:
 - **Travel Time:** 2h from Ashfall Wastes
 - **Reputation Reward:** Access to raid attunement quests
 - **Loot:** Blue Pre-BiS gear from quests
-- **Evolution Influence:** Good for Scholar (study focus) or Speed Runner (quest efficiency)
+- **Legacy Path Influence:** Good for Scholar (study focus) or Speed Runner (quest efficiency)
 
 ---
 
@@ -320,16 +320,27 @@ Each raid boss has study activities (**2h in-game, 12 energy each**, diminishing
 
 ---
 
-## Evolution-Specific Content
+## Dynamic Conditional Activities & Legacy Path Content
 
-**Not all content matters for all evolutions.** This is a KEY design principle - your choices reveal your playstyle.
+Activities are no longer just a static list. As a hero develops their Stats and Personality Axes, new conditional activities appear dynamically on their schedule.
 
-### Evolution Examples and What Matters
+### Conditional Activity Framework
+
+- **Stat Thresholds:** Reaching high levels in a specific Core Stat unlocks specialized training or work.
+  - *Example:* `Strength > 20` unlocks "Underground Fight Club" (High risk, high combat XP).
+  - *Example:* `Charisma/Influence > 20` unlocks "Host Guild Meeting" (Boosts social, grants reputation).
+- **Personality Locks:** Some activities require leaning heavily into a personality extreme.
+  - *Example:* `Economic + Reckless` unlocks "Black Market Trading".
+  - *Example:* `Methodical + Solo` unlocks "Deep Magical Research".
+
+**Not all content matters for all legacy paths.** This is a KEY design principle - your choices reveal your playstyle.
+
+### Legacy Path Examples and What Matters
 
 **Berserker (Tier 1)**
 - **What Matters:** Combat time, high-risk dungeons (Blackrock Depths, Temple of Serpent), raid boss attempts
 - **What Doesn't:** Crafting, gold farming, low-risk safe content
-- **Efficiency Note:** Berserker needs combat time, so spending 15 energy on dangerous dungeons is MORE efficient for evolution progress than safe quests
+- **Efficiency Note:** Berserker needs combat time, so spending 15 energy on dangerous dungeons is MORE efficient for legacy path progress than safe quests
 
 **Merchant (Tier 1)**
 - **What Matters:** Gold earned, gold farming activities, trading, selling loot instead of using it
@@ -344,18 +355,18 @@ Each raid boss has study activities (**2h in-game, 12 energy each**, diminishing
 **Master Crafter (Tier 1)**
 - **What Matters:** Crafting time, gathering materials, profession activities, crafting recipes
 - **What Doesn't:** Combat efficiency, raid attempts, gold hoarding
-- **Efficiency Note:** Crafting activities take time - 2h to craft consumables counts toward evolution even if it costs 8 energy
+- **Efficiency Note:** Crafting activities take time - 2h to craft consumables counts toward legacy path progress even if it costs 8 energy
 
 **Raid Legend (Tier 2)**
-- **What Matters:** Defeating Zar'thul (final boss), having both Berserker + Scholar prerequisite evolutions unlocked
+- **What Matters:** Defeating Zar'thul (final boss), having both Berserker + Scholar prerequisite paths unlocked
 - **What Doesn't:** Speed of victory, gear quality, gold remaining
 - **Prerequisite System:** You MUST unlock Berserker and Scholar in previous runs before Raid Legend becomes discoverable
 
-### How Different Evolutions Change Energy Efficiency
+### How Different Legacy Paths Change Energy Efficiency
 
 **Same 15-energy dungeon run, different evolution goals:**
 
-| Evolution Target | Efficient Content | Inefficient Content |
+| Legacy Path Target | Efficient Content | Inefficient Content |
 |-----------------|-------------------|---------------------|
 | Berserker | Blackrock Depths (25% death risk = combat time) | Irondeep Mines (5% death risk = too safe) |
 | Scholar | Study sessions (12 energy, 2h study time) | Gold farming (8 energy, but no wisdom gain) |
@@ -363,16 +374,16 @@ Each raid boss has study activities (**2h in-game, 12 energy each**, diminishing
 | Master Crafter | Gathering materials + crafting (8-12 energy) | Speed running quests (10 energy but no crafting) |
 | Treasure Hunter | High-loot dungeons with rare drops | Safe quests with guaranteed green loot |
 
-**This creates strategic depth:** "Should I farm Scholomance for Scholar evolution (high study requirements) or rush combat for Berserker evolution (high risk content)?"
+**This creates strategic depth:** "Should I farm Scholomance for Scholar path progress (high study requirements) or rush combat for Berserker path progress (high risk content)?"
 
-### Evolution Discovery on Death
+### Legacy Path Discovery on Death
 
 When you die, the game reveals:
-1. **Which evolution you unlocked** (big celebration, Pokédex-style reveal)
+1. **Which legacy path you unlocked** (big celebration, Pokédex-style reveal)
 2. **Why you unlocked it** (e.g., "You spent 40% of your time in combat and took high risks - you've become a **Berserker**!")
 3. **What bonuses it gives** (Knowledge Transfer - future runs start with Berserker's +10% damage)
-4. **What prerequisite it is for** (e.g., "Berserker is a prerequisite for Raid Legend, Gladiator, and Weapon Master")
-5. **What you DIDN'T unlock** (Hint system - "You were close to Merchant evolution! Try earning more gold next run.")
+4. **What prerequisite it is for** (e.g., "Berserker is a prerequisite path for Raid Legend, Gladiator, and Weapon Master")
+5. **What you DIDN'T unlock** (Hint system - "You were close to Merchant! Try earning more gold next run.")
 
 ---
 
@@ -390,16 +401,16 @@ When you die, the game reveals:
 
 ### Strategic Farming Paths
 
-**Evolution-focused paths replace traditional min-maxing:**
+**Legacy-path-focused routes replace traditional min-maxing:**
 
-**Berserker Evolution Path:**
+**Berserker Legacy Path:**
 - Prioritize high-risk combat (Blackrock Depths, Temple of Serpent)
 - Skip safe content (Irondeep Mines, low-level quests)
 - Attempt raid bosses with minimal prep (high death risk = more combat time)
 - Goal: Die in glorious combat after maximizing combat time
 - Energy efficiency: Combat dungeons (15 energy) > Study sessions
 
-**Scholar Evolution Path:**
+**Scholar Legacy Path:**
 - Prioritize study sessions (12 energy each, 2h study time)
 - Max out boss knowledge for all raid bosses
 - Farm intelligence-focused content (Whispering Crypts, Scholomance)
@@ -407,7 +418,7 @@ When you die, the game reveals:
 - Goal: Die with maximum knowledge accumulated
 - Energy efficiency: Study sessions > Intelligence dungeons > Combat
 
-**Merchant Evolution Path:**
+**Merchant Legacy Path:**
 - Prioritize gold farming activities (Corsair's Den +20g, Blackrock Depths +40g)
 - Buy and sell items frequently (trade activity)
 - Skip gear optimization (sell blues instead of equipping them)
@@ -415,7 +426,7 @@ When you die, the game reveals:
 - Goal: Die with maximum gold accumulated
 - Energy efficiency: Gold-bonus dungeons > Regular dungeons
 
-**Master Crafter Evolution Path:**
+**Master Crafter Legacy Path:**
 - Prioritize crafting and gathering (8-12 energy, 2-4h time investment)
 - Farm materials from dungeons (Mining materials, Dark Runes, etc.)
 - Spend time crafting consumables even if you don't need them
@@ -423,11 +434,11 @@ When you die, the game reveals:
 - Goal: Die with maximum crafting time logged
 - Energy efficiency: Crafting time > Material farming > Combat
 
-**Raid Legend Evolution Path (Tier 2):**
+**Raid Legend Legacy Path (Tier 2):**
 - Requires: Must have unlocked Berserker + Scholar in previous runs first
 - Strategy: Combine combat focus with study focus
 - Defeat Zar'thul (final boss)
-- This evolution is IMPOSSIBLE on your first run (prerequisite system)
+- This path is IMPOSSIBLE on your first run (prerequisite system)
 - Goal: Die after defeating final boss while having correct prerequisites
 - Energy efficiency: Balance combat and study equally
 
@@ -436,13 +447,25 @@ When you die, the game reveals:
 - Study each boss 5-7 times (diminishing returns)
 - Use gold for consumables instead of mount (short-term power)
 - Balance risk and speed
-- Note: This path might unlock a "Optimizer" or "Perfectionist" evolution
+- Note: This route might unlock an "Optimizer" or "Perfectionist" path
 
 ---
 
 ## Random Events Content
 
+The event system drives early-game character building and mid/late-game strategic decisions. All events explicitly show their impact on Stats and Personality before a choice is made.
+
 ### Event Types Examples
+
+**Early-Game Stat-Building Events (Days 1-3):**
+- **The Militia Training:** "A local militia is training nearby."
+  - *Choice 1:* Join the sparring (`+Strength`, `Combat Focus`)
+  - *Choice 2:* Study their tactics from afar (`+Intelligence`, `Methodical`)
+  - *Choice 3:* Negotiate to sell them supplies (`+Charisma`, `Economic`)
+- **The Fallen Scholar:** "A traveling scholar drops their books in the mud."
+  - *Choice 1:* Help organize the books (`+Intelligence`, `Social`)
+  - *Choice 2:* Ignore them and do pushups (`+Strength`, `Solo`)
+  - *Choice 3:* Quickly pocket a valuable tome (`+Agility`, `Reckless`)
 
 **Trade Events:**
 - "Rare vendor selling [Purple Weapon] for 800g!" (Opportunity cost: all your gold)
@@ -495,29 +518,29 @@ When you die, the game reveals:
 
 ## Content Pacing (Typical Run)
 
-**Evolution discovery changes how you think about pacing:**
+**Legacy path discovery changes how you think about pacing:**
 
 **First Run (Discovery Mode):**
-- You don't know what evolutions exist yet
-- Play naturally, die, discover your first evolution
-- Death reveals: "You unlocked **Berserker** evolution!"
+- You don't know what legacy paths exist yet
+- Play naturally, die, discover your first path
+- Death reveals: "You unlocked **Berserker**!"
 - Collection screen unlocks (Pokédex UI)
 - Real-time: ~2-4 weeks (50 energy capacity)
 
-**Second Run (Targeted Evolution):**
-- Goal: Unlock a DIFFERENT evolution (collect them all!)
+**Second Run (Targeted Path):**
+- Goal: Unlock a DIFFERENT path (collect them all!)
 - Maybe you unlocked Berserker first, now try for Scholar
 - Intentionally change playstyle (more study time, less combat)
-- Die, discover Scholar evolution
-- Collection screen shows: 2/30 evolutions unlocked
+- Die, discover Scholar
+- Collection screen shows: 2/30 paths unlocked
 - Real-time: ~1-2 weeks (100 energy capacity after first death)
 
 **Third+ Runs (Prerequisite Hunting):**
 - You've seen hints: "Raid Legend requires Berserker + Scholar"
-- Goal: Unlock Tier 2 evolution by having prerequisites
+- Goal: Unlock a Tier 2 path by having prerequisites
 - Combine combat and study, defeat Zar'thul
-- Death reveals: "You unlocked **Raid Legend** evolution! (Tier 2)"
-- Collection screen shows: 3/30 evolutions unlocked
+- Death reveals: "You unlocked **Raid Legend**! (Tier 2)"
+- Collection screen shows: 3/30 paths unlocked
 - Real-time: ~1 week (150+ energy capacity)
 
 **Traditional Pacing (Still Relevant):**
@@ -525,35 +548,35 @@ When you die, the game reveals:
 **In-Game Days 1-5 (Leveling):**
 - Zones: Greenhollow → Stonepeak → Twilight → Dustshore → Ashfall → Shadowspire
 - Activities: 90% questing (10 energy), 10% exploration
-- Evolution tracking: Hidden personality stats building (Aggression, Wisdom, Greed, etc.)
+- Legacy path tracking: Hidden personality stats building (Aggression, Wisdom, Greed, etc.)
 
 **In-Game Days 6-10 (Pre-BiS Farming):**
-- Dungeons: Choice based on evolution target
+- Dungeons: Choice based on legacy path target
   - Berserker path: Blackrock Depths (high risk)
   - Scholar path: Study sessions + intelligence dungeons
   - Merchant path: Corsair's Den, Blackrock Depths (gold bonuses)
 - Activities: 70% targeted content, 20% support activities, 10% preparation
-- Evolution tracking: Playstyle becoming clear
+- Legacy path tracking: Playstyle becoming clear
 
 **In-Game Days 11-14 (Raiding):**
-- Raids: Attempts based on evolution goal
+- Raids: Attempts based on legacy path goal
   - Berserker: Rush bosses with minimal prep (die in combat)
   - Scholar: Max study, attempt with knowledge
   - Raid Legend: Defeat Zar'thul (only possible with prerequisites)
-- Activities: 50% raids/study, 30% final evolution push, 20% gear optimization
-- Evolution tracking: Final push to meet evolution thresholds
+- Activities: 50% raids/study, 30% final path push, 20% gear optimization
+- Legacy path tracking: Final push to meet path thresholds
 
 **In-Game Day 15-18+ (Overtime):**
 - Aging penalties kick in
-- Last chance to shift evolution trajectory
-- Death approaching = evolution reveal imminent
+- Last chance to shift legacy path trajectory
+- Death approaching = path reveal imminent
 - Real-time: ~1-4 real days
 
 **Total Character Run:**
 - **18 in-game days** minimum to reach endgame
-- **Death reveals which evolution you unlocked** (core moment)
+- **Death reveals which legacy path you unlocked** (core moment)
 - **Real-time varies:**
   - Casual (50 energy): 2-4 weeks per run
   - Active (100 energy): 1-2 weeks per run
   - Veteran (200+ energy): 3-7 days per run
-- **Collection goal:** 30 evolutions total, will take months to unlock all
+- **Collection goal:** 30 legacy paths total, will take months to unlock all

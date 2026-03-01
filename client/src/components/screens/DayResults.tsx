@@ -26,7 +26,7 @@ export function DayResults() {
       </div>
 
       {/* Summary bar */}
-      <div className="grid grid-cols-3 gap-3 text-center">
+      <div className="grid grid-cols-4 gap-3 text-center">
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-3">
           <div className="text-blue-400 font-bold text-xl">+{results.totalXp}</div>
           <div className="text-gray-400 text-xs">XP</div>
@@ -38,6 +38,10 @@ export function DayResults() {
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-3">
           <div className="text-purple-400 font-bold text-xl">{results.lootObtained.length}</div>
           <div className="text-gray-400 text-xs">Items</div>
+        </div>
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-3">
+          <div className="text-indigo-400 font-bold text-xl">{results.eventsResolved.length}</div>
+          <div className="text-gray-400 text-xs">Events</div>
         </div>
       </div>
 
@@ -56,13 +60,14 @@ export function DayResults() {
 
       {/* Activity breakdown */}
       <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-2">
-        <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest">Activity Log</h3>
+        <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest">Action Log</h3>
         {results.activitiesResolved.map((r, i) => {
           const def = ACTIVITIES[r.activityId];
           return (
             <div className="flex items-center justify-between text-sm" key={i}>
-              <span className="text-gray-300">{def?.name ?? r.activityId}</span>
+              <span className="text-gray-300">{def.name}</span>
               <div className="flex gap-3 text-xs">
+                {def.deathRisk > 0 && <span className="text-red-300">Risk {Math.round(r.effectiveDeathRisk * 100)}%</span>}
                 {r.xpGained > 0 && <span className="text-blue-400">+{r.xpGained} XP</span>}
                 {r.goldGained > 0 && <span className="text-yellow-400">+{r.goldGained}g</span>}
                 {r.lootDropped.length > 0 && (
@@ -72,6 +77,15 @@ export function DayResults() {
             </div>
           );
         })}
+        {results.eventsResolved.map((event, i) => (
+          <div className="flex items-center justify-between text-sm border-t border-gray-800 pt-2" key={`${event.eventId}-${i}`}>
+            <span className="text-indigo-300">Event: {event.eventId}</span>
+            <div className="flex gap-3 text-xs">
+              {event.xpGained > 0 && <span className="text-blue-400">+{event.xpGained} XP</span>}
+              {event.goldGained > 0 && <span className="text-yellow-400">+{event.goldGained}g</span>}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Personality hint */}
@@ -89,19 +103,30 @@ export function DayResults() {
   );
 }
 
-function PersonalityHint({ personality }: { personality: { aggression: number; wisdom: number; greed: number; patience: number; recklessness: number } }) {
+function PersonalityHint({
+  personality,
+}: {
+  personality: {
+    combatStyle: number;
+    socialStyle: number;
+    economicFocus: number;
+    exploration: number;
+    preparation: number;
+    ambition: number;
+  };
+}) {
   const dominant = Object.entries(personality).sort(([, a], [, b]) => b - a)[0];
   if (dominant === undefined || dominant[1] === 0) {
     return <p className="text-gray-500 text-xs italic">Your hero is still finding their path…</p>;
   }
 
   const hints: Record<string, string> = {
-    aggression: "Your hero seems increasingly drawn to combat…",
-    wisdom: "Your hero's thirst for knowledge grows stronger…",
-    greed: "Your hero has a merchant's eye for opportunity…",
-    patience: "Your hero prefers careful, methodical planning…",
-    recklessness: "Your hero grows bolder, fearless in the face of danger…",
-    cunning: "Your hero is developing a sharp tactical mind…",
+    combatStyle: "Your hero leans into high-risk combat decisions…",
+    socialStyle: "Your hero is becoming increasingly social and influential…",
+    economicFocus: "Your hero has a strong instinct for profit and trade…",
+    exploration: "Your hero is drawn toward wandering and discovery…",
+    preparation: "Your hero prefers methodical preparation before action…",
+    ambition: "Your hero is chasing bigger glory and harder challenges…",
   };
 
   return <p className="text-gray-400 text-xs italic">{hints[dominant[0]] ?? "Your hero is evolving…"}</p>;

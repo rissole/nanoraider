@@ -1,5 +1,5 @@
 import { EVOLUTIONS } from "../data/evolutions";
-import type { EvolutionId, Hero, MetaProgression } from "../data/types";
+import type { BossId, EvolutionId, EvolutionUnlockCondition, Hero, MetaProgression } from "../data/types";
 
 export interface EvolutionCheckResult {
   unlocked: EvolutionId | null;
@@ -8,7 +8,7 @@ export interface EvolutionCheckResult {
   whyUnlocked: string | null;
 }
 
-export function checkEvolutionOnDeath(hero: Hero, meta: MetaProgression, raidDefeated: boolean): EvolutionCheckResult {
+export function checkEvolutionOnDeath(hero: Hero, meta: MetaProgression, defeatedRaids: BossId[]): EvolutionCheckResult {
   const alreadyUnlocked = new Set(meta.unlockedEvolutions);
 
   // Evaluate all evolutions for eligibility
@@ -31,18 +31,7 @@ export function checkEvolutionOnDeath(hero: Hero, meta: MetaProgression, raidDef
     const prereqsMet = evo.prerequisites.every((prereq) => alreadyUnlocked.has(prereq));
 
     const cond = evo.unlockCondition;
-    const p = hero.personality;
-    const knowledge = hero.bossKnowledge["molten_fury"] ?? 0;
-
-    const checks = {
-      aggression: cond.minAggression === undefined || p.aggression >= cond.minAggression,
-      wisdom: cond.minWisdom === undefined || p.wisdom >= cond.minWisdom,
-      greed: cond.minGreed === undefined || p.greed >= cond.minGreed,
-      recklessness: cond.minRecklessness === undefined || p.recklessness >= cond.minRecklessness,
-      gold: cond.minGoldAtDeath === undefined || hero.gold >= cond.minGoldAtDeath,
-      knowledge: cond.minBossKnowledge === undefined || knowledge >= cond.minBossKnowledge,
-      raid: cond.mustDefeatRaid !== true || raidDefeated,
-    };
+    const checks = evaluateChecks(hero, cond, defeatedRaids);
 
     const allPassed = Object.values(checks).every(Boolean);
     const passedCount = Object.values(checks).filter(Boolean).length;
@@ -51,14 +40,14 @@ export function checkEvolutionOnDeath(hero: Hero, meta: MetaProgression, raidDef
     if (allPassed && prereqsMet && evo.tier > bestTier) {
       bestMatch = evo.id;
       bestTier = evo.tier;
-      whyUnlocked = buildWhyString(evo.id, hero, raidDefeated);
+      whyUnlocked = buildWhyString(evo.id, hero, defeatedRaids);
     } else if (!allPassed || !prereqsMet) {
       // Near-miss: passed most conditions
       const score = passedCount / totalChecks;
       if (score > bestNearMissScore && score >= 0.5) {
         bestNearMissScore = score;
         almostUnlocked = evo.id;
-        almostReason = buildAlmostReason(evo.id, checks, prereqsMet, cond, p, hero.gold, knowledge, raidDefeated);
+        almostReason = buildAlmostReason(evo.id, checks, prereqsMet, cond, hero, defeatedRaids);
       }
     }
   }
@@ -66,18 +55,52 @@ export function checkEvolutionOnDeath(hero: Hero, meta: MetaProgression, raidDef
   return { unlocked: bestMatch, almostUnlocked, almostReason, whyUnlocked };
 }
 
-function buildWhyString(id: EvolutionId, hero: Hero, raidDefeated: boolean): string {
+function evaluateChecks(hero: Hero, cond: EvolutionUnlockCondition, defeatedRaids: BossId[]): Record<string, boolean> {
+  const checks: Record<string, boolean> = {};
+
+  if (cond.minCoreStats !== undefined) {
+    for (const [key, value] of Object.entries(cond.minCoreStats)) {
+      checks[`core_${key}`] = hero.coreStats[key as keyof Hero["coreStats"]] >= value;
+    }
+  }
+  if (cond.minPersonality !== undefined) {
+    for (const [key, value] of Object.entries(cond.minPersonality)) {
+      checks[`axis_${key}`] = hero.personality[key as keyof Hero["personality"]] >= value;
+    }
+  }
+  if (cond.minBossKnowledge !== undefined) {
+    for (const [key, value] of Object.entries(cond.minBossKnowledge)) {
+      checks[`knowledge_${key}`] = hero.secondary.bossKnowledge[key as BossId] >= value;
+    }
+  }
+  if (cond.minGoldAtDeath !== undefined) {
+    checks.gold = hero.gold >= cond.minGoldAtDeath;
+  }
+  if (cond.mustDefeatRaids !== undefined) {
+    for (const raidId of cond.mustDefeatRaids) {
+      checks[`raid_${raidId}`] = defeatedRaids.includes(raidId);
+    }
+  }
+
+  if (Object.keys(checks).length === 0) {
+    checks.default = true;
+  }
+  return checks;
+}
+
+function buildWhyString(id: EvolutionId, hero: Hero, defeatedRaids: BossId[]): string {
   const p = hero.personality;
   switch (id) {
     case "berserker":
-      return `You spent most of your time in dangerous combat (Aggression: ${p.aggression}, Recklessness: ${p.recklessness}).`;
+      return `You lived for dangerous combat (Combat Style: ${p.combatStyle}, Ambition: ${p.ambition}, Strength: ${hero.coreStats.strength}).`;
     case "merchant":
-      return `You accumulated wealth above all else (Greed: ${p.greed}, Gold at death: ${hero.gold}g).`;
+      return `You prioritized wealth and influence (Economic Focus: ${p.economicFocus}, Charisma: ${hero.coreStats.charismaInfluence}, Gold: ${hero.gold}g).`;
     case "scholar":
-      return `You prioritised knowledge and preparation (Wisdom: ${p.wisdom}, Boss knowledge: ${Math.round(hero.bossKnowledge["molten_fury"] ?? 0)}%).`;
+      return `You invested deeply in preparation and study (Preparation: ${p.preparation}, Intelligence: ${hero.coreStats.intelligence}, Molten Fury knowledge: ${Math.round(hero.secondary.bossKnowledge["molten_fury"])}%).`;
     case "raid_legend":
-      return `You combined combat mastery with deep boss knowledge ${raidDefeated ? "and defeated Molten Fury" : ""}.`;
+      return `You combined high combat and preparation with a raid victory${defeatedRaids.includes("molten_fury") ? " over Molten Fury" : ""}.`;
   }
+  return "Your hero's combined choices forged a new legacy.";
 }
 
 type CheckMap = Record<string, boolean>;
@@ -86,34 +109,52 @@ function buildAlmostReason(
   id: EvolutionId,
   checks: CheckMap,
   prereqsMet: boolean,
-  cond: { minAggression?: number; minWisdom?: number; minGreed?: number; minBossKnowledge?: number; mustDefeatRaid?: boolean; minGoldAtDeath?: number },
-  p: { aggression: number; wisdom: number; greed: number },
-  gold: number,
-  knowledge: number,
-  raidDefeated: boolean,
+  cond: EvolutionUnlockCondition,
+  hero: Hero,
+  defeatedRaids: BossId[],
 ): string {
   if (!prereqsMet) {
     const evo = EVOLUTIONS[id];
     return `Unlock prerequisites first: ${evo.prerequisites.join(" + ")}.`;
   }
   const parts: string[] = [];
-  if (checks["aggression"] === false && cond.minAggression !== undefined) {
-    parts.push(`${cond.minAggression - p.aggression} more Aggression needed`);
+
+  if (cond.minCoreStats !== undefined) {
+    for (const [key, value] of Object.entries(cond.minCoreStats)) {
+      const need = value;
+      const current = hero.coreStats[key as keyof Hero["coreStats"]];
+      if (current < need) {
+        parts.push(`${need - current} more ${key} needed`);
+      }
+    }
   }
-  if (checks["wisdom"] === false && cond.minWisdom !== undefined) {
-    parts.push(`${cond.minWisdom - p.wisdom} more Wisdom needed`);
+  if (cond.minPersonality !== undefined) {
+    for (const [key, value] of Object.entries(cond.minPersonality)) {
+      const need = value;
+      const current = hero.personality[key as keyof Hero["personality"]];
+      if (current < need) {
+        parts.push(`${need - current} more ${key} needed`);
+      }
+    }
   }
-  if (checks["greed"] === false && cond.minGreed !== undefined) {
-    parts.push(`${cond.minGreed - p.greed} more Greed needed`);
+  if (checks.gold === false && cond.minGoldAtDeath !== undefined) {
+    parts.push(`${cond.minGoldAtDeath - hero.gold}g more gold needed`);
   }
-  if (checks["gold"] === false && cond.minGoldAtDeath !== undefined) {
-    parts.push(`${cond.minGoldAtDeath - gold}g more gold needed`);
+  if (cond.minBossKnowledge !== undefined) {
+    for (const [key, value] of Object.entries(cond.minBossKnowledge)) {
+      const need = value;
+      const current = hero.secondary.bossKnowledge[key as BossId];
+      if (current < need) {
+        parts.push(`${need - Math.round(current)}% more ${key} knowledge needed`);
+      }
+    }
   }
-  if (checks["knowledge"] === false && cond.minBossKnowledge !== undefined) {
-    parts.push(`${cond.minBossKnowledge - Math.round(knowledge)}% more boss knowledge needed`);
-  }
-  if (checks["raid"] === false && cond.mustDefeatRaid === true && !raidDefeated) {
-    parts.push("must defeat Molten Fury");
+  if (cond.mustDefeatRaids !== undefined) {
+    for (const raidId of cond.mustDefeatRaids) {
+      if (!defeatedRaids.includes(raidId)) {
+        parts.push(`must defeat ${raidId}`);
+      }
+    }
   }
   return parts.length > 0 ? parts.join(", ") + "." : "Almost there!";
 }

@@ -1,10 +1,25 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { ActivityId, DayResult, EvolutionId, GameScreen, Hero, HeroClass, MetaProgression, PlannedActivity } from "../data/types";
-import { resolveActivity, totalEnergyCost } from "../game/activityResolver";
+import type {
+  ActivityId,
+  BossId,
+  DayResult,
+  EvolutionId,
+  GameScreen,
+  Hero,
+  MetaProgression,
+  PendingDailyEvent,
+  RiskBand,
+  ResolvedActivity,
+  ResolvedDailyEvent,
+} from "../data/types";
+import { DAILY_EVENTS, DAILY_EVENT_LIST } from "../data/nurture";
+import { getActivityUnlockGaps as getUnlockGapsForActivity, isActivityUnlocked, resolveActivity } from "../game/activityResolver";
 import { checkEvolutionOnDeath, stackEvolutionBonuses } from "../game/evolutionChecker";
 import { applyXp, createHero } from "../game/heroFactory";
 import { AP_UPGRADES } from "../data/evolutions";
+import { ACTIVITIES } from "../data/activities";
+import { randomHeroName } from "../data/nurture";
 
 const BASE_ENERGY = 50;
 const ENERGY_PER_DEATH = 5;
@@ -14,7 +29,6 @@ const OLD_AGE_DEATH_CHANCE_PER_DAY = 0.05;
 
 export interface DeathSummary {
   heroName: string;
-  heroClass: HeroClass;
   level: number;
   inGameDay: number;
   gold: number;
@@ -27,36 +41,44 @@ export interface DeathSummary {
   energyBonusGranted: number;
   apGranted: number;
   personalitySnapshot: Hero["personality"];
-  bossKnowledgeSnapshot: Record<string, number>;
-  raidDefeated: boolean;
+  coreStatsSnapshot: Hero["coreStats"];
+  bossKnowledgeSnapshot: Hero["secondary"]["bossKnowledge"];
+  defeatedRaids: BossId[];
+  fatalActivityId: ActivityId | null;
+  fatalActivityRisk: number | null;
+  fatalRiskBand: RiskBand | null;
+  fatalRiskHints: string[];
 }
 
 interface GameState {
   screen: GameScreen;
   hero: Hero | null;
   meta: MetaProgression;
-  plannedActivities: PlannedActivity[];
   energyUsedToday: number;
+  currentDayActivities: ResolvedActivity[];
+  currentDayEvents: ResolvedDailyEvent[];
+  pendingEvent: PendingDailyEvent | null;
   lastDayResults: DayResult | null;
   deathSummary: DeathSummary | null;
   runXpTotal: number;
-  raidDefeatedThisRun: boolean;
+  defeatedRaidsThisRun: BossId[];
 
   // Navigation
   goTo: (screen: GameScreen) => void;
 
   // Hero creation
   startHeroCreation: () => void;
-  createHero: (name: string, heroClass: HeroClass) => void;
+  createHero: (name: string) => void;
+  renameHero: (name: string) => void;
 
-  // Planning
-  addActivity: (activityId: ActivityId) => void;
-  removeActivity: (slot: number) => void;
-  reorderActivity: (from: number, to: number) => void;
-  clearPlan: () => void;
+  // Day loop
+  executeActivity: (activityId: ActivityId) => void;
+  resolvePendingEvent: (choiceId: string) => void;
+  restDay: () => void;
+  dismissPendingEvent: () => void;
 
-  // Execution
-  executeDay: () => void;
+  // Helpers
+  getActivityUnlockGaps: (activityId: ActivityId) => string[];
 
   // Meta
   spendAP: (upgradeId: string) => void;
@@ -81,203 +103,272 @@ function buildInitialMeta(): MetaProgression {
   };
 }
 
+function applyEventEffects(hero: Hero, effects: NonNullable<ResolvedDailyEvent["appliedEffects"]>): Hero {
+  const updated: Hero = {
+    ...hero,
+    coreStats: { ...hero.coreStats },
+    personality: { ...hero.personality },
+    secondary: {
+      reputation: { ...hero.secondary.reputation },
+      bossKnowledge: { ...hero.secondary.bossKnowledge },
+    },
+  };
+
+  if (effects.coreStats !== undefined) {
+    for (const [key, value] of Object.entries(effects.coreStats)) {
+      updated.coreStats[key as keyof Hero["coreStats"]] += value;
+    }
+  }
+  if (effects.personality !== undefined) {
+    for (const [key, value] of Object.entries(effects.personality)) {
+      updated.personality[key as keyof Hero["personality"]] += value;
+    }
+  }
+  if (effects.reputation !== undefined) {
+    for (const [key, value] of Object.entries(effects.reputation)) {
+      updated.secondary.reputation[key as keyof Hero["secondary"]["reputation"]] += value;
+    }
+  }
+  if (effects.bossKnowledge !== undefined) {
+    for (const [key, value] of Object.entries(effects.bossKnowledge)) {
+      const boss = key as BossId;
+      const current = updated.secondary.bossKnowledge[boss];
+      updated.secondary.bossKnowledge[boss] = Math.max(0, Math.min(100, current + value));
+    }
+  }
+
+  return updated;
+}
+
+function shouldTriggerEvent(day: number): boolean {
+  const chance = day <= 3 ? 0.65 : 0.25;
+  return Math.random() < chance;
+}
+
+function rollDailyEvent(day: number): PendingDailyEvent | null {
+  const candidates = DAILY_EVENT_LIST.filter((event) => day >= event.minDay && (event.maxDay === undefined || day <= event.maxDay));
+  if (candidates[0] === undefined) {
+    return null;
+  }
+  const totalWeight = candidates.reduce((sum, event) => sum + event.weight, 0);
+  let roll = Math.random() * totalWeight;
+  for (const event of candidates) {
+    roll -= event.weight;
+    if (roll <= 0) {
+      return { eventId: event.id };
+    }
+  }
+  return { eventId: candidates[0].id };
+}
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
       screen: "main_menu",
       hero: null,
       meta: buildInitialMeta(),
-      plannedActivities: [],
       energyUsedToday: 0,
+      currentDayActivities: [],
+      currentDayEvents: [],
+      pendingEvent: null,
       lastDayResults: null,
       deathSummary: null,
       runXpTotal: 0,
-      raidDefeatedThisRun: false,
+      defeatedRaidsThisRun: [],
 
       goTo: (screen) => set({ screen }),
 
-      startHeroCreation: () => set({ screen: "hero_creation" }),
-
-      createHero: (name, heroClass) => {
+      startHeroCreation: () => {
         const { meta } = get();
-        const hero = createHero(name, heroClass, meta);
-        set({ hero, screen: "planning", energyUsedToday: 0, plannedActivities: [], runXpTotal: 0, raidDefeatedThisRun: false });
-      },
-
-      addActivity: (activityId) => {
-        const { plannedActivities, meta, energyUsedToday } = get();
-        const { totalEnergyCost: calc } = { totalEnergyCost };
-        const incoming = calc([...plannedActivities.map((a) => a.activityId), activityId]);
-        if (incoming > meta.maxEnergy - energyUsedToday) {
-          return; // not enough energy — silently ignore (UI should disable button)
-        }
+        const hero = createHero(randomHeroName(), meta);
         set({
-          plannedActivities: [...plannedActivities, { activityId, slot: plannedActivities.length }],
+          hero,
+          screen: "planning",
+          energyUsedToday: 0,
+          currentDayActivities: [],
+          currentDayEvents: [],
+          pendingEvent: null,
+          runXpTotal: 0,
+          defeatedRaidsThisRun: [],
         });
       },
 
-      removeActivity: (slot) => {
-        const { plannedActivities } = get();
-        const updated = plannedActivities.filter((a) => a.slot !== slot).map((a, i) => ({ ...a, slot: i }));
-        set({ plannedActivities: updated });
+      createHero: (name) => {
+        const { meta } = get();
+        const hero = createHero(name, meta);
+        set({
+          hero,
+          screen: "planning",
+          energyUsedToday: 0,
+          currentDayActivities: [],
+          currentDayEvents: [],
+          pendingEvent: null,
+          runXpTotal: 0,
+          defeatedRaidsThisRun: [],
+        });
       },
 
-      reorderActivity: (from, to) => {
-        const { plannedActivities } = get();
-        const arr = [...plannedActivities];
-        const [item] = arr.splice(from, 1);
-        if (item === undefined) {
+      renameHero: (name) => {
+        const { hero } = get();
+        if (hero === null || name.trim().length === 0) {
           return;
         }
-        arr.splice(to, 0, item);
-        set({ plannedActivities: arr.map((a, i) => ({ ...a, slot: i })) });
+        set({ hero: { ...hero, name: name.trim() } });
       },
 
-      clearPlan: () => set({ plannedActivities: [] }),
+      executeActivity: (activityId) => {
+        const { hero, meta, energyUsedToday, runXpTotal, currentDayActivities, defeatedRaidsThisRun } = get();
+        if (hero === null) {
+          return;
+        }
+        const def = ACTIVITIES[activityId];
+        if (energyUsedToday + def.energyCost > meta.maxEnergy) {
+          return;
+        }
+        if (!isActivityUnlocked(hero, def)) {
+          return;
+        }
 
-      executeDay: () => {
-        const { hero, meta, plannedActivities, runXpTotal, raidDefeatedThisRun } = get();
+        const { resolved, updatedHero } = resolveActivity(hero, activityId, meta);
+        const leveledHero = applyXp(updatedHero, resolved.xpGained);
+        const nextActivities = [...currentDayActivities, resolved];
+        const nextRunXp = runXpTotal + resolved.xpGained;
+        const nextDefeatedRaids: BossId[] =
+          activityId === "raid_molten_fury" && !resolved.died && !defeatedRaidsThisRun.includes("molten_fury")
+            ? [...defeatedRaidsThisRun, "molten_fury" as BossId]
+            : defeatedRaidsThisRun;
+
+        if (resolved.died) {
+          const dayResult: DayResult = {
+            day: hero.inGameDay,
+            activitiesResolved: nextActivities,
+            eventsResolved: get().currentDayEvents,
+            totalXp: nextActivities.reduce((sum, item) => sum + item.xpGained, 0),
+            totalGold: nextActivities.reduce((sum, item) => sum + item.goldGained, 0),
+            lootObtained: nextActivities.flatMap((item) => item.lootDropped),
+            heroSurvived: false,
+            deathCause: "combat",
+            personalitySnapshot: leveledHero.personality,
+            coreStatsSnapshot: leveledHero.coreStats,
+          };
+          finalizeDeath("combat", leveledHero, nextRunXp, nextDefeatedRaids, dayResult, set, get, resolved);
+          return;
+        }
+
+        const eventTriggered = shouldTriggerEvent(leveledHero.inGameDay);
+        const pendingEvent = eventTriggered ? rollDailyEvent(leveledHero.inGameDay) : null;
+        set({
+          hero: {
+            ...leveledHero,
+            completedActivitiesToday: [...leveledHero.completedActivitiesToday, activityId],
+          },
+          energyUsedToday: energyUsedToday + def.energyCost,
+          runXpTotal: nextRunXp,
+          currentDayActivities: nextActivities,
+          pendingEvent,
+          defeatedRaidsThisRun: nextDefeatedRaids,
+          screen: pendingEvent !== null ? "daily_event" : "planning",
+        });
+      },
+
+      resolvePendingEvent: (choiceId) => {
+        const { hero, pendingEvent, currentDayEvents, runXpTotal } = get();
+        if (hero === null || pendingEvent === null) {
+          return;
+        }
+
+        const def = DAILY_EVENTS[pendingEvent.eventId];
+        const choice = def.choices.find((item) => item.id === choiceId);
+        if (choice === undefined) {
+          return;
+        }
+
+        const heroAfterEffects = applyEventEffects(hero, choice.effects);
+        const xpGained = choice.xpGain ?? 0;
+        const goldGained = choice.goldGain ?? 0;
+        const heroAfterXp = applyXp(
+          {
+            ...heroAfterEffects,
+            gold: heroAfterEffects.gold + goldGained,
+          },
+          xpGained,
+        );
+
+        const resolvedEvent: ResolvedDailyEvent = {
+          eventId: pendingEvent.eventId,
+          choiceId: choice.id,
+          xpGained,
+          goldGained,
+          appliedEffects: choice.effects,
+        };
+
+        set({
+          hero: heroAfterXp,
+          pendingEvent: null,
+          currentDayEvents: [...currentDayEvents, resolvedEvent],
+          runXpTotal: runXpTotal + xpGained,
+          screen: "planning",
+        });
+      },
+
+      dismissPendingEvent: () => {
+        set({ pendingEvent: null, screen: "planning" });
+      },
+
+      restDay: () => {
+        const { hero, currentDayActivities, currentDayEvents, runXpTotal, defeatedRaidsThisRun } = get();
         if (hero === null) {
           return;
         }
 
-        let currentHero = hero;
-        const resolvedActivities = [];
-        let totalXp = 0;
-        let died = false;
-        let deathCause: "combat" | "old_age" = "combat";
-        const lootAll = [];
-        let raidDefeated = raidDefeatedThisRun;
-
-        for (const planned of plannedActivities) {
-          const { resolved, updatedHero } = resolveActivity(currentHero, planned.activityId, meta);
-          resolvedActivities.push(resolved);
-          currentHero = updatedHero;
-          totalXp += resolved.xpGained;
-          lootAll.push(...resolved.lootDropped);
-
-          if (planned.activityId === "raid_molten_fury" && !resolved.died) {
-            raidDefeated = true;
-          }
-
-          if (resolved.died) {
-            died = true;
-            deathCause = "combat";
-            break;
+        let deathCause: "combat" | "old_age" | null = null;
+        if (hero.inGameDay >= OLD_AGE_START_DAY) {
+          const oldAgeChance = OLD_AGE_DEATH_CHANCE_PER_DAY * (hero.inGameDay - OLD_AGE_START_DAY + 1);
+          if (Math.random() < oldAgeChance) {
+            deathCause = "old_age";
           }
         }
-
-        // Apply XP leveling
-        currentHero = applyXp(currentHero, totalXp);
 
         const dayResult: DayResult = {
-          day: currentHero.inGameDay,
-          activitiesResolved: resolvedActivities,
-          totalXp,
-          totalGold: resolvedActivities.reduce((s, r) => s + r.goldGained, 0),
-          lootObtained: lootAll,
-          heroSurvived: !died,
-          ...(died ? { deathCause } : {}),
-          personalitySnapshot: currentHero.personality,
+          day: hero.inGameDay,
+          activitiesResolved: currentDayActivities,
+          eventsResolved: currentDayEvents,
+          totalXp: currentDayActivities.reduce((sum, item) => sum + item.xpGained, 0) + currentDayEvents.reduce((sum, item) => sum + item.xpGained, 0),
+          totalGold: currentDayActivities.reduce((sum, item) => sum + item.goldGained, 0) + currentDayEvents.reduce((sum, item) => sum + item.goldGained, 0),
+          lootObtained: currentDayActivities.flatMap((item) => item.lootDropped),
+          heroSurvived: deathCause === null,
+          ...(deathCause !== null ? { deathCause } : {}),
+          personalitySnapshot: hero.personality,
+          coreStatsSnapshot: hero.coreStats,
         };
 
-        // Check old age death if survived activities
-        if (!died && currentHero.inGameDay >= OLD_AGE_START_DAY) {
-          const oldAgeChance = OLD_AGE_DEATH_CHANCE_PER_DAY * (currentHero.inGameDay - OLD_AGE_START_DAY + 1);
-          if (Math.random() < oldAgeChance) {
-            died = true;
-            deathCause = "old_age";
-            dayResult.heroSurvived = false;
-            dayResult.deathCause = "old_age";
-          }
+        if (deathCause !== null) {
+          finalizeDeath(deathCause, hero, runXpTotal, defeatedRaidsThisRun, dayResult, set, get);
+          return;
         }
 
-        const newRunXp = runXpTotal + totalXp;
+        set({
+          hero: {
+            ...hero,
+            inGameDay: hero.inGameDay + 1,
+            completedActivitiesToday: [],
+          },
+          lastDayResults: dayResult,
+          screen: "day_results",
+          energyUsedToday: 0,
+          currentDayActivities: [],
+          currentDayEvents: [],
+          pendingEvent: null,
+        });
+      },
 
-        if (died) {
-          // Evolution check
-          const { unlocked, whyUnlocked, almostUnlocked, almostReason } = checkEvolutionOnDeath(
-            currentHero,
-            meta,
-            raidDefeated,
-          );
-
-          // Compute new meta
-          const apGained = AP_PER_RUN + Math.floor(currentHero.level / 5) * 10;
-          const newUnlocked = unlocked !== null ? [...meta.unlockedEvolutions, unlocked] : meta.unlockedEvolutions;
-          const stackedBonuses = stackEvolutionBonuses(newUnlocked);
-          const newMaxEnergy = BASE_ENERGY + ENERGY_PER_DEATH * (meta.totalRuns + 1) + stackedBonuses.energyBonus;
-
-          // Persist boss knowledge (merge max values)
-          const updatedKnowledgeBank: Record<string, number> = { ...meta.bossKnowledgeBank };
-          for (const [boss, val] of Object.entries(currentHero.bossKnowledge)) {
-            updatedKnowledgeBank[boss] = Math.max(updatedKnowledgeBank[boss] ?? 0, val);
-          }
-
-          const newMeta: MetaProgression = {
-            ...meta,
-            totalRuns: meta.totalRuns + 1,
-            maxEnergy: newMaxEnergy,
-            achievementPoints: meta.achievementPoints + apGained,
-            unlockedEvolutions: newUnlocked,
-            evolutionBonuses: {
-              energyBonus: stackedBonuses.energyBonus,
-              startGold: stackedBonuses.startGold,
-              combatBonus: stackedBonuses.combatBonus,
-              bossKnowledgeBonus: stackedBonuses.bossKnowledgeBonus,
-              knowledgeTransferMultiplier: stackedBonuses.knowledgeTransferMultiplier,
-            },
-            bossKnowledgeBank: updatedKnowledgeBank,
-          };
-
-          const deathSummary: DeathSummary = {
-            heroName: currentHero.name,
-            heroClass: currentHero.heroClass,
-            level: currentHero.level,
-            inGameDay: currentHero.inGameDay,
-            gold: currentHero.gold,
-            cause: deathCause,
-            totalXpGained: newRunXp,
-            evolutionUnlocked: unlocked,
-            whyUnlocked,
-            almostUnlocked,
-            almostReason,
-            energyBonusGranted: ENERGY_PER_DEATH,
-            apGranted: apGained,
-            personalitySnapshot: currentHero.personality,
-            bossKnowledgeSnapshot: currentHero.bossKnowledge,
-            raidDefeated,
-          };
-
-          set({
-            hero: null,
-            meta: newMeta,
-            lastDayResults: dayResult,
-            deathSummary,
-            screen: "death",
-            plannedActivities: [],
-            energyUsedToday: 0,
-            runXpTotal: newRunXp,
-            raidDefeatedThisRun: raidDefeated,
-          });
-        } else {
-          // Survive the day → advance
-          const advancedHero: Hero = {
-            ...currentHero,
-            inGameDay: currentHero.inGameDay + 1,
-            completedActivitiesToday: plannedActivities.map((a) => a.activityId),
-          };
-
-          set({
-            hero: advancedHero,
-            lastDayResults: dayResult,
-            screen: "day_results",
-            plannedActivities: [],
-            energyUsedToday: 0,
-            runXpTotal: newRunXp,
-            raidDefeatedThisRun: raidDefeated,
-          });
+      getActivityUnlockGaps: (activityId) => {
+        const { hero } = get();
+        const def = ACTIVITIES[activityId];
+        if (hero === null || isActivityUnlocked(hero, def)) {
+          return [];
         }
+        return getUnlockGapsForActivity(hero, def);
       },
 
       spendAP: (upgradeId) => {
@@ -310,7 +401,17 @@ export const useGameStore = create<GameState>()(
       },
 
       resetRun: () => {
-        set({ screen: "main_menu", hero: null, plannedActivities: [], energyUsedToday: 0, lastDayResults: null, deathSummary: null });
+        set({
+          screen: "main_menu",
+          hero: null,
+          energyUsedToday: 0,
+          currentDayActivities: [],
+          currentDayEvents: [],
+          pendingEvent: null,
+          lastDayResults: null,
+          deathSummary: null,
+          defeatedRaidsThisRun: [],
+        });
       },
     }),
     {
@@ -319,3 +420,80 @@ export const useGameStore = create<GameState>()(
     },
   ),
 );
+
+function finalizeDeath(
+  cause: "combat" | "old_age",
+  hero: Hero,
+  runXpTotal: number,
+  defeatedRaids: BossId[],
+  dayResult: DayResult,
+  set: (state: Partial<GameState>) => void,
+  get: () => GameState,
+  fatalActivity?: ResolvedActivity,
+) {
+  const { meta } = get();
+  const { unlocked, whyUnlocked, almostUnlocked, almostReason } = checkEvolutionOnDeath(hero, meta, defeatedRaids);
+
+  const apGained = AP_PER_RUN + Math.floor(hero.level / 5) * 10;
+  const newUnlocked = unlocked !== null ? [...meta.unlockedEvolutions, unlocked] : meta.unlockedEvolutions;
+  const stackedBonuses = stackEvolutionBonuses(newUnlocked);
+  const newMaxEnergy = BASE_ENERGY + ENERGY_PER_DEATH * (meta.totalRuns + 1) + stackedBonuses.energyBonus;
+
+  const updatedKnowledgeBank: MetaProgression["bossKnowledgeBank"] = { ...meta.bossKnowledgeBank };
+  for (const [boss, value] of Object.entries(hero.secondary.bossKnowledge)) {
+    const bossId = boss as BossId;
+    updatedKnowledgeBank[bossId] = Math.max(updatedKnowledgeBank[bossId] ?? 0, value);
+  }
+
+  const newMeta: MetaProgression = {
+    ...meta,
+    totalRuns: meta.totalRuns + 1,
+    maxEnergy: newMaxEnergy,
+    achievementPoints: meta.achievementPoints + apGained,
+    unlockedEvolutions: newUnlocked,
+    evolutionBonuses: {
+      energyBonus: stackedBonuses.energyBonus,
+      startGold: stackedBonuses.startGold,
+      combatBonus: stackedBonuses.combatBonus,
+      bossKnowledgeBonus: stackedBonuses.bossKnowledgeBonus,
+      knowledgeTransferMultiplier: stackedBonuses.knowledgeTransferMultiplier,
+    },
+    bossKnowledgeBank: updatedKnowledgeBank,
+  };
+
+  const deathSummary: DeathSummary = {
+    heroName: hero.name,
+    level: hero.level,
+    inGameDay: hero.inGameDay,
+    gold: hero.gold,
+    cause,
+    totalXpGained: runXpTotal,
+    evolutionUnlocked: unlocked,
+    whyUnlocked,
+    almostUnlocked,
+    almostReason,
+    energyBonusGranted: ENERGY_PER_DEATH,
+    apGranted: apGained,
+    personalitySnapshot: hero.personality,
+    coreStatsSnapshot: hero.coreStats,
+    bossKnowledgeSnapshot: hero.secondary.bossKnowledge,
+    defeatedRaids,
+    fatalActivityId: cause === "combat" ? (fatalActivity?.activityId ?? null) : null,
+    fatalActivityRisk: cause === "combat" ? (fatalActivity?.effectiveDeathRisk ?? null) : null,
+    fatalRiskBand: cause === "combat" ? (fatalActivity?.riskBand ?? null) : null,
+    fatalRiskHints: cause === "combat" ? (fatalActivity?.riskHints ?? []) : [],
+  };
+
+  set({
+    hero: null,
+    meta: newMeta,
+    lastDayResults: dayResult,
+    deathSummary,
+    screen: "death",
+    energyUsedToday: 0,
+    currentDayActivities: [],
+    currentDayEvents: [],
+    pendingEvent: null,
+    defeatedRaidsThisRun: defeatedRaids,
+  });
+}

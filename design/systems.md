@@ -2,7 +2,7 @@
 
 ## 1. Energy System
 
-Energy is the primary meta-resource that gates **how many activities you can do per in-game day**. It creates the roguelike progression layer where advanced evolutions are literally impossible without sufficient energy capacity.
+Energy is the primary meta-resource that gates **how many activities you can do per in-game day**. It creates the roguelike progression layer where advanced legacy paths are literally impossible without sufficient energy capacity.
 
 ### Core Concept
 
@@ -10,28 +10,39 @@ Energy is the primary meta-resource that gates **how many activities you can do 
 
 - Each activity costs energy (in addition to in-game time)
 - **Energy refills to max at the start of each new in-game day**
-- Max energy increases through death bonuses and evolution unlocks
+- Max energy increases through death bonuses and legacy path unlocks
 - **Higher max energy = more activities per day = more accomplishments per 18-day lifespan**
-- **Advanced evolutions mathematically impossible without high max energy**
+- **Advanced legacy paths mathematically impossible without high max energy**
 
 **Critical Design Principle:**
 - Energy is NOT about real-time gating (this is single-player, convenience is good)
 - Energy is about **what you can accomplish in one hero's lifetime**
 - 18-day lifespan × 50 energy/day = 900 total energy budget
 - 18-day lifespan × 150 energy/day = 2,700 total energy budget
-- **Ultimate Raider needs ~2,700 energy to achieve** → IMPOSSIBLE with base 50 energy/day
+- **Ultimate Raider path needs ~2,700 energy to achieve** → IMPOSSIBLE with base 50 energy/day
 
-### Energy Costs
+### Energy Costs & UI Transparency
 
-| Activity | Energy Cost | Notes |
-|----------|-------------|-------|
-| **Quest** | 10 | XP, gold, zone rep, story progress |
-| **Dungeon Run** | 15 | Targeted loot farming, moderate death risk |
-| **Raid Boss** | 30 | BiS loot, high death risk, weekly lockout |
-| **Study Boss** | 12 | +2-5% survival for specific boss |
-| **Farm Gold** | 8 | ~40-60g, no XP, safe |
-| **Craft/Profession** | 10 | Create consumables or gear |
-| **Random Event** | Varies | Triggered by world sim, optional |
+Every activity and event in the game must provide **full UI transparency** before the player commits to it.
+
+- **Visual Indicators:** The UI will explicitly show the expected impact on Core Stats (e.g., `+1 Strength`, `+2 Intelligence`) and Personality Axes (e.g., `Cautious +5`, `Social +2`) alongside the Energy and Time costs.
+- Players should never have to guess what an activity does to their hero's development.
+
+| Activity | Energy Cost | Core Stat Impact | Personality Impact | Notes |
+|----------|-------------|------------------|--------------------|-------|
+| **Quest** | 10 | +Stat based on quest | Varies | XP, gold, zone rep, story progress |
+| **Dungeon Run** | 15 | +Str/Agi/Int | Combat/Cautious/Reckless | Targeted loot farming, moderate death risk |
+| **Raid Boss** | 30 | +All Stats | Glory-Seeker +15 | BiS loot, high death risk, weekly lockout |
+| **Study Boss** | 12 | +Intelligence | Methodical +10 | +2-5% survival for specific boss |
+| **Farm Gold** | 8 | +Stamina/Agility | Economic +10 | ~40-60g, no XP, safe |
+| **Craft/Profession** | 10 | +Intelligence/Agility | Economic/Methodical | Create consumables or gear |
+| **Random Event** | Varies | Clearly indicated | Clearly indicated | Triggered by daily sim, optional |
+
+### Dynamic Activity Roster
+
+The list of available activities is **not static**. As players level up specific Core Stats or lean heavily into certain Personality Axes, new niche activities will dynamically appear on their schedule.
+- **Stat-based Unlocks:** Reaching high `Charisma/Influence` might unlock "Host Guild Meeting".
+- **Personality-based Unlocks:** Leaning heavily into `Economic` and `Reckless` might unlock "Black Market Trading".
 
 **Rest = End Day Button:**
 - Not an activity with a cost
@@ -110,11 +121,11 @@ Energy is the primary meta-resource that gates **how many activities you can do 
 - 275 energy/day: Means more activities per in-game day
 - Both can play 1 day or 18 days per session
 
-### Evolution Energy Requirements (CRITICAL HARD GATES)
+### Legacy Path Energy Requirements (CRITICAL HARD GATES)
 
-**This is the core progression system:** Advanced evolutions are **mathematically impossible** without sufficient max energy.
+**This is the core progression system:** Advanced legacy paths are **mathematically impossible** without sufficient max energy.
 
-#### Tier 1 Evolutions (Achievable with 50-70 energy/day)
+#### Tier 1 Legacy Paths (Achievable with 50-70 energy/day)
 
 **Berserker (Combat-focused):**
 - Requirements: Level to 30, defeat 3+ dungeon bosses, high combat focus
@@ -140,10 +151,10 @@ Energy is the primary meta-resource that gates **how many activities you can do 
   - **Total: ~450 energy over 15 days**
   - **50 energy/day:** 15 days × 50 = 750 total → **ACHIEVABLE** ✅
 
-#### Tier 2 Evolutions (Need 100-120 energy/day)
+#### Tier 2 Legacy Paths (Need 100-120 energy/day)
 
 **Raid Legend (Defeat 4/5 raid bosses):**
-- Prerequisites: Berserker + Scholar evolutions already unlocked
+- Prerequisites: Berserker + Scholar legacy paths already unlocked
 - Energy needed:
   - Days 1-5: Leveling (10 energy/day × 5 = 50 energy)
   - Days 6-10: Dungeon farming for gear (15 energy × 6/day × 5 days = 450 energy)
@@ -154,7 +165,7 @@ Energy is the primary meta-resource that gates **how many activities you can do 
   - **100 energy/day:** 18 days × 100 = 1,800 total → **COMFORTABLE** ✅
 
 **Master Crafter (Profession mastery):**
-- Prerequisites: Merchant King + Scholar evolutions already unlocked
+- Prerequisites: Merchant King + Scholar legacy paths already unlocked
 - Energy needed:
   - Days 1-5: Leveling (50 energy)
   - Days 6-15: Heavy crafting + material farming (10 craft + 15 dungeon × 3 = 55/day × 10 days = 550 energy)
@@ -163,7 +174,7 @@ Energy is the primary meta-resource that gates **how many activities you can do 
   - **50 energy/day:** 18 days × 50 = 900 total → **BARELY POSSIBLE** ⚠️
   - **100 energy/day:** 18 days × 100 = 1,800 total → **COMFORTABLE** ✅
 
-#### Tier 3 Evolutions (Need 150-200+ energy/day)
+#### Tier 3 Legacy Paths (Need 150-200+ energy/day)
 
 **Ultimate Raider (Defeat ALL 5 raid bosses):**
 - Prerequisites: Must have Raid Legend + Master Crafter + Scholar + Treasure Hunter unlocked
@@ -188,24 +199,24 @@ Energy is the primary meta-resource that gates **how many activities you can do 
   - **200 energy/day:** 18 days × 200 = 3,600 total → **COMFORTABLE** ✅
 
 **Key Insight:**
-- **Tier 1 evolutions:** Designed for 50-70 energy/day (new players)
-- **Tier 2 evolutions:** Designed for 100-120 energy/day (10-15 runs completed)
-- **Tier 3 evolutions:** Designed for 150-200+ energy/day (20-30+ runs completed)
-- **This creates natural progression:** You MUST collect Tier 1 evolutions (which grant energy bonuses) before attempting Tier 2, and MUST collect Tier 2 before attempting Tier 3
+- **Tier 1 legacy paths:** Designed for 50-70 energy/day (new players)
+- **Tier 2 legacy paths:** Designed for 100-120 energy/day (10-15 runs completed)
+- **Tier 3 legacy paths:** Designed for 150-200+ energy/day (20-30+ runs completed)
+- **This creates natural progression:** You MUST collect Tier 1 paths (which grant energy bonuses) before attempting Tier 2, and MUST collect Tier 2 before attempting Tier 3
 
 ### Energy as Progression Gate (Not Engagement Hook)
 
 **Energy is about WHAT you can achieve, not WHEN you play:**
-- More max energy = more complex evolutions accessible
+- More max energy = more complex legacy paths accessible
 - Natural progression: Unlock Tier 1 → Get energy bonuses → Unlock Tier 2 → Get more energy → Unlock Tier 3
-- **Evolution collection IS the engagement driver** ("I need to unlock Master Crafter so I can attempt Ultimate Raider")
-- Energy is the **mechanical gate** that enforces evolution progression
+- **Legacy path collection IS the engagement driver** ("I need to unlock Master Crafter so I can attempt Ultimate Raider")
+- Energy is the **mechanical gate** that enforces path progression
 
 **Why return to the game?**
-- Want to attempt next evolution in your collection
+- Want to attempt the next path in your collection
 - Ready to start new hero run with more energy capacity
-- New strategy to try based on unlocked evolution bonuses
-- "One more run" to unlock that next Tier 2 evolution
+- New strategy to try based on unlocked path bonuses
+- "One more run" to unlock that next Tier 2 path
 
 **Natural stopping points:**
 - Completed an in-game day (satisfying milestone)
@@ -222,22 +233,41 @@ Energy is the primary meta-resource that gates **how many activities you can do 
 
 ---
 
-## 2. Personality & Evolution System
+## 2. The Dimensions Framework & Legacy Path System
 
-Heroes develop unique personalities based on their MMO choices, determining their evolution path upon death. This creates meaningful replayability and long-term progression.
+Everything in the game—from the activities you can perform to the legacy paths you unlock upon death—is governed by a bottoms-up "Dimensions Framework". 
 
-### Core Concept
+### Core Dimensions
 
-**Evolution = Your character's legacy based on how they lived**
+1. **Core Stats**: The physical and mental attributes of your hero. Leveling up these stats is the primary trigger for unlocking new specific activities.
+   - **Strength**: Increases physical damage and allows demanding physical activities.
+   - **Agility**: Increases speed, critical strikes, and unlocks finesse-based activities.
+   - **Intelligence**: Increases magical power, and unlocks complex cognitive/magical activities.
+   - **Stamina**: Increases health, and allows high-endurance activities.
+   - **Charisma/Influence**: Determines social sway, unlocking guild leadership, social events, and mercantile opportunities.
 
-- Personality stats track behavior patterns throughout the run
-- Upon death, personality determines evolution type
-- Each evolution unlocks permanent bonuses and knowledge transfer
-- 30+ evolution types across 3 tiers create deep replayability
+2. **Personality Axes**: These 6 spectrums track your behavioral patterns based on how you play. They act as secondary gates for niche activities (e.g., a "Black Market Trading" activity only unlocks if you lean heavily into *Economic* and *Reckless*).
+   - **Combat Style**: Cautious vs. Reckless
+   - **Social Style**: Solo vs. Social
+   - **Economic Focus**: Combat vs. Economic
+   - **Exploration**: Focused vs. Wanderer
+   - **Preparation**: Improviser vs. Methodical
+   - **Ambition**: Survivor vs. Glory-Seeker
 
-### Personality Stats
+3. **Secondary Dimensions**: 
+   - **Reputation**: Standing with various zones or factions.
+   - **Boss Knowledge**: Earned through study, directly reduces death risk.
 
-Each hero has hidden personality metrics that track their playstyle:
+### Legacy Path = Your character's legacy based on how they lived
+
+- Core stats and personality axes track behavior patterns throughout the run.
+- Upon death, the combination of these dimensions determines your legacy path.
+- Each path unlocks permanent bonuses and knowledge transfer.
+- 30+ path types across 3 tiers create deep replayability.
+
+### Personality Stats Tracking
+
+Each hero has hidden personality metrics that shift throughout the run:
 
 | Personality Axis | Low End | High End | Tracking |
 |-----------------|---------|----------|----------|
@@ -280,15 +310,15 @@ Each hero has hidden personality metrics that track their playstyle:
 - Play conservatively, survive to Day 15+ = Survivor +10
 - Kill 3+ raid bosses in one run = Glory-Seeker +15
 
-### Evolution Determination Formula
+### Legacy Path Determination Formula
 
-Upon death, the game calculates evolution based on:
+Upon death, the game calculates legacy path unlocks based on:
 
 ```
 Primary Personality = Highest tracked stat (must be 30+)
 Secondary Personality = Second-highest stat (must be 20+)
 Milestone Achievements = Specific accomplishments (killed raid boss, reached Day 15, etc.)
-Evolution Tier = Based on total personality points + achievement count
+Path Tier = Based on total personality points + achievement count
 ```
 
 **Example Calculation:**
@@ -299,11 +329,11 @@ Evolution Tier = Based on total personality points + achievement count
 - Methodical: 10
 - Glory-Seeker: 40
 
-**Result:** Glory-Seeker (40) + Combat (35) + "Killed 2 raid bosses" = **Raid Legend Evolution** (Tier 2)
+**Result:** Glory-Seeker (40) + Combat (35) + "Killed 2 raid bosses" = **Raid Legend Path** (Tier 2)
 
-### Evolution Tier Examples
+### Legacy Path Tier Examples
 
-**Tier 1: Foundation Evolutions (5-10 energy bonus)**
+**Tier 1: Foundation Paths (5-10 energy bonus)**
 
 Single personality dominant (40+ points), basic achievements
 
@@ -323,48 +353,48 @@ Single personality dominant (40+ points), basic achievements
   - Bonus: +10 max energy, start with mount
   - Knowledge Transfer: All zones unlocked for future heroes
 
-**Tier 2: Specialist Evolutions (10-15 energy bonus)**
+**Tier 2: Specialist Paths (10-15 energy bonus)**
 
-Two personalities balanced (35+ each), significant achievements, requires at least 1 Tier 1 evolution unlocked
+Two personalities balanced (35+ each), significant achievements, requires at least 1 Tier 1 path unlocked
 
 - **Raid Legend** - Glory-Seeker + Combat, killed 4+ raid bosses
   - Bonus: +15 max energy, +10% raid loot chance
   - Knowledge Transfer: +25% boss knowledge for raid bosses
-  - Prerequisite: Berserker or Glory-Seeker Tier 1 evolution unlocked
+  - Prerequisite: Berserker or Glory-Seeker Tier 1 path unlocked
 
 - **Master Crafter** - Methodical + Economic, mastered 2 professions
   - Bonus: +12 max energy, start with profession unlocked
   - Knowledge Transfer: All recipes unlocked, blueprints persist
-  - Prerequisite: Merchant King or Scholar evolution unlocked
+  - Prerequisite: Merchant King or Scholar path unlocked
 
 - **Treasure Hunter** - Wanderer + Economic, looted 15+ blue items
   - Bonus: +15 max energy, +15% loot drop chance
   - Knowledge Transfer: Smart loot weights doubled
-  - Prerequisite: Explorer evolution unlocked
+  - Prerequisite: Explorer path unlocked
 
 - **Speed Demon** - Reckless + Glory-Seeker, killed raid boss before Day 7
   - Bonus: +12 max energy, +10% activity speed
   - Knowledge Transfer: Skip to level 15 on new heroes
-  - Prerequisite: Berserker evolution unlocked
+  - Prerequisite: Berserker path unlocked
 
-**Tier 3: Mastery Evolutions (30-50 energy bonus)**
+**Tier 3: Mastery Paths (30-50 energy bonus)**
 
-Multiple high personalities, exceptional achievements, requires 2+ Tier 2 evolutions unlocked
+Multiple high personalities, exceptional achievements, requires 2+ Tier 2 paths unlocked
 
 - **Ultimate Raider** - All combat metrics high, killed all raid bosses
   - Bonus: +50 max energy, +20% all combat stats
   - Knowledge Transfer: 100% boss knowledge for all raid bosses
-  - Prerequisite: Raid Legend + Speed Demon evolutions unlocked
+  - Prerequisite: Raid Legend + Speed Demon paths unlocked
 
 - **Perfect Run** - Survived to Day 18+, full BiS gear, killed all bosses
   - Bonus: +40 max energy, +25% rewards permanently
   - Knowledge Transfer: Start with full blue gear set
-  - Prerequisite: 3+ Tier 2 evolutions unlocked
+  - Prerequisite: 3+ Tier 2 paths unlocked
 
 - **Shapeshifter** - Balanced across all 6 personality axes (25+ each)
   - Bonus: +35 max energy, choose any Tier 1 bonus on new run
   - Knowledge Transfer: Flexible mentor system (pick 2 legacy bonuses)
-  - Prerequisite: 4+ different Tier 1 evolutions unlocked
+  - Prerequisite: 4+ different Tier 1 paths unlocked
 
 ### Personality Visibility
 
@@ -374,26 +404,26 @@ Multiple high personalities, exceptional achievements, requires 2+ Tier 2 evolut
 - Post-death summary reveals full personality breakdown
 
 **Between Runs:**
-- Evolution collection shows unlocked evolution types
+- Legacy path collection shows unlocked path types
 - Can review personality trends from past heroes
-- Hints for locked evolutions ("Needs more methodical choices...")
+- Hints for locked paths ("Needs more methodical choices...")
 
 ---
 
-## 3. Evolution Collection (Pokédex)
+## 3. Legacy Path Collection (Pokédex)
 
 A memorial screen tracks all evolved heroes and provides completion goals.
 
 ### Collection Screen Layout
 
-**Unlocked Evolutions:**
-- Hero portrait with evolution name
+**Unlocked Paths:**
+- Hero portrait with path name
 - Death date and cause
 - Personality breakdown
 - Bonuses unlocked
 - Lore description
 
-**Locked Evolutions:**
+**Locked Paths:**
 - Silhouette with "???"
 - Hint text: "Kill 4+ raid bosses with reckless playstyle"
 - Tier indicator (so players know what's possible)
@@ -402,17 +432,17 @@ A memorial screen tracks all evolved heroes and provides completion goals.
 ### Completion Tracking
 
 **Progress Metrics:**
-- Evolutions unlocked: 5/30+
+- Paths unlocked: 5/30+
 - Tier 1: 3/12
 - Tier 2: 1/12
 - Tier 3: 0/6+
-- Achievement: "Collected 10 evolutions" = +15 max energy
+- Achievement: "Collected 10 legacy paths" = +15 max energy
 
 **Long-term Goals:**
-- "All Tier 1 Evolutions" = +25 max energy
-- "All Tier 2 Evolutions" = +50 max energy
-- "Unlock Ultimate Raider" = +30 max energy
-- "True Master: Unlock all evolutions" = +100 max energy
+- "All Tier 1 Paths" = +25 max energy
+- "All Tier 2 Paths" = +50 max energy
+- "Unlock Ultimate Raider Path" = +30 max energy
+- "True Master: Unlock all paths" = +100 max energy
 
 ### Memorial Functionality
 
@@ -705,24 +735,18 @@ Heroes grow through multiple systems simultaneously.
 - Levels 21-25: Elite zones, profession mastery
 - Levels 26-30: Raid-ready, endgame content
 
-### Class System (Nurture-Based)
+### Early Game & Organic Class Progression
 
-Hero creation presents 3 scenario-based dilemmas that reveal class archetype through instinct rather than explicit stat selection. Each presents a concrete in-world situation with two plausible responses — no right answer, just a preference.
+Heroes are no longer created with preset classes or binary dilemmas. Instead, every new hero starts as a true **"Blank Slate."** 
 
-**Example dilemmas:**
-- Mid-dungeon, overwhelmed: push for the boss or fall back?
-- Guild veteran's advice: hit harder, or study the boss pattern?
-- Found 300 gold: buy a weapon spike or stock consumables?
+**Daily Event System (Days 1-3):**
+- During the first few in-game days, players experience a higher frequency of **Random Daily Events**.
+- These early events offer choices that provide significant initial boosts to Core Stats and shape the hero's early Personality Axes.
+- **Example Event:** "A local militia is training. Do you join the sparring (Strength/Combat focus), study their tactics from afar (Intelligence/Methodical focus), or negotiate to sell them supplies (Charisma/Economic focus)?"
 
-**Class Archetypes (resolved from choices):**
-- **Warrior** (Tank): High survivability, slower farming
-- **Mage** (DPS): High burst damage, fragile
-- **Healer** (Support): Balanced, strong in all content; result of mixed instincts
-
-**Class Flexibility:**
-- 3 choices determine archetype (majority wins; tie → Healer)
-- Hero name is randomly assigned at creation and editable before confirming
-- Adds replayability without feeling like a stat screen
+**Emergent Class Archetypes:**
+- Based on the stats accumulated through these early events and initial activities, the hero organically leans into a class archetype (e.g., heavily stacking Strength naturally turns them into a Warrior-type, while Intelligence leans Mage-type).
+- This creates replayability by letting the player guide the character's development through actions rather than a static creation menu.
 
 ### Profession System
 

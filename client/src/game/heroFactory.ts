@@ -1,15 +1,35 @@
-import type { Hero, HeroClass, MetaProgression } from "../data/types";
+import type { BossId, CoreStats, Hero, MetaProgression, PersonalityAxes } from "../data/types";
 
-export function createHero(name: string, heroClass: HeroClass, meta: MetaProgression): Hero {
+const BASE_CORE_STATS: CoreStats = {
+  strength: 5,
+  agility: 5,
+  intelligence: 5,
+  stamina: 5,
+  charismaInfluence: 5,
+};
+
+const BASE_PERSONALITY: PersonalityAxes = {
+  combatStyle: 0,
+  socialStyle: 0,
+  economicFocus: 0,
+  exploration: 0,
+  preparation: 0,
+  ambition: 0,
+};
+
+const TRACKED_BOSSES: BossId[] = ["molten_fury"];
+
+export function createHero(name: string, meta: MetaProgression): Hero {
   const startGold = (meta.evolutionBonuses.startGold ?? 0) + (meta.apUpgrades.includes("start_gold_100") ? 100 : 0);
   const bossKnowledgeStart = meta.evolutionBonuses.bossKnowledgeBonus ?? 0;
-  const inheritedKnowledge = Object.fromEntries(
-    Object.entries(meta.bossKnowledgeBank).map(([k, v]) => [k, Math.min(100, v + bossKnowledgeStart * 100)]),
-  );
+  const inheritedKnowledge = TRACKED_BOSSES.reduce<Record<BossId, number>>((acc, bossId) => {
+    const base = meta.bossKnowledgeBank[bossId] ?? 0;
+    acc[bossId] = Math.min(100, base + bossKnowledgeStart * 100);
+    return acc;
+  }, { molten_fury: 0 });
 
   return {
     name,
-    heroClass,
     level: 1,
     xp: 0,
     xpToNextLevel: 100,
@@ -25,15 +45,15 @@ export function createHero(name: string, heroClass: HeroClass, meta: MetaProgres
       legs: null,
       accessory: null,
     },
-    personality: {
-      aggression: 0,
-      wisdom: 0,
-      greed: 0,
-      cunning: 0,
-      patience: 0,
-      recklessness: 0,
+    coreStats: { ...BASE_CORE_STATS },
+    personality: { ...BASE_PERSONALITY },
+    secondary: {
+      reputation: {
+        adventurers_guild: 0,
+        scholomance_order: 0,
+      },
+      bossKnowledge: inheritedKnowledge,
     },
-    bossKnowledge: { molten_fury: inheritedKnowledge["molten_fury"] ?? 0 },
     completedActivitiesToday: [],
     raidLockouts: {},
   };

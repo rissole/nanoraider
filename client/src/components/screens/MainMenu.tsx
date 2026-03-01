@@ -5,13 +5,21 @@ export function MainMenu() {
   const { meta, hero, goTo, startHeroCreation } = useGameStore();
   const unlockedCount = meta.unlockedEvolutions.length;
   const totalEvolutions = EVOLUTION_LIST.length;
+  const resetGame = () => {
+    const confirmed = window.confirm("Reset all progress? This will clear all local save data.");
+    if (!confirmed) {
+      return;
+    }
+    localStorage.clear();
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-8">
       {/* Title */}
       <div className="text-center space-y-2">
         <h1 className="text-5xl font-bold text-yellow-400 tracking-widest">NANO RAIDER</h1>
-        <p className="text-gray-400 text-sm">Discover your evolution. Collect them all.</p>
+        <p className="text-gray-400 text-sm">Forge your legacy path. Collect them all.</p>
       </div>
 
       {/* Meta stats */}
@@ -22,7 +30,7 @@ export function MainMenu() {
         </div>
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-3">
           <div className="text-purple-400 font-bold text-2xl">{unlockedCount}/{totalEvolutions}</div>
-          <div className="text-gray-400 text-xs">Evolutions</div>
+          <div className="text-gray-400 text-xs">Legacy Paths</div>
         </div>
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-3">
           <div className="text-blue-400 font-bold text-2xl">{meta.totalRuns}</div>
@@ -77,13 +85,19 @@ export function MainMenu() {
           className="bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-lg transition-colors border border-gray-600"
           onClick={() => { goTo("collection"); }}
         >
-          ◈ Evolution Collection ({unlockedCount}/{totalEvolutions})
+          ◈ Legacy Paths ({unlockedCount}/{totalEvolutions})
         </button>
         <button
           className="bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-lg transition-colors border border-gray-600"
           onClick={() => { goTo("upgrades"); }}
         >
           ✦ Upgrades · {meta.achievementPoints} AP
+        </button>
+        <button
+          className="bg-red-900 hover:bg-red-800 text-red-100 font-bold py-3 px-6 rounded-lg transition-colors border border-red-700"
+          onClick={resetGame}
+        >
+          Reset Game
         </button>
       </div>
 
