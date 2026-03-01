@@ -707,24 +707,22 @@ Heroes grow through multiple systems simultaneously.
 
 ### Class System (Nurture-Based)
 
-Early decisions shape class archetype:
+Hero creation presents 3 scenario-based dilemmas that reveal class archetype through instinct rather than explicit stat selection. Each presents a concrete in-world situation with two plausible responses — no right answer, just a preference.
 
-**Binary Choices (Days 1-3):**
-- "Help the merchant" vs "Study in library"
-- "Train with guards" vs "Meditate in temple"
-- "Explore wilderness" vs "Practice spellcasting"
+**Example dilemmas:**
+- Mid-dungeon, overwhelmed: push for the boss or fall back?
+- Guild veteran's advice: hit harder, or study the boss pattern?
+- Found 300 gold: buy a weapon spike or stock consumables?
 
-**Class Archetypes:**
+**Class Archetypes (resolved from choices):**
 - **Warrior** (Tank): High survivability, slower farming
-- **Rogue** (DPS): Fast farming, lower survivability
 - **Mage** (DPS): High burst damage, fragile
-- **Healer** (Support): Moderate all-around, high value in raids
-- **Hybrid** (e.g., Paladin): Mixed choices = versatile but not specialized
+- **Healer** (Support): Balanced, strong in all content; result of mixed instincts
 
 **Class Flexibility:**
-- First 5 choices = 80% of class determination
-- Can still pivot slightly based on later gear/profession choices
-- Adds replayability (different class each run)
+- 3 choices determine archetype (majority wins; tie → Healer)
+- Hero name is randomly assigned at creation and editable before confirming
+- Adds replayability without feeling like a stat screen
 
 ### Profession System
 

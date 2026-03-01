@@ -339,17 +339,16 @@ The #1 question to answer: **Does evolution discovery feel rewarding?** and **Do
 ### Tech Stack Recommendation
 
 **Frontend:**
-- **Framework:** React or Svelte (component-based, reactive)
+- **Framework:** React
 - **Styling:** TailwindCSS (rapid UI development)
 - **State Management:** Zustand or Context API
 - **Persistence:** LocalStorage (simple, no backend needed)
 
 **Backend (Optional for Phase 3):**
-- **If needed:** Firebase or Supabase (easy auth + cloud saves)
-- **Analytics:** Google Analytics or Mixpanel (track usage)
+- **If needed:** Supabase (easy auth + cloud saves)
 
 **Deployment:**
-- **Hosting:** Vercel or Netlify (free for MVPs)
+- **Hosting:** GitHub pages or Render.com
 - **Mobile:** PWA (Progressive Web App) before native app
 
 ### File Structure
