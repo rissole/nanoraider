@@ -11,6 +11,18 @@ Content is NOT just about gear progression - it's about discovering your playsty
 
 **The core loop is:** Play → Die → Discover Legacy Path → Learn Prerequisites → Plan Next Run → Collect Them All
 
+### Evolution Style Alignment (Role-First Content)
+
+Content should produce legacy paths that are instantly legible MMO identities.
+
+- Prefer role-explicit names (e.g., `Theorycrafter`, `Dungeon Leader`, `Raid Leader`) over abstract labels.
+- Tier structure should read as a role journey:
+  - Tier 1 = obvious specialization in one run.
+  - Tier 2 = combined mastery enabled by Tier 1 unlock support.
+  - Tier 3 = apex social/endgame group identity.
+- Unlock logic should detect **disproportionate behavior** (dominant action ratios), not just high absolute totals.
+- Activity rewards and path bonuses should reinforce the same identity fantasy.
+
 ---
 
 ## Overview
@@ -337,6 +349,8 @@ Activities are no longer just a static list. As a hero develops their Stats and 
 
 ### Legacy Path Examples and What Matters
 
+Use these as directionally correct role-readable references for future content conversion.
+
 **Berserker (Tier 1)**
 - **What Matters:** Combat time, high-risk dungeons (Blackrock Depths, Temple of Serpent), raid boss attempts
 - **What Doesn't:** Crafting, gold farming, low-risk safe content
@@ -352,6 +366,11 @@ Activities are no longer just a static list. As a hero develops their Stats and 
 - **What Doesn't:** Combat speed, gold farming, crafting
 - **Efficiency Note:** Scholar needs study time (12 energy per session), so prioritize boss knowledge over dungeon spam
 
+**Theorycrafter (Tier 1, style anchor)**
+- **What Matters:** Drill/simulation-heavy behavior ratio (practice rotation, log review, rehearsal loops)
+- **What Doesn't:** Broad unfocused action volume
+- **Efficiency Note:** Theorycrafters should feel rewarded for repeated prep loops that improve encounter execution
+
 **Master Crafter (Tier 1)**
 - **What Matters:** Crafting time, gathering materials, profession activities, crafting recipes
 - **What Doesn't:** Combat efficiency, raid attempts, gold hoarding
@@ -361,6 +380,16 @@ Activities are no longer just a static list. As a hero develops their Stats and 
 - **What Matters:** Defeating Zar'thul (final boss), having both Berserker + Scholar prerequisite paths unlocked
 - **What Doesn't:** Speed of victory, gear quality, gold remaining
 - **Prerequisite System:** You MUST unlock Berserker and Scholar in previous runs before Raid Legend becomes discoverable
+
+**Dungeon Leader (Tier 2, style anchor)**
+- **What Matters:** High dungeon clear count + high readiness + meaningful social/group coordination
+- **What Doesn't:** Solo-only optimization without leadership behavior
+- **Prerequisite System:** Should feel like a hybrid identity unlocked by combining prior specialist strengths
+
+**Raid Leader (Tier 3, style anchor)**
+- **What Matters:** Repeated raid attempts/clears, near-max readiness, and clear leadership behavior under endgame pressure
+- **What Doesn't:** Isolated stat spikes without command identity
+- **Prerequisite System:** Should represent apex MMO role maturity, not just "bigger Tier 2"
 
 ### How Different Legacy Paths Change Energy Efficiency
 
@@ -380,7 +409,7 @@ Activities are no longer just a static list. As a hero develops their Stats and 
 
 When you die, the game reveals:
 1. **Which legacy path you unlocked** (big celebration, Pokédex-style reveal)
-2. **Why you unlocked it** (e.g., "You spent 40% of your time in combat and took high risks - you've become a **Berserker**!")
+2. **Why you unlocked it** (call out dominant behavior ratios, e.g., "You spent most of your run in drill loops and prep activities - you've become a **Theorycrafter**!")
 3. **What bonuses it gives** (Knowledge Transfer - future runs start with Berserker's +10% damage)
 4. **What prerequisite it is for** (e.g., "Berserker is a prerequisite path for Raid Legend, Gladiator, and Weapon Master")
 5. **What you DIDN'T unlock** (Hint system - "You were close to Merchant! Try earning more gold next run.")

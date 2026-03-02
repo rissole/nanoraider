@@ -1,4 +1,6 @@
-import type { BossId, CoreStats, Hero, MetaProgression, PersonalityAxes } from "../data/types";
+import type { BossId, CoreStats, DungeonActivityId, Hero, MetaProgression, PersonalityAxes } from "../data/types";
+import { applyFlatStartingKnowledgeBonus, normalizeBossKnowledgeBank } from "./bossKnowledge";
+import { generateGear, randomHeroClass } from "./gearGenerator";
 
 const BASE_CORE_STATS: CoreStats = {
   strength: 5,
@@ -18,33 +20,58 @@ const BASE_PERSONALITY: PersonalityAxes = {
 };
 
 const TRACKED_BOSSES: BossId[] = ["molten_fury"];
+const TRACKED_DUNGEONS: DungeonActivityId[] = [
+  "dungeon_irondeep",
+  "dungeon_whispering_crypts",
+  "dungeon_scholomance",
+  "dungeon_blackrock",
+];
 
 export function createHero(name: string, meta: MetaProgression): Hero {
   const startGold = (meta.evolutionBonuses.startGold ?? 0) + (meta.apUpgrades.includes("start_gold_100") ? 100 : 0);
   const bossKnowledgeStart = meta.evolutionBonuses.bossKnowledgeBonus ?? 0;
-  const inheritedKnowledge = TRACKED_BOSSES.reduce<Record<BossId, number>>((acc, bossId) => {
-    const base = meta.bossKnowledgeBank[bossId] ?? 0;
-    acc[bossId] = Math.min(100, base + bossKnowledgeStart * 100);
+  const normalizedBank = normalizeBossKnowledgeBank(meta.bossKnowledgeBank, TRACKED_BOSSES);
+  const inheritedKnowledge = TRACKED_BOSSES.reduce<Record<BossId, Hero["secondary"]["bossKnowledge"][BossId]>>((acc, bossId) => {
+    const base = normalizedBank[bossId];
+    acc[bossId] = applyFlatStartingKnowledgeBonus(base, bossKnowledgeStart);
     return acc;
-  }, { molten_fury: 0 });
+  }, { molten_fury: { intel: 0, drills: 0, execution: 0 } });
+  const inheritedDungeonFamiliarity = TRACKED_DUNGEONS.reduce<Record<DungeonActivityId, number>>((acc, dungeonId) => {
+    acc[dungeonId] = Math.max(0, Math.floor(meta.dungeonFamiliarityBank[dungeonId] ?? 0));
+    return acc;
+  }, {
+    dungeon_irondeep: 0,
+    dungeon_whispering_crypts: 0,
+    dungeon_scholomance: 0,
+    dungeon_blackrock: 0,
+  });
+
+  const heroClass = randomHeroClass();
+  const emptyGear = {
+    head: null,
+    chest: null,
+    legs: null,
+    mainhand: null,
+    offhand: null,
+  };
+
+  const startingGear = {
+    head: generateGear(heroClass, "head", "gray", 1, emptyGear),
+    chest: generateGear(heroClass, "chest", "gray", 1, emptyGear),
+    legs: generateGear(heroClass, "legs", "gray", 1, emptyGear),
+    mainhand: generateGear(heroClass, "mainhand", "gray", 1, emptyGear),
+    offhand: generateGear(heroClass, "offhand", "gray", 1, emptyGear),
+  };
 
   return {
     name,
+    heroClass,
     level: 1,
     xp: 0,
     xpToNextLevel: 100,
     inGameDay: 1,
     gold: startGold,
-    gear: {
-      helmet: null,
-      chest: null,
-      gloves: null,
-      boots: null,
-      weapon: null,
-      offhand: null,
-      legs: null,
-      accessory: null,
-    },
+    gear: startingGear,
     coreStats: { ...BASE_CORE_STATS },
     personality: { ...BASE_PERSONALITY },
     secondary: {
@@ -53,6 +80,7 @@ export function createHero(name: string, meta: MetaProgression): Hero {
         scholomance_order: 0,
       },
       bossKnowledge: inheritedKnowledge,
+      dungeonFamiliarity: inheritedDungeonFamiliarity,
     },
     completedActivitiesToday: [],
     raidLockouts: {},

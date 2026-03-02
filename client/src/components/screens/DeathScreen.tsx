@@ -2,6 +2,7 @@ import { useState } from "react";
 import { EVOLUTIONS } from "../../data/evolutions";
 import { ACTIVITIES } from "../../data/activities";
 import { useGameStore } from "../../store/gameStore";
+import { getBossReadinessFromProgress } from "../../game/bossKnowledge";
 
 const CAUSE_LABELS = {
   combat: { label: "Fell in Battle", icon: "⚔", color: "text-red-400" },
@@ -20,6 +21,7 @@ export function DeathScreen() {
   const summary = deathSummary;
   const causeInfo = CAUSE_LABELS[summary.cause];
   const fatalActivityName = summary.fatalActivityId !== null ? ACTIVITIES[summary.fatalActivityId].name : null;
+  const moltenReadiness = getBossReadinessFromProgress(summary.bossKnowledgeSnapshot["molten_fury"]);
 
   const evolutionDef = summary.evolutionUnlocked !== null ? EVOLUTIONS[summary.evolutionUnlocked] : null;
   const almostDef = summary.almostUnlocked !== null ? EVOLUTIONS[summary.almostUnlocked] : null;
@@ -57,7 +59,7 @@ export function DeathScreen() {
               <Stat label="Gold at Death" value={`${summary.gold}g`} />
               <Stat label="Total XP Earned" value={`${summary.totalXpGained}`} />
               <Stat label="Raid Defeated" value={summary.defeatedRaids.length > 0 ? "Yes ✓" : "No"} />
-              <Stat label="Boss Knowledge" value={`${Math.round(summary.bossKnowledgeSnapshot["molten_fury"])}%`} />
+              <Stat label="Boss Readiness" value={`${Math.round(moltenReadiness)}%`} />
             </div>
           </div>
 

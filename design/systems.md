@@ -258,6 +258,16 @@ Everything in the game—from the activities you can perform to the legacy paths
    - **Reputation**: Standing with various zones or factions.
    - **Boss Knowledge**: Earned through study, directly reduces death risk.
 
+### Evolution Role Legibility Standard
+
+When a run is converted into a legacy path, players should immediately understand the MMO role identity.
+
+- The path name should answer: **"What does this player do in a group?"**
+- Prefer role-explicit titles over abstract flavor labels.
+- Tier progression should read as a role career arc (specialist -> coordinator -> apex leader), not just larger numbers.
+- Unlock checks should favor **disproportionate behavior** (dominant action ratios), not high totals alone.
+- Bonuses should reinforce the same role identity to keep fantasy and mechanics aligned.
+
 ### Legacy Path = Your character's legacy based on how they lived
 
 - Core stats and personality axes track behavior patterns throughout the run.
@@ -318,8 +328,14 @@ Upon death, the game calculates legacy path unlocks based on:
 Primary Personality = Highest tracked stat (must be 30+)
 Secondary Personality = Second-highest stat (must be 20+)
 Milestone Achievements = Specific accomplishments (killed raid boss, reached Day 15, etc.)
+Dominance Check = Primary behavior ratio is meaningfully above alternatives
 Path Tier = Based on total personality points + achievement count
 ```
+
+**Tuning rule for unlock math:**
+- High activity volume without a dominant pattern should not qualify for role-defining paths.
+- A strongly dominant pattern should qualify even when total volume is moderate.
+- Tier 2 and Tier 3 should require multi-signal identity combinations that are realistically enabled by Tier 1 bonuses.
 
 **Example Calculation:**
 - Reckless: 45
@@ -335,7 +351,7 @@ Path Tier = Based on total personality points + achievement count
 
 **Tier 1: Foundation Paths (5-10 energy bonus)**
 
-Single personality dominant (40+ points), basic achievements
+Single-role specialization that is clearly visible in one run.
 
 - **Berserker** - Reckless + Combat dominant, killed 3+ bosses
   - Bonus: +8 max energy, +5% starting combat stats
@@ -355,7 +371,7 @@ Single personality dominant (40+ points), basic achievements
 
 **Tier 2: Specialist Paths (10-15 energy bonus)**
 
-Two personalities balanced (35+ each), significant achievements, requires at least 1 Tier 1 path unlocked
+Combined mastery identity (role + coordination), generally requiring prior Tier 1 support.
 
 - **Raid Legend** - Glory-Seeker + Combat, killed 4+ raid bosses
   - Bonus: +15 max energy, +10% raid loot chance
@@ -379,7 +395,7 @@ Two personalities balanced (35+ each), significant achievements, requires at lea
 
 **Tier 3: Mastery Paths (30-50 energy bonus)**
 
-Multiple high personalities, exceptional achievements, requires 2+ Tier 2 paths unlocked
+Apex social/endgame role identity with high execution demands and strong prerequisite scaffolding.
 
 - **Ultimate Raider** - All combat metrics high, killed all raid bosses
   - Bonus: +50 max energy, +20% all combat stats

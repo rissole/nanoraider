@@ -11,6 +11,32 @@ Every character run creates a **Legacy Path** - a permanent legacy that defines 
 - Knowledge transfers between paths create powerful synergies
 - Energy capacity grows with each path discovered
 
+### Evolution Identity Rules (MMO Readability First)
+
+Legacy path naming and unlock logic should be readable in 2 seconds by ex-MMO players.
+
+- **Name like a group role, not a poem:** prefer labels such as `Theorycrafter`, `Dungeon Leader`, `Raid Leader`.
+- **Tiering is a career arc, not bigger numbers:**
+  - **Tier 1** = obvious specialization visible within one run.
+  - **Tier 2** = combined mastery that is only realistic with Tier 1 unlock support.
+  - **Tier 3** = apex social/endgame role identity.
+- **Unlocks should reward disproportionate behavior:** not "high total actions," but "this behavior clearly dominated this run."
+- **Bonuses must reinforce identity:** the reward should make you better at the exact thing that role is known for in MMO groups.
+
+### Anchor Evolution Chain (Style Reference)
+
+Use this as the tone/structure baseline for future path rewrites:
+
+1. **Tier 1: Theorycrafter**
+   - Behavior signal: Drill-heavy run ratio (practice/sim/review massively outweighs other actions).
+   - Reward shape: Better training efficiency, clearer prep feedback, stronger rehearsal outcomes.
+2. **Tier 2: Dungeon Leader**
+   - Behavior signal: Many dungeon clears + high readiness + meaningful social coordination.
+   - Reward shape: Better dungeon pacing and group orchestration tools.
+3. **Tier 3: Raid Leader**
+   - Behavior signal: Repeated raid leadership + near-max readiness + successful endgame command identity.
+   - Reward shape: Endgame leadership power (raid planning/readiness and execution support).
+
 **Energy Growth:**
 - Base energy: 50 per session
 - +5 energy per character death (automatic)

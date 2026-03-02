@@ -8,6 +8,10 @@ const RARITY_COLOR: Record<string, string> = {
   purple: "text-purple-400",
 };
 
+function formatSignedGold(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value}g`;
+}
+
 export function DayResults() {
   const { hero, lastDayResults, goTo } = useGameStore();
 
@@ -32,8 +36,11 @@ export function DayResults() {
           <div className="text-gray-400 text-xs">XP</div>
         </div>
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-3">
-          <div className="text-yellow-400 font-bold text-xl">+{results.totalGold}g</div>
-          <div className="text-gray-400 text-xs">Gold</div>
+          <div className={`font-bold text-xl ${results.totalGold >= 0 ? "text-yellow-400" : "text-red-300"}`}>
+            {formatSignedGold(results.totalGold)}
+          </div>
+          <div className="text-gray-400 text-xs">Gold (Net)</div>
+          {results.totalGoldSpent > 0 && <div className="text-red-300 text-[10px] mt-1">-{results.totalGoldSpent}g spent</div>}
         </div>
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-3">
           <div className="text-purple-400 font-bold text-xl">{results.lootObtained.length}</div>
@@ -70,6 +77,7 @@ export function DayResults() {
                 {def.deathRisk > 0 && <span className="text-red-300">Risk {Math.round(r.effectiveDeathRisk * 100)}%</span>}
                 {r.xpGained > 0 && <span className="text-blue-400">+{r.xpGained} XP</span>}
                 {r.goldGained > 0 && <span className="text-yellow-400">+{r.goldGained}g</span>}
+                {r.goldSpent > 0 && <span className="text-red-300">-{r.goldSpent}g</span>}
                 {r.lootDropped.length > 0 && (
                   <span className="text-purple-400">+{r.lootDropped.length} item{r.lootDropped.length !== 1 ? "s" : ""}</span>
                 )}

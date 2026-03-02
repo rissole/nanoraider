@@ -4,6 +4,7 @@ import type {
   ActivityId,
   BossId,
   DayResult,
+  DungeonActivityId,
   EvolutionId,
   GameScreen,
   Hero,
@@ -20,12 +21,36 @@ import { applyXp, createHero } from "../game/heroFactory";
 import { AP_UPGRADES } from "../data/evolutions";
 import { ACTIVITIES } from "../data/activities";
 import { randomHeroName } from "../data/nurture";
+import { applyKnowledgeGain, normalizeBossKnowledgeBank } from "../game/bossKnowledge";
 
 const BASE_ENERGY = 50;
 const ENERGY_PER_DEATH = 5;
 const AP_PER_RUN = 25;
 const OLD_AGE_START_DAY = 16;
 const OLD_AGE_DEATH_CHANCE_PER_DAY = 0.05;
+const TRACKED_BOSSES: BossId[] = ["molten_fury"];
+const TRACKED_DUNGEONS: DungeonActivityId[] = [
+  "dungeon_irondeep",
+  "dungeon_whispering_crypts",
+  "dungeon_scholomance",
+  "dungeon_blackrock",
+];
+
+function normalizeDungeonFamiliarityBank(
+  source: MetaProgression["dungeonFamiliarityBank"],
+  tracked: DungeonActivityId[],
+): Record<DungeonActivityId, number> {
+  return tracked.reduce<Record<DungeonActivityId, number>>((acc, dungeonId) => {
+    const raw = source[dungeonId];
+    acc[dungeonId] = typeof raw === "number" && Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : 0;
+    return acc;
+  }, {
+    dungeon_irondeep: 0,
+    dungeon_whispering_crypts: 0,
+    dungeon_scholomance: 0,
+    dungeon_blackrock: 0,
+  });
+}
 
 export interface DeathSummary {
   heroName: string;
@@ -55,6 +80,7 @@ interface GameState {
   hero: Hero | null;
   meta: MetaProgression;
   energyUsedToday: number;
+  plannedActivities: ActivityId[];
   currentDayActivities: ResolvedActivity[];
   currentDayEvents: ResolvedDailyEvent[];
   pendingEvent: PendingDailyEvent | null;
@@ -72,9 +98,11 @@ interface GameState {
   renameHero: (name: string) => void;
 
   // Day loop
-  executeActivity: (activityId: ActivityId) => void;
+  planActivity: (activityId: ActivityId) => void;
+  unplanActivity: (index: number) => void;
+  clearPlan: () => void;
   resolvePendingEvent: (choiceId: string) => void;
-  restDay: () => void;
+  endDay: () => void;
   dismissPendingEvent: () => void;
 
   // Helpers
@@ -99,6 +127,7 @@ function buildInitialMeta(): MetaProgression {
       knowledgeTransferMultiplier: 1,
     },
     bossKnowledgeBank: {},
+    dungeonFamiliarityBank: {},
     apUpgrades: [],
   };
 }
@@ -111,6 +140,7 @@ function applyEventEffects(hero: Hero, effects: NonNullable<ResolvedDailyEvent["
     secondary: {
       reputation: { ...hero.secondary.reputation },
       bossKnowledge: { ...hero.secondary.bossKnowledge },
+      dungeonFamiliarity: { ...hero.secondary.dungeonFamiliarity },
     },
   };
 
@@ -129,19 +159,34 @@ function applyEventEffects(hero: Hero, effects: NonNullable<ResolvedDailyEvent["
       updated.secondary.reputation[key as keyof Hero["secondary"]["reputation"]] += value;
     }
   }
-  if (effects.bossKnowledge !== undefined) {
-    for (const [key, value] of Object.entries(effects.bossKnowledge)) {
+  if (effects.bossKnowledgeIntel !== undefined) {
+    for (const [key, value] of Object.entries(effects.bossKnowledgeIntel)) {
       const boss = key as BossId;
       const current = updated.secondary.bossKnowledge[boss];
-      updated.secondary.bossKnowledge[boss] = Math.max(0, Math.min(100, current + value));
+      updated.secondary.bossKnowledge[boss] = applyKnowledgeGain(current, "intel", value);
+    }
+  }
+  if (effects.bossKnowledgeDrills !== undefined) {
+    for (const [key, value] of Object.entries(effects.bossKnowledgeDrills)) {
+      const boss = key as BossId;
+      const current = updated.secondary.bossKnowledge[boss];
+      updated.secondary.bossKnowledge[boss] = applyKnowledgeGain(current, "drills", value);
+    }
+  }
+  if (effects.bossKnowledgeExecution !== undefined) {
+    for (const [key, value] of Object.entries(effects.bossKnowledgeExecution)) {
+      const boss = key as BossId;
+      const current = updated.secondary.bossKnowledge[boss];
+      updated.secondary.bossKnowledge[boss] = applyKnowledgeGain(current, "execution", value);
     }
   }
 
   return updated;
 }
 
-function shouldTriggerEvent(day: number): boolean {
-  const chance = day <= 3 ? 0.65 : 0.25;
+function shouldTriggerEvent(energySpent: number, maxEnergy: number): boolean {
+  const energyRatio = maxEnergy > 0 ? Math.min(1, energySpent / maxEnergy) : 0;
+  const chance = 0.05 + 0.15 * energyRatio;
   return Math.random() < chance;
 }
 
@@ -168,6 +213,7 @@ export const useGameStore = create<GameState>()(
       hero: null,
       meta: buildInitialMeta(),
       energyUsedToday: 0,
+      plannedActivities: [],
       currentDayActivities: [],
       currentDayEvents: [],
       pendingEvent: null,
@@ -185,6 +231,7 @@ export const useGameStore = create<GameState>()(
           hero,
           screen: "planning",
           energyUsedToday: 0,
+          plannedActivities: [],
           currentDayActivities: [],
           currentDayEvents: [],
           pendingEvent: null,
@@ -200,6 +247,7 @@ export const useGameStore = create<GameState>()(
           hero,
           screen: "planning",
           energyUsedToday: 0,
+          plannedActivities: [],
           currentDayActivities: [],
           currentDayEvents: [],
           pendingEvent: null,
@@ -216,63 +264,52 @@ export const useGameStore = create<GameState>()(
         set({ hero: { ...hero, name: name.trim() } });
       },
 
-      executeActivity: (activityId) => {
-        const { hero, meta, energyUsedToday, runXpTotal, currentDayActivities, defeatedRaidsThisRun } = get();
+      planActivity: (activityId) => {
+        const { hero, meta, plannedActivities } = get();
         if (hero === null) {
           return;
         }
+
         const def = ACTIVITIES[activityId];
-        if (energyUsedToday + def.energyCost > meta.maxEnergy) {
-          return;
-        }
         if (!isActivityUnlocked(hero, def)) {
           return;
         }
-
-        const { resolved, updatedHero } = resolveActivity(hero, activityId, meta);
-        const leveledHero = applyXp(updatedHero, resolved.xpGained);
-        const nextActivities = [...currentDayActivities, resolved];
-        const nextRunXp = runXpTotal + resolved.xpGained;
-        const nextDefeatedRaids: BossId[] =
-          activityId === "raid_molten_fury" && !resolved.died && !defeatedRaidsThisRun.includes("molten_fury")
-            ? [...defeatedRaidsThisRun, "molten_fury" as BossId]
-            : defeatedRaidsThisRun;
-
-        if (resolved.died) {
-          const dayResult: DayResult = {
-            day: hero.inGameDay,
-            activitiesResolved: nextActivities,
-            eventsResolved: get().currentDayEvents,
-            totalXp: nextActivities.reduce((sum, item) => sum + item.xpGained, 0),
-            totalGold: nextActivities.reduce((sum, item) => sum + item.goldGained, 0),
-            lootObtained: nextActivities.flatMap((item) => item.lootDropped),
-            heroSurvived: false,
-            deathCause: "combat",
-            personalitySnapshot: leveledHero.personality,
-            coreStatsSnapshot: leveledHero.coreStats,
-          };
-          finalizeDeath("combat", leveledHero, nextRunXp, nextDefeatedRaids, dayResult, set, get, resolved);
+        const plannedEnergy = plannedActivities.reduce((sum, id) => sum + ACTIVITIES[id].energyCost, 0);
+        if (plannedEnergy + def.energyCost > meta.maxEnergy) {
           return;
         }
 
-        const eventTriggered = shouldTriggerEvent(leveledHero.inGameDay);
-        const pendingEvent = eventTriggered ? rollDailyEvent(leveledHero.inGameDay) : null;
+        const plannedGoldSpend = plannedActivities.reduce((sum, id) => sum + (ACTIVITIES[id].goldCost ?? 0), 0);
+        if (plannedGoldSpend + (def.goldCost ?? 0) > hero.gold) {
+          return;
+        }
+
+        const nextPlan = [...plannedActivities, activityId];
+        const nextEnergy = nextPlan.reduce((sum, id) => sum + ACTIVITIES[id].energyCost, 0);
         set({
-          hero: {
-            ...leveledHero,
-            completedActivitiesToday: [...leveledHero.completedActivitiesToday, activityId],
-          },
-          energyUsedToday: energyUsedToday + def.energyCost,
-          runXpTotal: nextRunXp,
-          currentDayActivities: nextActivities,
-          pendingEvent,
-          defeatedRaidsThisRun: nextDefeatedRaids,
-          screen: pendingEvent !== null ? "daily_event" : "planning",
+          plannedActivities: nextPlan,
+          energyUsedToday: nextEnergy,
         });
       },
 
+      unplanActivity: (index) => {
+        const { plannedActivities } = get();
+        if (index < 0 || index >= plannedActivities.length) {
+          return;
+        }
+
+        const nextPlan = plannedActivities.filter((_, i) => i !== index);
+        const nextEnergy = nextPlan.reduce((sum, id) => sum + ACTIVITIES[id].energyCost, 0);
+        set({
+          plannedActivities: nextPlan,
+          energyUsedToday: nextEnergy,
+        });
+      },
+
+      clearPlan: () => set({ plannedActivities: [], energyUsedToday: 0 }),
+
       resolvePendingEvent: (choiceId) => {
-        const { hero, pendingEvent, currentDayEvents, runXpTotal } = get();
+        const { hero, pendingEvent, currentDayEvents, runXpTotal, lastDayResults } = get();
         if (hero === null || pendingEvent === null) {
           return;
         }
@@ -302,63 +339,127 @@ export const useGameStore = create<GameState>()(
           appliedEffects: choice.effects,
         };
 
+        const updatedDayResult = lastDayResults !== null
+          ? {
+              ...lastDayResults,
+              eventsResolved: [...lastDayResults.eventsResolved, resolvedEvent],
+              totalXp: lastDayResults.totalXp + xpGained,
+              totalGold: lastDayResults.totalGold + goldGained,
+            }
+          : null;
+
         set({
           hero: heroAfterXp,
           pendingEvent: null,
           currentDayEvents: [...currentDayEvents, resolvedEvent],
+          lastDayResults: updatedDayResult,
           runXpTotal: runXpTotal + xpGained,
-          screen: "planning",
+          screen: "day_results",
         });
       },
 
       dismissPendingEvent: () => {
-        set({ pendingEvent: null, screen: "planning" });
+        set({ pendingEvent: null, screen: "day_results" });
       },
 
-      restDay: () => {
-        const { hero, currentDayActivities, currentDayEvents, runXpTotal, defeatedRaidsThisRun } = get();
+      endDay: () => {
+        const { hero, meta, plannedActivities, runXpTotal, defeatedRaidsThisRun } = get();
         if (hero === null) {
           return;
         }
 
+        let currentHero = hero;
+        let nextRunXp = runXpTotal;
+        let nextDefeatedRaids = defeatedRaidsThisRun;
+        const resolvedActivities: ResolvedActivity[] = [];
+
+        for (const activityId of plannedActivities) {
+          const def = ACTIVITIES[activityId];
+          if (!isActivityUnlocked(currentHero, def)) {
+            continue;
+          }
+          if (currentHero.gold < (def.goldCost ?? 0)) {
+            continue;
+          }
+
+          const { resolved, updatedHero } = resolveActivity(currentHero, activityId, meta);
+          const leveledHero = applyXp(updatedHero, resolved.xpGained);
+          resolvedActivities.push(resolved);
+          nextRunXp += resolved.xpGained;
+          if (activityId === "raid_molten_fury" && !resolved.died && !nextDefeatedRaids.includes("molten_fury")) {
+            nextDefeatedRaids = [...nextDefeatedRaids, "molten_fury"];
+          }
+
+          if (resolved.died) {
+            const dayResult: DayResult = {
+              day: hero.inGameDay,
+              activitiesResolved: resolvedActivities,
+              eventsResolved: [],
+              totalXp: resolvedActivities.reduce((sum, item) => sum + item.xpGained, 0),
+              totalGold: resolvedActivities.reduce((sum, item) => sum + item.goldGained - item.goldSpent, 0),
+              totalGoldSpent: resolvedActivities.reduce((sum, item) => sum + item.goldSpent, 0),
+              lootObtained: resolvedActivities.flatMap((item) => item.lootDropped),
+              heroSurvived: false,
+              deathCause: "combat",
+              personalitySnapshot: leveledHero.personality,
+              coreStatsSnapshot: leveledHero.coreStats,
+            };
+            finalizeDeath("combat", leveledHero, nextRunXp, nextDefeatedRaids, dayResult, set, get, resolved);
+            return;
+          }
+
+          currentHero = {
+            ...leveledHero,
+            completedActivitiesToday: [...currentHero.completedActivitiesToday, activityId],
+          };
+        }
+
         let deathCause: "combat" | "old_age" | null = null;
-        if (hero.inGameDay >= OLD_AGE_START_DAY) {
-          const oldAgeChance = OLD_AGE_DEATH_CHANCE_PER_DAY * (hero.inGameDay - OLD_AGE_START_DAY + 1);
+        if (currentHero.inGameDay >= OLD_AGE_START_DAY) {
+          const oldAgeChance = OLD_AGE_DEATH_CHANCE_PER_DAY * (currentHero.inGameDay - OLD_AGE_START_DAY + 1);
           if (Math.random() < oldAgeChance) {
             deathCause = "old_age";
           }
         }
 
         const dayResult: DayResult = {
-          day: hero.inGameDay,
-          activitiesResolved: currentDayActivities,
-          eventsResolved: currentDayEvents,
-          totalXp: currentDayActivities.reduce((sum, item) => sum + item.xpGained, 0) + currentDayEvents.reduce((sum, item) => sum + item.xpGained, 0),
-          totalGold: currentDayActivities.reduce((sum, item) => sum + item.goldGained, 0) + currentDayEvents.reduce((sum, item) => sum + item.goldGained, 0),
-          lootObtained: currentDayActivities.flatMap((item) => item.lootDropped),
+          day: currentHero.inGameDay,
+          activitiesResolved: resolvedActivities,
+          eventsResolved: [],
+          totalXp: resolvedActivities.reduce((sum, item) => sum + item.xpGained, 0),
+          totalGold: resolvedActivities.reduce((sum, item) => sum + item.goldGained - item.goldSpent, 0),
+          totalGoldSpent: resolvedActivities.reduce((sum, item) => sum + item.goldSpent, 0),
+          lootObtained: resolvedActivities.flatMap((item) => item.lootDropped),
           heroSurvived: deathCause === null,
           ...(deathCause !== null ? { deathCause } : {}),
-          personalitySnapshot: hero.personality,
-          coreStatsSnapshot: hero.coreStats,
+          personalitySnapshot: currentHero.personality,
+          coreStatsSnapshot: currentHero.coreStats,
         };
 
         if (deathCause !== null) {
-          finalizeDeath(deathCause, hero, runXpTotal, defeatedRaidsThisRun, dayResult, set, get);
+          finalizeDeath(deathCause, currentHero, nextRunXp, nextDefeatedRaids, dayResult, set, get);
           return;
         }
 
+        const totalEnergySpent = plannedActivities.reduce((sum, id) => sum + ACTIVITIES[id].energyCost, 0);
+        const eventTriggered = shouldTriggerEvent(totalEnergySpent, meta.maxEnergy);
+        const pendingEvent = eventTriggered ? rollDailyEvent(currentHero.inGameDay) : null;
+
         set({
           hero: {
-            ...hero,
-            inGameDay: hero.inGameDay + 1,
+            ...currentHero,
+            inGameDay: currentHero.inGameDay + 1,
             completedActivitiesToday: [],
           },
           lastDayResults: dayResult,
-          screen: "day_results",
+          screen: pendingEvent !== null ? "daily_event" : "day_results",
           energyUsedToday: 0,
-          currentDayActivities: [],
+          plannedActivities: [],
+          currentDayActivities: pendingEvent !== null ? resolvedActivities : [],
           currentDayEvents: [],
-          pendingEvent: null,
+          pendingEvent,
+          runXpTotal: nextRunXp,
+          defeatedRaidsThisRun: nextDefeatedRaids,
         });
       },
 
@@ -405,6 +506,7 @@ export const useGameStore = create<GameState>()(
           screen: "main_menu",
           hero: null,
           energyUsedToday: 0,
+          plannedActivities: [],
           currentDayActivities: [],
           currentDayEvents: [],
           pendingEvent: null,
@@ -416,7 +518,30 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: "nanoraider-save",
+      version: 2,
       partialize: (state) => ({ meta: state.meta }),
+      migrate: (persistedState, version) => {
+        if (version < 2) {
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem("nanoraider-save");
+          }
+          return { meta: buildInitialMeta() };
+        }
+        const state = persistedState as { meta?: MetaProgression };
+        if (state.meta === undefined) {
+          return state;
+        }
+        const normalizedBank = normalizeBossKnowledgeBank(state.meta.bossKnowledgeBank, TRACKED_BOSSES);
+        const normalizedDungeonBank = normalizeDungeonFamiliarityBank(state.meta.dungeonFamiliarityBank, TRACKED_DUNGEONS);
+        return {
+          ...state,
+          meta: {
+            ...state.meta,
+            bossKnowledgeBank: normalizedBank,
+            dungeonFamiliarityBank: normalizedDungeonBank,
+          },
+        };
+      },
     },
   ),
 );
@@ -439,10 +564,23 @@ function finalizeDeath(
   const stackedBonuses = stackEvolutionBonuses(newUnlocked);
   const newMaxEnergy = BASE_ENERGY + ENERGY_PER_DEATH * (meta.totalRuns + 1) + stackedBonuses.energyBonus;
 
-  const updatedKnowledgeBank: MetaProgression["bossKnowledgeBank"] = { ...meta.bossKnowledgeBank };
+  const normalizedKnowledgeBank = normalizeBossKnowledgeBank(meta.bossKnowledgeBank, TRACKED_BOSSES);
+  const updatedKnowledgeBank: MetaProgression["bossKnowledgeBank"] = { ...normalizedKnowledgeBank };
   for (const [boss, value] of Object.entries(hero.secondary.bossKnowledge)) {
     const bossId = boss as BossId;
-    updatedKnowledgeBank[bossId] = Math.max(updatedKnowledgeBank[bossId] ?? 0, value);
+    const previous = updatedKnowledgeBank[bossId] ?? { intel: 0, drills: 0, execution: 0 };
+    updatedKnowledgeBank[bossId] = {
+      intel: Math.max(previous.intel, value.intel),
+      drills: Math.max(previous.drills, value.drills),
+      execution: Math.max(previous.execution, value.execution),
+    };
+  }
+  const normalizedDungeonBank = normalizeDungeonFamiliarityBank(meta.dungeonFamiliarityBank, TRACKED_DUNGEONS);
+  const updatedDungeonBank: MetaProgression["dungeonFamiliarityBank"] = { ...normalizedDungeonBank };
+  for (const [dungeon, survivedRuns] of Object.entries(hero.secondary.dungeonFamiliarity)) {
+    const dungeonId = dungeon as DungeonActivityId;
+    const previous = updatedDungeonBank[dungeonId] ?? 0;
+    updatedDungeonBank[dungeonId] = Math.max(previous, Math.max(0, Math.floor(survivedRuns)));
   }
 
   const newMeta: MetaProgression = {
@@ -459,6 +597,7 @@ function finalizeDeath(
       knowledgeTransferMultiplier: stackedBonuses.knowledgeTransferMultiplier,
     },
     bossKnowledgeBank: updatedKnowledgeBank,
+    dungeonFamiliarityBank: updatedDungeonBank,
   };
 
   const deathSummary: DeathSummary = {
@@ -491,6 +630,7 @@ function finalizeDeath(
     deathSummary,
     screen: "death",
     energyUsedToday: 0,
+    plannedActivities: [],
     currentDayActivities: [],
     currentDayEvents: [],
     pendingEvent: null,

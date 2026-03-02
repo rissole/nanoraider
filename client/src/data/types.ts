@@ -29,30 +29,56 @@ export interface PersonalityAxes {
 
 export type FactionId = "adventurers_guild" | "scholomance_order";
 export type BossId = "molten_fury";
+export type BossKnowledgeChannel = "intel" | "drills" | "execution";
+
+export interface BossKnowledgeProgress {
+  intel: number;
+  drills: number;
+  execution: number;
+}
 
 export interface SecondaryDimensions {
   reputation: Record<FactionId, number>;
-  bossKnowledge: Record<BossId, number>; // 0-100
+  bossKnowledge: Record<BossId, BossKnowledgeProgress>; // each channel 0-100
+  dungeonFamiliarity: Record<DungeonActivityId, number>; // survived clears per dungeon
 }
 
 export interface DimensionDeltas {
   coreStats?: Partial<Record<CoreStatKey, number>>;
   personality?: Partial<Record<PersonalityAxisKey, number>>;
   reputation?: Partial<Record<FactionId, number>>;
-  bossKnowledge?: Partial<Record<BossId, number>>;
+  bossKnowledgeIntel?: Partial<Record<BossId, number>>;
+  bossKnowledgeDrills?: Partial<Record<BossId, number>>;
+  bossKnowledgeExecution?: Partial<Record<BossId, number>>;
 }
 
 // ─── Activity ────────────────────────────────────────────────────────────────
 
 export type ActivityId =
   | "quest"
+  | "dungeon_irondeep"
+  | "dungeon_whispering_crypts"
   | "dungeon_scholomance"
   | "dungeon_blackrock"
   | "farm_gold"
   | "study_boss"
+  | "analyze_logs"
+  | "training_dummy"
+  | "raid_rehearsal"
   | "raid_molten_fury"
+  | "raid_eternal_throne"
   | "host_guild_meeting"
-  | "black_market_trading";
+  | "black_market_trading"
+  | "buy_raid_supplies"
+  | "field_repairs"
+  | "commission_enchant";
+
+export type ActivityProgressionTier = "none" | "early_dungeon" | "mid_dungeon" | "entry_raid" | "capstone_raid";
+export type DungeonActivityId =
+  | "dungeon_irondeep"
+  | "dungeon_whispering_crypts"
+  | "dungeon_scholomance"
+  | "dungeon_blackrock";
 
 export interface UnlockConditions {
   minLevel?: number;
@@ -60,6 +86,29 @@ export interface UnlockConditions {
   minPersonality?: Partial<Record<PersonalityAxisKey, number>>;
   minReputation?: Partial<Record<FactionId, number>>;
   minBossKnowledge?: Partial<Record<BossId, number>>;
+  minItemPower?: number;
+  minGreenPlusSlots?: number;
+  minBluePlusSlots?: number;
+  minPurpleSlots?: number;
+}
+
+export type GearReadinessMetric = "greenPlusSlots" | "bluePlusSlots" | "purpleSlots";
+
+export interface GearReadinessBand {
+  min?: number;
+  max?: number;
+  riskFloor: number;
+  label: string;
+}
+
+export interface GearReadinessRule {
+  metric: GearReadinessMetric;
+  bands: GearReadinessBand[];
+}
+
+export interface ActivityLevelRange {
+  min: number;
+  max: number;
 }
 
 export interface ActivityDefinition {
@@ -67,11 +116,15 @@ export interface ActivityDefinition {
   name: string;
   description: string;
   energyCost: number;
+  goldCost?: number;
   durationHours: number;
+  progressionTier: ActivityProgressionTier;
+  levelRange?: ActivityLevelRange;
   category: "combat" | "economic" | "knowledge" | "social" | "general";
   effects: DimensionDeltas;
   outcomes: ActivityOutcomeTable;
   unlockConditions?: UnlockConditions;
+  gearReadiness?: GearReadinessRule;
   deathRisk: number; // 0–1
   riskProfile?: {
     coreStats?: Partial<Record<CoreStatKey, number>>;
@@ -92,8 +145,10 @@ export interface ActivityOutcomeTable {
 }
 
 export interface LootDrop {
-  itemId: string;
   chance: number; // 0–1
+  itemId?: string;
+  rarity?: GearRarity;
+  slot?: GearSlot;
 }
 
 // ─── Daily Events ─────────────────────────────────────────────────────────────
@@ -129,7 +184,11 @@ export interface PendingDailyEvent {
 
 // ─── Gear ─────────────────────────────────────────────────────────────────────
 
-export type GearSlot = "helmet" | "chest" | "gloves" | "boots" | "weapon" | "offhand" | "legs" | "accessory";
+export type HeroClass = "warrior" | "mage" | "priest" | "rogue" | "hunter";
+export type ArmorWeight = "plate" | "cloth" | "leather";
+export type GearSlot = "head" | "chest" | "legs" | "mainhand" | "offhand";
+export type ArmorSlot = "head" | "chest" | "legs";
+export type WeaponSlot = "mainhand" | "offhand";
 export type GearRarity = "gray" | "green" | "blue" | "purple";
 
 export interface GearItem {
@@ -138,7 +197,6 @@ export interface GearItem {
   slot: GearSlot;
   rarity: GearRarity;
   itemPower: number;
-  description: string;
 }
 
 // ─── Evolution ───────────────────────────────────────────────────────────────
@@ -178,18 +236,16 @@ export interface EvolutionBonuses {
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 
 export interface GearSlots {
-  helmet: GearItem | null;
+  head: GearItem | null;
   chest: GearItem | null;
-  gloves: GearItem | null;
-  boots: GearItem | null;
-  weapon: GearItem | null;
-  offhand: GearItem | null;
   legs: GearItem | null;
-  accessory: GearItem | null;
+  mainhand: GearItem | null;
+  offhand: GearItem | null;
 }
 
 export interface Hero {
   name: string;
+  heroClass: HeroClass;
   level: number;
   xp: number;
   xpToNextLevel: number;
@@ -220,7 +276,8 @@ export interface DayResult {
   activitiesResolved: ResolvedActivity[];
   eventsResolved: ResolvedDailyEvent[];
   totalXp: number;
-  totalGold: number;
+  totalGold: number; // net (gained - spent)
+  totalGoldSpent: number;
   lootObtained: GearItem[];
   heroSurvived: boolean;
   deathCause?: "combat" | "old_age";
@@ -232,6 +289,7 @@ export interface ResolvedActivity {
   activityId: ActivityId;
   xpGained: number;
   goldGained: number;
+  goldSpent: number;
   lootDropped: GearItem[];
   died: boolean;
   appliedEffects: DimensionDeltas;
@@ -250,8 +308,13 @@ export interface ActivityRiskBreakdown {
   prepMitigation: number;
   knowledgeMitigation: number;
   metaMitigation: number;
+  dungeonFamiliarityMitigation: number;
+  levelPenalty: number;
+  levelMitigation: number;
   agePenalty: number;
   recklessPressure: number;
+  readinessFloor: number;
+  readinessLabel: string | null;
   finalRisk: number;
   riskBand: RiskBand;
 }
@@ -272,7 +335,8 @@ export interface MetaProgression {
   achievementPoints: number;
   unlockedEvolutions: EvolutionId[]; // Pokédex collection
   evolutionBonuses: EvolutionBonuses; // stacked from all unlocked evolutions
-  bossKnowledgeBank: Partial<Record<BossId, number>>; // persists across runs
+  bossKnowledgeBank: Partial<Record<BossId, BossKnowledgeProgress>>; // persists across runs
+  dungeonFamiliarityBank: Partial<Record<DungeonActivityId, number>>; // persists across runs
   apUpgrades: APUpgradeId[];
 }
 

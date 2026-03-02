@@ -1,5 +1,6 @@
 import { EVOLUTIONS } from "../data/evolutions";
 import type { BossId, EvolutionId, EvolutionUnlockCondition, Hero, MetaProgression } from "../data/types";
+import { getBossReadiness } from "./bossKnowledge";
 
 export interface EvolutionCheckResult {
   unlocked: EvolutionId | null;
@@ -70,7 +71,7 @@ function evaluateChecks(hero: Hero, cond: EvolutionUnlockCondition, defeatedRaid
   }
   if (cond.minBossKnowledge !== undefined) {
     for (const [key, value] of Object.entries(cond.minBossKnowledge)) {
-      checks[`knowledge_${key}`] = hero.secondary.bossKnowledge[key as BossId] >= value;
+      checks[`knowledge_${key}`] = getBossReadiness(hero, key as BossId) >= value;
     }
   }
   if (cond.minGoldAtDeath !== undefined) {
@@ -96,7 +97,7 @@ function buildWhyString(id: EvolutionId, hero: Hero, defeatedRaids: BossId[]): s
     case "merchant":
       return `You prioritized wealth and influence (Economic Focus: ${p.economicFocus}, Charisma: ${hero.coreStats.charismaInfluence}, Gold: ${hero.gold}g).`;
     case "scholar":
-      return `You invested deeply in preparation and study (Preparation: ${p.preparation}, Intelligence: ${hero.coreStats.intelligence}, Molten Fury knowledge: ${Math.round(hero.secondary.bossKnowledge["molten_fury"])}%).`;
+      return `You invested deeply in preparation and study (Preparation: ${p.preparation}, Intelligence: ${hero.coreStats.intelligence}, Molten Fury readiness: ${Math.round(getBossReadiness(hero, "molten_fury"))}%).`;
     case "raid_legend":
       return `You combined high combat and preparation with a raid victory${defeatedRaids.includes("molten_fury") ? " over Molten Fury" : ""}.`;
   }
@@ -143,7 +144,7 @@ function buildAlmostReason(
   if (cond.minBossKnowledge !== undefined) {
     for (const [key, value] of Object.entries(cond.minBossKnowledge)) {
       const need = value;
-      const current = hero.secondary.bossKnowledge[key as BossId];
+      const current = getBossReadiness(hero, key as BossId);
       if (current < need) {
         parts.push(`${need - Math.round(current)}% more ${key} knowledge needed`);
       }

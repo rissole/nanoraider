@@ -1,5 +1,10 @@
 # AI Agent Rules
 
+## TypeScript and Casting
+
+- Avoid unnecessary type casting using `as` or `as unknown as`.
+- If casting is absolutely necessary (e.g., interfacing with external libraries or handling complex union types where type guards are insufficient), a comment MUST be included explaining why the cast is required.
+
 ## Validation After Code Changes
 
 After making any code change, run validation before handing work back.

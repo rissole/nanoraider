@@ -1,5 +1,7 @@
-import type { GearSlot, Hero } from "../data/types";
+import { useCallback, useState } from "react";
+import type { GearRarity, GearSlot, Hero } from "../data/types";
 import { EnergyBar } from "./EnergyBar";
+import { getBossReadiness } from "../game/bossKnowledge";
 
 interface HeroStatusProps {
   hero: Hero;
@@ -15,19 +17,33 @@ const RARITY_COLOR: Record<string, string> = {
   purple: "text-purple-400",
 };
 
-const SLOT_LABELS: Record<GearSlot, string> = {
-  helmet: "Head",
-  chest: "Chest",
-  gloves: "Hands",
-  boots: "Feet",
-  weapon: "Weapon",
-  offhand: "Off-hand",
-  legs: "Legs",
-  accessory: "Trinket",
+const RARITY_LABEL: Record<GearRarity, string> = {
+  gray: "Common",
+  green: "Uncommon",
+  blue: "Rare",
+  purple: "Epic",
 };
 
+const SLOT_LABELS: Record<GearSlot, string> = {
+  head: "Head",
+  chest: "Chest",
+  legs: "Legs",
+  mainhand: "Main Hand",
+  offhand: "Off-hand",
+};
+
+function formatClassLabel(heroClass: Hero["heroClass"]): string {
+  return `${heroClass.charAt(0).toUpperCase()}${heroClass.slice(1)}`;
+}
+
 export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroStatusProps) {
+  const [selectedSlot, setSelectedSlot] = useState<GearSlot>();
+  const toggleSelectedSlot = useCallback((slot: GearSlot) => {
+    setSelectedSlot((prev) => prev !== slot ? slot : undefined);
+  }, []);
   const energyRemaining = maxEnergy - energyUsedToday;
+  const moltenReadiness = getBossReadiness(hero, "molten_fury");
+  const selectedItem = selectedSlot !== undefined ? hero.gear[selectedSlot] : null;
 
   const agePhase = (() => {
     if (hero.inGameDay <= 5) {return { label: "Young", color: "text-green-400" };}
@@ -57,7 +73,7 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
           >
             {hero.name}
           </button>
-          <span className="block mt-1 text-gray-400 text-xs capitalize">Blank Slate · Lv.{hero.level}</span>
+          <span className="block mt-1 text-gray-400 text-xs capitalize">{formatClassLabel(hero.heroClass)} · Lv.{hero.level}</span>
         </div>
         <div className="text-right">
           <div className={`font-bold text-sm ${agePhase.color}`}>{agePhase.label}</div>
@@ -89,7 +105,7 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
         <div className="flex items-center gap-1">
           <span className="text-cyan-400">◉</span>
           <span className="text-gray-300">
-            Boss Knowledge: <span className="text-cyan-400 font-bold">{Math.round(hero.secondary.bossKnowledge["molten_fury"])}%</span>
+            Boss Readiness: <span className="text-cyan-400 font-bold">{Math.round(moltenReadiness)}%</span>
           </span>
         </div>
         <div className="text-gray-400 text-xs">
@@ -98,14 +114,19 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
       </div>
 
       {/* Gear slots */}
-      <div className="grid grid-cols-4 gap-1">
+      <div className="grid grid-cols-5 gap-1">
         {(Object.entries(SLOT_LABELS) as [GearSlot, string][]).map(([slot, label]) => {
           const item = hero.gear[slot];
+          const isSelected = slot === selectedSlot;
           return (
-            <div
-              className="bg-gray-800 border border-gray-700 rounded p-1 text-center"
+            <button
+              className={`bg-gray-800 border rounded p-1 text-center transition-colors ${
+                isSelected ? "border-yellow-500" : "border-gray-700 hover:border-gray-500"
+              }`}
               key={slot}
-              title={item !== null ? item.name : "Empty"}
+              onClick={() => toggleSelectedSlot(slot)}
+              title={item !== null ? `${item.name} (${RARITY_LABEL[item.rarity]}) · ${item.itemPower} IP` : "Empty"}
+              type="button"
             >
               <div className="text-gray-500 text-xs">{label}</div>
               {item !== null ? (
@@ -115,10 +136,25 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
               ) : (
                 <div className="text-gray-700 text-xs">—</div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
+
+      {selectedSlot != null ? <div className="bg-gray-800 border border-gray-700 rounded p-2">
+        {selectedItem !== null ? (
+          <div className="mt-1 space-y-1">
+            <div className={`text-sm font-bold ${RARITY_COLOR[selectedItem.rarity] ?? "text-gray-400"}`}>
+              {selectedItem.name}
+            </div>
+            <div className="text-gray-300 text-xs">
+              {RARITY_LABEL[selectedItem.rarity]} · {selectedItem.itemPower} Item Power
+            </div>
+          </div>
+        ) : (
+          <div className="mt-1 text-gray-500 text-xs">No item equipped.</div>
+        )}
+      </div> : null}
     </div>
   );
 }

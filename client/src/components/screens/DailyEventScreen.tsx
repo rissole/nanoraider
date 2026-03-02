@@ -17,10 +17,24 @@ function formatEffects(choiceEffects: NonNullable<(typeof DAILY_EVENTS)[keyof ty
       }
     }
   }
-  if (choiceEffects.bossKnowledge !== undefined) {
-    for (const [k, v] of Object.entries(choiceEffects.bossKnowledge)) {
+  if (choiceEffects.bossKnowledgeIntel !== undefined) {
+    for (const [k, v] of Object.entries(choiceEffects.bossKnowledgeIntel)) {
       if (v !== 0) {
-        parts.push(`${k} knowledge ${v > 0 ? "+" : ""}${v}%`);
+        parts.push(`${k} intel ${v > 0 ? "+" : ""}${v}%`);
+      }
+    }
+  }
+  if (choiceEffects.bossKnowledgeDrills !== undefined) {
+    for (const [k, v] of Object.entries(choiceEffects.bossKnowledgeDrills)) {
+      if (v !== 0) {
+        parts.push(`${k} drills ${v > 0 ? "+" : ""}${v}%`);
+      }
+    }
+  }
+  if (choiceEffects.bossKnowledgeExecution !== undefined) {
+    for (const [k, v] of Object.entries(choiceEffects.bossKnowledgeExecution)) {
+      if (v !== 0) {
+        parts.push(`${k} execution ${v > 0 ? "+" : ""}${v}%`);
       }
     }
   }
@@ -46,7 +60,7 @@ export function DailyEventScreen() {
     <div className="min-h-screen p-4 flex items-center justify-center">
       <div className="w-full max-w-2xl bg-gray-900 border border-gray-700 rounded-xl p-6 space-y-4">
         <div>
-          <p className="text-xs text-yellow-400 font-bold uppercase tracking-widest">Daily Event</p>
+          <p className="text-xs text-yellow-400 font-bold uppercase tracking-widest">Random Event</p>
           <h2 className="text-2xl font-bold text-white mt-1">{eventDef.title}</h2>
           <p className="text-gray-400 text-sm mt-2">{eventDef.description}</p>
         </div>
