@@ -227,6 +227,30 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
       lootTable: [],
     },
   },
+  salvage_gear: {
+    id: "salvage_gear",
+    name: "Salvage Gear",
+    description: "Break down old equipment into reusable crafting scraps.",
+    energyCost: 4,
+    goldCost: 5,
+    durationHours: 1,
+    progressionTier: "none",
+    category: "economic",
+    effects: {
+      coreStats: { intelligence: 1 },
+      personality: { preparation: 4, economicFocus: 3 },
+      reputation: { adventurers_guild: 1 },
+    },
+    unlockConditions: { minLevel: 2 },
+    deathRisk: 0,
+    outcomes: {
+      xpMin: 20,
+      xpMax: 50,
+      goldMin: 0,
+      goldMax: 0,
+      lootTable: [],
+    },
+  },
 
   study_boss: {
     id: "study_boss",

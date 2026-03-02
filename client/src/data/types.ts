@@ -60,6 +60,7 @@ export type ActivityId =
   | "dungeon_whispering_crypts"
   | "dungeon_scholomance"
   | "dungeon_blackrock"
+  | "salvage_gear"
   | "farm_gold"
   | "study_boss"
   | "analyze_logs"
@@ -199,6 +200,55 @@ export interface GearItem {
   itemPower: number;
 }
 
+export type MaterialId = "iron_shards" | "arcane_essence" | "ember_core" | "vault_relic";
+export type VendorId = "quartermaster" | "artisan" | "broker" | "raid_provisioner";
+export type VendorTier = 1 | 2 | 3;
+
+export interface VendorOffer {
+  id: string;
+  vendorId: VendorId;
+  name: string;
+  description: string;
+  tier: VendorTier;
+  costs: {
+    gold?: number;
+    materials?: Partial<Record<MaterialId, number>>;
+  };
+  rewards: {
+    materials?: Partial<Record<MaterialId, number>>;
+    recipeUnlocks?: RecipeId[];
+    fixedItemId?: string;
+  };
+  rotating?: boolean;
+}
+
+export type RecipeId =
+  | "reforge_green_head"
+  | "reforge_green_chest"
+  | "reforge_green_legs"
+  | "reforge_green_mainhand"
+  | "reforge_green_offhand"
+  | "craft_blue_head"
+  | "craft_blue_chest"
+  | "craft_blue_legs"
+  | "craft_blue_mainhand"
+  | "craft_blue_offhand"
+  | "upgrade_purple_head"
+  | "upgrade_purple_chest"
+  | "upgrade_purple_legs"
+  | "upgrade_purple_mainhand"
+  | "upgrade_purple_offhand";
+
+export interface RecipeDefinition {
+  id: RecipeId;
+  slot: GearSlot;
+  rarity: GearRarity;
+  energyCost: number;
+  goldCost: number;
+  materialsCost: Partial<Record<MaterialId, number>>;
+  requiresKnownRecipe?: boolean;
+}
+
 // ─── Evolution ───────────────────────────────────────────────────────────────
 
 export type EvolutionId = "berserker" | "merchant" | "scholar" | "raid_legend";
@@ -231,6 +281,11 @@ export interface EvolutionBonuses {
   combatBonus?: number; // % damage increase (0.1 = 10%)
   bossKnowledgeBonus?: number; // % boss knowledge on new hero (0.05 = 5%)
   knowledgeTransferMultiplier?: number; // multiplier on study gains
+  vendorDiscountPct?: number; // additive vendor discount
+  recipeDiscountPct?: number; // additive recipe crafting discount
+  purpleCraftBonusPct?: number; // additive output item power bonus for purple crafts
+  brokerTierStart?: VendorTier; // starting broker tier access
+  raidProvisionerUnlocked?: boolean; // access to raid provisioner vendor
 }
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
@@ -255,6 +310,8 @@ export interface Hero {
   coreStats: CoreStats;
   personality: PersonalityAxes;
   secondary: SecondaryDimensions;
+  materials: Partial<Record<MaterialId, number>>;
+  knownRecipes: RecipeId[];
   completedActivitiesToday: ActivityId[];
   raidLockouts: Partial<Record<BossId, number>>; // bossId -> day attempted
 }
@@ -283,6 +340,7 @@ export interface DayResult {
   deathCause?: "combat" | "old_age";
   personalitySnapshot: PersonalityAxes;
   coreStatsSnapshot: CoreStats;
+  transactions: EconomyTransaction[];
 }
 
 export interface ResolvedActivity {
@@ -297,6 +355,7 @@ export interface ResolvedActivity {
   riskBand: RiskBand;
   riskBreakdown: ActivityRiskBreakdown | null;
   riskHints: string[];
+  materialsGained?: Partial<Record<MaterialId, number>>;
 }
 
 export type RiskBand = "safe" | "manageable" | "dangerous" | "lethal";
@@ -327,6 +386,14 @@ export interface ResolvedDailyEvent {
   appliedEffects: DimensionDeltas;
 }
 
+export interface EconomyTransaction {
+  kind: "vendor_purchase" | "craft";
+  label: string;
+  energySpent?: number;
+  goldSpent?: number;
+  materialsDelta?: Partial<Record<MaterialId, number>>;
+}
+
 // ─── Meta-Progression (persists across runs) ──────────────────────────────────
 
 export interface MetaProgression {
@@ -337,10 +404,14 @@ export interface MetaProgression {
   evolutionBonuses: EvolutionBonuses; // stacked from all unlocked evolutions
   bossKnowledgeBank: Partial<Record<BossId, BossKnowledgeProgress>>; // persists across runs
   dungeonFamiliarityBank: Partial<Record<DungeonActivityId, number>>; // persists across runs
+  vendorTiersUnlocked: Partial<Record<VendorId, VendorTier>>;
+  knownRecipes: RecipeId[];
+  craftingEfficiency: number;
+  salvageYieldBonus: number;
   apUpgrades: APUpgradeId[];
 }
 
-export type APUpgradeId = "energy_10" | "start_gold_100";
+export type APUpgradeId = "energy_10" | "start_gold_100" | "vendor_reroll_1";
 
 export interface APUpgrade {
   id: APUpgradeId;

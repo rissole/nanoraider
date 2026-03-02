@@ -13,6 +13,7 @@ import type {
   GearRarity,
   GearItem,
   Hero,
+  MaterialId,
   MetaProgression,
   RiskBand,
   ResolvedActivity,
@@ -22,6 +23,24 @@ import { generateGear, randomGearSlot } from "./gearGenerator";
 
 function roll(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function addMaterials(
+  source: Partial<Record<MaterialId, number>>,
+  delta: Partial<Record<MaterialId, number>>,
+): Partial<Record<MaterialId, number>> {
+  const next: Partial<Record<MaterialId, number>> = { ...source };
+  for (const [id, amount] of Object.entries(delta)) {
+    const materialId = id as MaterialId;
+    const current = next[materialId] ?? 0;
+    const nextValue = current + amount;
+    if (nextValue <= 0) {
+      delete next[materialId];
+      continue;
+    }
+    next[materialId] = nextValue;
+  }
+  return next;
 }
 
 function applyDimensionDeltas(hero: Hero, deltas: DimensionDeltas): Hero {
@@ -465,6 +484,27 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
     };
   }
 
+  let materialsGained: Partial<Record<MaterialId, number>> = {};
+  if (!died) {
+    if (activityId === "dungeon_irondeep" || activityId === "dungeon_whispering_crypts") {
+      materialsGained = addMaterials(materialsGained, { iron_shards: 1 });
+    }
+    if (activityId === "dungeon_scholomance" || activityId === "dungeon_blackrock") {
+      materialsGained = addMaterials(materialsGained, { iron_shards: 1, arcane_essence: 1 });
+    }
+    if (activityId === "raid_molten_fury") {
+      materialsGained = addMaterials(materialsGained, { ember_core: 1 });
+    }
+    if (activityId === "raid_eternal_throne") {
+      materialsGained = addMaterials(materialsGained, { ember_core: 2, vault_relic: 1 });
+    }
+    if (activityId === "salvage_gear") {
+      const salvageBonus = Math.round(meta.salvageYieldBonus * 10) / 10;
+      const base = 2;
+      materialsGained = addMaterials(materialsGained, { iron_shards: Math.max(1, Math.round(base + salvageBonus)) });
+    }
+  }
+
   // Loot drops
   const lootDropped: GearItem[] = [];
   if (!died) {
@@ -501,12 +541,14 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
     riskBand: riskBreakdown.riskBand,
     riskBreakdown,
     riskHints,
+    ...(Object.keys(materialsGained).length > 0 ? { materialsGained } : {}),
   };
 
   // Update hero dimensions and gold
   let updatedHero: Hero = {
     ...applyDimensionDeltas(hero, effectiveEffects),
     gold: hero.gold + goldGained - goldSpent,
+    materials: addMaterials(hero.materials, materialsGained),
   };
 
   if (!died && isDungeonTier(def.progressionTier) && isTrackedDungeonActivity(activityId)) {

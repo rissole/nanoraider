@@ -1,5 +1,6 @@
 import { useGameStore } from "../../store/gameStore";
 import { ACTIVITIES } from "../../data/activities";
+import { MATERIAL_LABELS } from "../../data/crafting";
 
 const RARITY_COLOR: Record<string, string> = {
   gray: "text-gray-400",
@@ -81,6 +82,11 @@ export function DayResults() {
                 {r.lootDropped.length > 0 && (
                   <span className="text-purple-400">+{r.lootDropped.length} item{r.lootDropped.length !== 1 ? "s" : ""}</span>
                 )}
+                {r.materialsGained !== undefined && Object.keys(r.materialsGained).length > 0 && (
+                  <span className="text-cyan-300">
+                    +{Object.entries(r.materialsGained).map(([id, amount]) => `${amount} ${MATERIAL_LABELS[id as keyof typeof MATERIAL_LABELS]}`).join(", ")}
+                  </span>
+                )}
               </div>
             </div>
           );
@@ -91,6 +97,15 @@ export function DayResults() {
             <div className="flex gap-3 text-xs">
               {event.xpGained > 0 && <span className="text-blue-400">+{event.xpGained} XP</span>}
               {event.goldGained > 0 && <span className="text-yellow-400">+{event.goldGained}g</span>}
+            </div>
+          </div>
+        ))}
+        {results.transactions.map((tx, i) => (
+          <div className="flex items-center justify-between text-sm border-t border-gray-800 pt-2" key={`${tx.label}-${i}`}>
+            <span className="text-cyan-300">{tx.kind === "craft" ? "Forge" : "Vendor"}: {tx.label}</span>
+            <div className="flex gap-3 text-xs">
+              {(tx.energySpent ?? 0) > 0 && <span className="text-yellow-400">⚡{tx.energySpent}</span>}
+              {(tx.goldSpent ?? 0) > 0 && <span className="text-red-300">-{tx.goldSpent}g</span>}
             </div>
           </div>
         ))}

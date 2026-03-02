@@ -1,9 +1,11 @@
 import { ACTIVITIES, ACTIVITY_LIST } from "../../data/activities";
-import type { ActivityDefinition, RiskBand } from "../../data/types";
+import { MATERIAL_LABELS, RECIPE_DEFINITIONS } from "../../data/crafting";
+import { RARITY_LABELS } from "../../data/rarity";
+import type { ActivityDefinition, ActivityId, GearSlot, MaterialId, RecipeId, RiskBand, VendorId } from "../../data/types";
 import { useGameStore } from "../../store/gameStore";
 import { computeActivityRisk, isActivityUnlocked } from "../../game/activityResolver";
 import { HeroStatus } from "../HeroStatus";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const CATEGORY_COLORS: Record<ActivityDefinition["category"], string> = {
   combat: "border-red-800 bg-red-950",
@@ -34,6 +36,105 @@ const RISK_STYLES: Record<RiskBand, string> = {
   dangerous: "text-orange-400",
   lethal: "text-red-400",
 };
+
+const VENDOR_LABELS: Record<VendorId, string> = {
+  quartermaster: "Quartermaster",
+  artisan: "Artisan",
+  broker: "Broker",
+  raid_provisioner: "Raid Provisioner",
+};
+
+type ForgeTier = "green" | "blue" | "purple";
+
+const FORGE_TIERS: ForgeTier[] = ["green", "blue", "purple"];
+
+const FORGE_TIER_LABELS: Record<ForgeTier, string> = {
+  green: `${RARITY_LABELS.green} Forge`,
+  blue: `${RARITY_LABELS.blue} Forge`,
+  purple: `${RARITY_LABELS.purple} Forge`,
+};
+
+const FORGE_SLOT_ORDER: GearSlot[] = ["head", "chest", "legs", "mainhand", "offhand"];
+
+const FORGE_SLOT_LABELS: Record<GearSlot, string> = {
+  head: "Head",
+  chest: "Chest",
+  legs: "Legs",
+  mainhand: "Main Hand",
+  offhand: "Off-hand",
+};
+
+const FORGE_RECIPES_BY_TIER: Record<ForgeTier, Record<GearSlot, RecipeId>> = {
+  green: {
+    head: "reforge_green_head",
+    chest: "reforge_green_chest",
+    legs: "reforge_green_legs",
+    mainhand: "reforge_green_mainhand",
+    offhand: "reforge_green_offhand",
+  },
+  blue: {
+    head: "craft_blue_head",
+    chest: "craft_blue_chest",
+    legs: "craft_blue_legs",
+    mainhand: "craft_blue_mainhand",
+    offhand: "craft_blue_offhand",
+  },
+  purple: {
+    head: "upgrade_purple_head",
+    chest: "upgrade_purple_chest",
+    legs: "upgrade_purple_legs",
+    mainhand: "upgrade_purple_mainhand",
+    offhand: "upgrade_purple_offhand",
+  },
+};
+
+function prioritizeActivities(hero: ReturnType<typeof useGameStore.getState>["hero"], allUnlocked: ActivityDefinition[]): {
+  featured: ActivityDefinition[];
+  advanced: ActivityDefinition[];
+} {
+  if (hero === null) {
+    return { featured: [], advanced: [] };
+  }
+  const budget = hero.inGameDay <= 3 ? 5 : hero.inGameDay <= 8 ? 7 : Number.MAX_SAFE_INTEGER;
+  if (allUnlocked.length <= budget) {
+    return { featured: allUnlocked, advanced: [] };
+  }
+
+  const mandatoryIds: ActivityId[] = ["quest"];
+  const mandatory = allUnlocked.filter((def) => mandatoryIds.includes(def.id));
+  const dungeon = allUnlocked.find((def) => def.progressionTier === "early_dungeon" || def.progressionTier === "mid_dungeon");
+  const economy = allUnlocked.find((def) => def.category === "economic" && def.id !== "quest");
+  const knowledge = allUnlocked.find((def) => def.category === "knowledge");
+  const seeds = [...mandatory, ...(dungeon ? [dungeon] : []), ...(economy ? [economy] : []), ...(knowledge ? [knowledge] : [])];
+  const used = new Set(seeds.map((def) => def.id));
+
+  const trajectory = hero.personality.combatStyle >= hero.personality.economicFocus
+    ? (hero.personality.preparation > hero.personality.combatStyle ? "knowledge" : "combat")
+    : "economic";
+
+  const scored = allUnlocked
+    .filter((def) => !used.has(def.id))
+    .map((def) => {
+      let score = 0;
+      if (def.category === trajectory) {
+        score += 4;
+      }
+      if (trajectory === "combat" && def.progressionTier !== "none") {
+        score += 2;
+      }
+      if (def.id === "salvage_gear") {
+        score += 1;
+      }
+      return { def, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.def);
+
+  const featured = [...seeds, ...scored].slice(0, budget);
+  const featuredSet = new Set(featured.map((def) => def.id));
+  const advanced = allUnlocked.filter((def) => !featuredSet.has(def.id));
+  return { featured, advanced };
+}
 
 function formatDetailTooltip(def: ActivityDefinition, includeCoreStats: boolean): string | null {
   const detailLines: string[] = [];
@@ -158,7 +259,19 @@ export function PlanningScreen() {
     getActivityUnlockGaps,
     goTo,
     renameHero,
+    directEnergySpentToday,
+    getVendorOffers,
+    buyVendorOffer,
+    craftRecipe,
+    rerollVendor,
+    getDailyRerollsRemaining,
   } = useGameStore();
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [vendorTab, setVendorTab] = useState<VendorId>("quartermaster");
+  const [showVendors, setShowVendors] = useState(false);
+  const [showForge, setShowForge] = useState(false);
+  const [forgeTier, setForgeTier] = useState<ForgeTier>("green");
+  const [selectedForgeSlot, setSelectedForgeSlot] = useState<GearSlot>("head");
   const availableActivities = useMemo(() => hero !== null ? ACTIVITY_LIST.filter((def) => isActivityUnlocked(hero, def)) : null, [hero]);
 
   if (availableActivities === null || hero === null) {
@@ -167,7 +280,33 @@ export function PlanningScreen() {
 
   const plannedGoldSpend = plannedActivities.reduce((sum, id) => sum + (ACTIVITIES[id].goldCost ?? 0), 0);
   const goldRemaining = hero.gold - plannedGoldSpend;
-  const energyRemaining = meta.maxEnergy - energyUsedToday;
+  const totalEnergyUsed = energyUsedToday + directEnergySpentToday;
+  const energyRemaining = meta.maxEnergy - totalEnergyUsed;
+  const curated = prioritizeActivities(hero, availableActivities);
+  const selectedRecipe = FORGE_RECIPES_BY_TIER[forgeTier][selectedForgeSlot];
+  const recipe = RECIPE_DEFINITIONS[selectedRecipe];
+  const vendorOffers = getVendorOffers(vendorTab);
+  const rerollsRemaining = getDailyRerollsRemaining();
+  const discountedRecipeGold = Math.max(0, Math.round(recipe.goldCost * (1 - (meta.evolutionBonuses.recipeDiscountPct ?? 0) - meta.craftingEfficiency)));
+  const hasKnownRecipe = recipe.requiresKnownRecipe !== true || hero.knownRecipes.includes(selectedRecipe);
+  const materialChecks = (Object.keys(recipe.materialsCost) as MaterialId[]).map((id) => {
+    const required = recipe.materialsCost[id] ?? 0;
+    const owned = hero.materials[id] ?? 0;
+    return { id, required, owned, hasEnough: owned >= required };
+  });
+  const canCraftRecipe = hasKnownRecipe
+    && energyRemaining >= recipe.energyCost
+    && goldRemaining >= discountedRecipeGold
+    && materialChecks.every(({ hasEnough }) => hasEnough);
+  const hasRerollUpgrade = meta.apUpgrades.includes("vendor_reroll_1");
+  const canUseReroll = hasRerollUpgrade && rerollsRemaining > 0 && goldRemaining >= 10;
+  const rerollLabel = !hasRerollUpgrade
+    ? "Reroll (requires AP upgrade)"
+    : rerollsRemaining <= 0
+      ? "Reroll used today"
+      : goldRemaining < 10
+        ? "Need 10g to reroll"
+        : "Reroll Current Vendor (10g)";
 
   return (
     <div className="min-h-screen p-4 space-y-4 max-w-2xl mx-auto">
@@ -183,14 +322,198 @@ export function PlanningScreen() {
       </div>
 
       {/* Hero status */}
-      <HeroStatus energyUsedToday={energyUsedToday} hero={hero} maxEnergy={meta.maxEnergy} onRename={renameHero} />
+      <HeroStatus energyUsedToday={totalEnergyUsed} hero={hero} maxEnergy={meta.maxEnergy} onRename={renameHero} />
+
+      <div className="flex gap-2">
+        <button
+          className="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 font-bold py-2 rounded text-sm"
+          onClick={() => { setShowVendors((prev) => !prev); }}
+        >
+          Visit Vendors
+        </button>
+        <button
+          className="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 font-bold py-2 rounded text-sm"
+          onClick={() => { setShowForge((prev) => !prev); }}
+        >
+          Forge / Upgrade
+        </button>
+      </div>
+
+      {showVendors ? (
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest">Vendors</h3>
+            <span className="text-xs text-gray-400">Rerolls: {rerollsRemaining}</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {(Object.keys(VENDOR_LABELS) as VendorId[]).map((id) => (
+              <button
+                className={`text-xs px-2 py-1 rounded border ${vendorTab === id ? "bg-gray-700 border-gray-500 text-white" : "bg-gray-800 border-gray-700 text-gray-400"}`}
+                key={id}
+                onClick={() => { setVendorTab(id); }}
+                type="button"
+              >
+                {VENDOR_LABELS[id]}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 gap-2">
+            {vendorOffers.length === 0 && <div className="text-xs text-gray-500">No offers unlocked for this vendor yet.</div>}
+            {vendorOffers.map((offer) => {
+              const goldCost = Math.max(0, Math.round((offer.costs.gold ?? 0) * (1 - (meta.evolutionBonuses.vendorDiscountPct ?? 0))));
+              const materialCostParts = Object.entries(offer.costs.materials ?? {}).map(([id, amount]) => `${amount} ${MATERIAL_LABELS[id as keyof typeof MATERIAL_LABELS]}`);
+              const hasMaterials = Object.entries(offer.costs.materials ?? {}).every(([id, amount]) => (hero.materials[id as keyof typeof hero.materials] ?? 0) >= amount);
+              const canBuy = goldRemaining >= goldCost && hasMaterials && energyRemaining >= 1;
+              return (
+                <div className="bg-gray-800 border border-gray-700 rounded p-2" key={offer.id}>
+                  <div className="text-sm text-white font-bold">{offer.name}</div>
+                  <div className="text-xs text-gray-400">{offer.description}</div>
+                  <div className="text-xs text-gray-300 mt-1">
+                    Cost: {goldCost}g{materialCostParts.length > 0 ? ` + ${materialCostParts.join(", ")}` : ""}
+                  </div>
+                  <button
+                    className="mt-2 bg-yellow-500 hover:bg-yellow-400 disabled:bg-gray-700 disabled:text-gray-500 text-black text-xs font-bold px-2 py-1 rounded"
+                    disabled={!canBuy}
+                    onClick={() => { buyVendorOffer(offer); }}
+                    type="button"
+                  >
+                    {canBuy ? "Buy" : "Need more gold"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <button
+            className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-xs px-2 py-1 rounded disabled:text-gray-600"
+            disabled={!canUseReroll}
+            onClick={() => { rerollVendor(vendorTab); }}
+            type="button"
+          >
+            {rerollLabel}
+          </button>
+        </div>
+      ) : null}
+
+      {showForge ? (
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-3">
+          <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest">Forge / Upgrade</h3>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {FORGE_TIERS.map((tier) => (
+              <button
+                className={`text-xs px-2 py-1 rounded border ${forgeTier === tier ? "bg-gray-700 border-gray-500 text-white" : "bg-gray-800 border-gray-700 text-gray-400"}`}
+                key={tier}
+                onClick={() => { setForgeTier(tier); }}
+                type="button"
+              >
+                {FORGE_TIER_LABELS[tier]}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {FORGE_SLOT_ORDER.map((slot) => {
+              const slotRecipeId = FORGE_RECIPES_BY_TIER[forgeTier][slot];
+              const slotRecipe = RECIPE_DEFINITIONS[slotRecipeId];
+              const slotGold = Math.max(0, Math.round(slotRecipe.goldCost * (1 - (meta.evolutionBonuses.recipeDiscountPct ?? 0) - meta.craftingEfficiency)));
+              const slotKnown = slotRecipe.requiresKnownRecipe !== true || hero.knownRecipes.includes(slotRecipeId);
+              const slotMaterialChecks = (Object.keys(slotRecipe.materialsCost) as MaterialId[]).map((id) => ({
+                id,
+                required: slotRecipe.materialsCost[id] ?? 0,
+                owned: hero.materials[id] ?? 0,
+              }));
+              const slotCanCraft = slotKnown
+                && energyRemaining >= slotRecipe.energyCost
+                && goldRemaining >= slotGold
+                && slotMaterialChecks.every(({ required, owned }) => owned >= required);
+              return (
+                <button
+                  className={`rounded border p-2 text-left ${selectedForgeSlot === slot ? "border-yellow-500 bg-gray-800" : "border-gray-700 bg-gray-900 hover:bg-gray-800"}`}
+                  key={slot}
+                  onClick={() => { setSelectedForgeSlot(slot); }}
+                  type="button"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-gray-100">{FORGE_SLOT_LABELS[slot]}</span>
+                    {slotKnown ? (
+                      <span className={`text-[10px] font-bold ${slotCanCraft ? "text-green-400" : "text-gray-400"}`}>{slotCanCraft ? "Ready" : "Blocked"}</span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-orange-400">Locked</span>
+                    )}
+                  </div>
+                  {!slotKnown ? (
+                    <div className="text-[11px] text-orange-300 mt-1">Recipe unknown · Artisan vendor</div>
+                  ) : (
+                    <>
+                      <div className="text-[11px] text-gray-300 mt-1">⚡{slotRecipe.energyCost} · {slotGold}g</div>
+                      <div className="text-[11px] text-gray-500 truncate">
+                        {slotMaterialChecks.map(({ id, required }) => `${required} ${MATERIAL_LABELS[id]}`).join(", ")}
+                      </div>
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="bg-gray-800 border border-gray-700 rounded p-3 space-y-2">
+            <div className="text-sm font-bold text-gray-100">
+              {FORGE_SLOT_LABELS[selectedForgeSlot]} · {FORGE_TIER_LABELS[forgeTier]}
+            </div>
+            <div className="text-xs text-gray-400">Recipe: {selectedRecipe}</div>
+
+            {!hasKnownRecipe ? (
+              <div className="space-y-2">
+                <div className="text-xs text-orange-300">
+                  Recipe not learned. Visit the Artisan vendor to purchase the blueprint first.
+                </div>
+                <button
+                  className="bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-200 text-xs font-bold px-2 py-1 rounded"
+                  onClick={() => {
+                    setShowVendors(true);
+                    setVendorTab("artisan");
+                  }}
+                  type="button"
+                >
+                  Open Artisan Vendor
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="text-xs text-gray-300">
+                  Energy {recipe.energyCost} · Gold {discountedRecipeGold} · Materials {materialChecks.map(({ id, required }) => `${required} ${MATERIAL_LABELS[id]}`).join(", ")}
+                </div>
+                <div className="grid grid-cols-1 gap-1 text-xs">
+                  <div className={energyRemaining >= recipe.energyCost ? "text-green-400" : "text-red-300"}>
+                    Energy: {energyRemaining}/{recipe.energyCost}
+                  </div>
+                  <div className={goldRemaining >= discountedRecipeGold ? "text-green-400" : "text-red-300"}>
+                    Gold: {goldRemaining}/{discountedRecipeGold}
+                  </div>
+                  {materialChecks.map(({ id, required, owned, hasEnough }) => (
+                    <div className={hasEnough ? "text-green-400" : "text-red-300"} key={id}>
+                      {MATERIAL_LABELS[id]}: {owned}/{required}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  className="bg-yellow-500 hover:bg-yellow-400 disabled:bg-gray-700 disabled:text-gray-500 text-black text-xs font-bold px-2 py-1 rounded"
+                  disabled={!canCraftRecipe}
+                  onClick={() => { craftRecipe(selectedRecipe); }}
+                  type="button"
+                >
+                  {canCraftRecipe ? "Confirm Craft" : "Missing requirements"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {/* Available activities */}
       <div className="space-y-2">
         <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest">Available Activities</h3>
         <p className="text-gray-500 text-xs">Build your full day plan, then resolve everything at once.</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {availableActivities.map((def) => {
+          {curated.featured.map((def) => {
             const previewRisk = computeActivityRisk(hero, def.id, meta);
             return (
             <ActivityCard
@@ -219,6 +542,40 @@ export function PlanningScreen() {
             );
           })}
         </div>
+        {curated.advanced.length > 0 && (
+          <div className="mt-3">
+            <button
+              className="text-xs text-gray-400 hover:text-gray-200"
+              onClick={() => { setShowAdvanced((prev) => !prev); }}
+              type="button"
+            >
+              {showAdvanced ? "Hide" : "Show"} Advanced Activities ({curated.advanced.length})
+            </button>
+            {showAdvanced ? (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 mt-2">
+                {curated.advanced.map((def) => {
+                  const previewRisk = computeActivityRisk(hero, def.id, meta);
+                  return (
+                    <ActivityCard
+                      blockedReasons={[
+                        ...(energyRemaining < def.energyCost ? [`energy ${energyRemaining}/${def.energyCost}`] : []),
+                        ...(goldRemaining < (def.goldCost ?? 0) ? [`gold ${goldRemaining}/${def.goldCost ?? 0}`] : []),
+                        ...getActivityUnlockGaps(def.id),
+                      ]}
+                      canUse={energyRemaining >= def.energyCost && goldRemaining >= (def.goldCost ?? 0) && isActivityUnlocked(hero, def)}
+                      def={def}
+                      effectiveDeathRisk={previewRisk.finalRisk}
+                      key={def.id}
+                      onExecute={() => { planActivity(def.id); }}
+                      riskBand={previewRisk.riskBand}
+                      riskHints={[]}
+                    />
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Planned queue */}

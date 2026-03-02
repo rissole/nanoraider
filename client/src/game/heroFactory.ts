@@ -1,4 +1,5 @@
 import type { BossId, CoreStats, DungeonActivityId, Hero, MetaProgression, PersonalityAxes } from "../data/types";
+import { defaultKnownRecipes } from "../data/crafting";
 import { applyFlatStartingKnowledgeBonus, normalizeBossKnowledgeBank } from "./bossKnowledge";
 import { generateGear, randomHeroClass } from "./gearGenerator";
 
@@ -82,6 +83,8 @@ export function createHero(name: string, meta: MetaProgression): Hero {
       bossKnowledge: inheritedKnowledge,
       dungeonFamiliarity: inheritedDungeonFamiliarity,
     },
+    materials: {},
+    knownRecipes: [...new Set([...defaultKnownRecipes(), ...meta.knownRecipes])],
     completedActivitiesToday: [],
     raidLockouts: {},
   };

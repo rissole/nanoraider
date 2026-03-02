@@ -166,6 +166,11 @@ export function stackEvolutionBonuses(unlockedIds: EvolutionId[]) {
   let combatBonus = 0;
   let bossKnowledgeBonus = 0;
   let knowledgeTransferMultiplier = 1;
+  let vendorDiscountPct = 0;
+  let recipeDiscountPct = 0;
+  let purpleCraftBonusPct = 0;
+  let brokerTierStart: 1 | 2 | 3 = 1;
+  let raidProvisionerUnlocked = false;
 
   for (const id of unlockedIds) {
     const evo = EVOLUTIONS[id];
@@ -173,10 +178,28 @@ export function stackEvolutionBonuses(unlockedIds: EvolutionId[]) {
     startGold += evo.bonuses.startGold ?? 0;
     combatBonus += evo.bonuses.combatBonus ?? 0;
     bossKnowledgeBonus += evo.bonuses.bossKnowledgeBonus ?? 0;
+    vendorDiscountPct += evo.bonuses.vendorDiscountPct ?? 0;
+    recipeDiscountPct += evo.bonuses.recipeDiscountPct ?? 0;
+    purpleCraftBonusPct += evo.bonuses.purpleCraftBonusPct ?? 0;
+    const candidate = evo.bonuses.brokerTierStart ?? 1;
+    const merged = Math.max(brokerTierStart, candidate);
+    brokerTierStart = merged >= 3 ? 3 : merged >= 2 ? 2 : 1;
+    raidProvisionerUnlocked = raidProvisionerUnlocked || (evo.bonuses.raidProvisionerUnlocked ?? false);
     if ((evo.bonuses.knowledgeTransferMultiplier ?? 1) > knowledgeTransferMultiplier) {
       knowledgeTransferMultiplier = evo.bonuses.knowledgeTransferMultiplier ?? 1;
     }
   }
 
-  return { energyBonus, startGold, combatBonus, bossKnowledgeBonus, knowledgeTransferMultiplier };
+  return {
+    energyBonus,
+    startGold,
+    combatBonus,
+    bossKnowledgeBonus,
+    knowledgeTransferMultiplier,
+    vendorDiscountPct,
+    recipeDiscountPct,
+    purpleCraftBonusPct,
+    brokerTierStart,
+    raidProvisionerUnlocked,
+  };
 }

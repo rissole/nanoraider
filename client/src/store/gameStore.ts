@@ -5,14 +5,19 @@ import type {
   BossId,
   DayResult,
   DungeonActivityId,
+  EconomyTransaction,
   EvolutionId,
   GameScreen,
   Hero,
+  MaterialId,
   MetaProgression,
   PendingDailyEvent,
+  RecipeId,
   RiskBand,
   ResolvedActivity,
   ResolvedDailyEvent,
+  VendorId,
+  VendorOffer,
 } from "../data/types";
 import { DAILY_EVENTS, DAILY_EVENT_LIST } from "../data/nurture";
 import { getActivityUnlockGaps as getUnlockGapsForActivity, isActivityUnlocked, resolveActivity } from "../game/activityResolver";
@@ -20,8 +25,11 @@ import { checkEvolutionOnDeath, stackEvolutionBonuses } from "../game/evolutionC
 import { applyXp, createHero } from "../game/heroFactory";
 import { AP_UPGRADES } from "../data/evolutions";
 import { ACTIVITIES } from "../data/activities";
+import { RECIPE_DEFINITIONS, baseVendorTierUnlocks, defaultKnownRecipes, listVendorOffers } from "../data/crafting";
+import { GEAR_ITEMS } from "../data/gear";
 import { randomHeroName } from "../data/nurture";
 import { applyKnowledgeGain, normalizeBossKnowledgeBank } from "../game/bossKnowledge";
+import { generateGear } from "../game/gearGenerator";
 
 const BASE_ENERGY = 50;
 const ENERGY_PER_DEATH = 5;
@@ -50,6 +58,48 @@ function normalizeDungeonFamiliarityBank(
     dungeon_scholomance: 0,
     dungeon_blackrock: 0,
   });
+}
+
+function addMaterials(
+  source: Partial<Record<MaterialId, number>>,
+  delta: Partial<Record<MaterialId, number>>,
+): Partial<Record<MaterialId, number>> {
+  const next: Partial<Record<MaterialId, number>> = { ...source };
+  for (const [id, amount] of Object.entries(delta)) {
+    const materialId = id as MaterialId;
+    const current = next[materialId] ?? 0;
+    const value = current + amount;
+    if (value <= 0) {
+      delete next[materialId];
+      continue;
+    }
+    next[materialId] = value;
+  }
+  return next;
+}
+
+function canAffordMaterials(
+  owned: Partial<Record<MaterialId, number>>,
+  costs: Partial<Record<MaterialId, number>> | undefined,
+): boolean {
+  if (costs === undefined) {
+    return true;
+  }
+  return Object.entries(costs).every(([id, amount]) => (owned[id as MaterialId] ?? 0) >= amount);
+}
+
+function applyDiscount(base: number, pct: number): number {
+  return Math.max(0, Math.round(base * (1 - Math.min(0.45, Math.max(0, pct)))));
+}
+
+function clampVendorTier(value: number): 1 | 2 | 3 {
+  if (value >= 3) {
+    return 3;
+  }
+  if (value >= 2) {
+    return 2;
+  }
+  return 1;
 }
 
 export interface DeathSummary {
@@ -88,6 +138,9 @@ interface GameState {
   deathSummary: DeathSummary | null;
   runXpTotal: number;
   defeatedRaidsThisRun: BossId[];
+  directEnergySpentToday: number;
+  todayTransactions: EconomyTransaction[];
+  vendorRerollsUsedToday: number;
 
   // Navigation
   goTo: (screen: GameScreen) => void;
@@ -107,6 +160,11 @@ interface GameState {
 
   // Helpers
   getActivityUnlockGaps: (activityId: ActivityId) => string[];
+  getVendorOffers: (vendorId: VendorId) => VendorOffer[];
+  buyVendorOffer: (offer: VendorOffer) => boolean;
+  craftRecipe: (recipeId: RecipeId) => boolean;
+  getDailyRerollsRemaining: () => number;
+  rerollVendor: (vendorId: VendorId) => boolean;
 
   // Meta
   spendAP: (upgradeId: string) => void;
@@ -125,9 +183,18 @@ function buildInitialMeta(): MetaProgression {
       combatBonus: 0,
       bossKnowledgeBonus: 0,
       knowledgeTransferMultiplier: 1,
+      vendorDiscountPct: 0,
+      recipeDiscountPct: 0,
+      purpleCraftBonusPct: 0,
+      brokerTierStart: 1,
+      raidProvisionerUnlocked: false,
     },
     bossKnowledgeBank: {},
     dungeonFamiliarityBank: {},
+    vendorTiersUnlocked: baseVendorTierUnlocks(),
+    knownRecipes: defaultKnownRecipes(),
+    craftingEfficiency: 0,
+    salvageYieldBonus: 0,
     apUpgrades: [],
   };
 }
@@ -206,6 +273,8 @@ function rollDailyEvent(day: number): PendingDailyEvent | null {
   return { eventId: candidates[0].id };
 }
 
+const GAMESTORE_VERSION = 3;
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
@@ -221,6 +290,9 @@ export const useGameStore = create<GameState>()(
       deathSummary: null,
       runXpTotal: 0,
       defeatedRaidsThisRun: [],
+      directEnergySpentToday: 0,
+      todayTransactions: [],
+      vendorRerollsUsedToday: 0,
 
       goTo: (screen) => set({ screen }),
 
@@ -237,6 +309,9 @@ export const useGameStore = create<GameState>()(
           pendingEvent: null,
           runXpTotal: 0,
           defeatedRaidsThisRun: [],
+          directEnergySpentToday: 0,
+          todayTransactions: [],
+          vendorRerollsUsedToday: 0,
         });
       },
 
@@ -253,6 +328,9 @@ export const useGameStore = create<GameState>()(
           pendingEvent: null,
           runXpTotal: 0,
           defeatedRaidsThisRun: [],
+          directEnergySpentToday: 0,
+          todayTransactions: [],
+          vendorRerollsUsedToday: 0,
         });
       },
 
@@ -265,7 +343,7 @@ export const useGameStore = create<GameState>()(
       },
 
       planActivity: (activityId) => {
-        const { hero, meta, plannedActivities } = get();
+        const { hero, meta, plannedActivities, directEnergySpentToday } = get();
         if (hero === null) {
           return;
         }
@@ -275,7 +353,7 @@ export const useGameStore = create<GameState>()(
           return;
         }
         const plannedEnergy = plannedActivities.reduce((sum, id) => sum + ACTIVITIES[id].energyCost, 0);
-        if (plannedEnergy + def.energyCost > meta.maxEnergy) {
+        if (plannedEnergy + directEnergySpentToday + def.energyCost > meta.maxEnergy) {
           return;
         }
 
@@ -363,7 +441,7 @@ export const useGameStore = create<GameState>()(
       },
 
       endDay: () => {
-        const { hero, meta, plannedActivities, runXpTotal, defeatedRaidsThisRun } = get();
+        const { hero, meta, plannedActivities, runXpTotal, defeatedRaidsThisRun, directEnergySpentToday, todayTransactions } = get();
         if (hero === null) {
           return;
         }
@@ -403,6 +481,7 @@ export const useGameStore = create<GameState>()(
               deathCause: "combat",
               personalitySnapshot: leveledHero.personality,
               coreStatsSnapshot: leveledHero.coreStats,
+              transactions: todayTransactions,
             };
             finalizeDeath("combat", leveledHero, nextRunXp, nextDefeatedRaids, dayResult, set, get, resolved);
             return;
@@ -434,6 +513,7 @@ export const useGameStore = create<GameState>()(
           ...(deathCause !== null ? { deathCause } : {}),
           personalitySnapshot: currentHero.personality,
           coreStatsSnapshot: currentHero.coreStats,
+          transactions: todayTransactions,
         };
 
         if (deathCause !== null) {
@@ -441,7 +521,7 @@ export const useGameStore = create<GameState>()(
           return;
         }
 
-        const totalEnergySpent = plannedActivities.reduce((sum, id) => sum + ACTIVITIES[id].energyCost, 0);
+        const totalEnergySpent = plannedActivities.reduce((sum, id) => sum + ACTIVITIES[id].energyCost, 0) + directEnergySpentToday;
         const eventTriggered = shouldTriggerEvent(totalEnergySpent, meta.maxEnergy);
         const pendingEvent = eventTriggered ? rollDailyEvent(currentHero.inGameDay) : null;
 
@@ -454,10 +534,13 @@ export const useGameStore = create<GameState>()(
           lastDayResults: dayResult,
           screen: pendingEvent !== null ? "daily_event" : "day_results",
           energyUsedToday: 0,
+          directEnergySpentToday: 0,
           plannedActivities: [],
           currentDayActivities: pendingEvent !== null ? resolvedActivities : [],
           currentDayEvents: [],
           pendingEvent,
+          todayTransactions: [],
+          vendorRerollsUsedToday: 0,
           runXpTotal: nextRunXp,
           defeatedRaidsThisRun: nextDefeatedRaids,
         });
@@ -470,6 +553,166 @@ export const useGameStore = create<GameState>()(
           return [];
         }
         return getUnlockGapsForActivity(hero, def);
+      },
+
+      getVendorOffers: (vendorId) => {
+        const { hero, meta, vendorRerollsUsedToday } = get();
+        if (hero === null) {
+          return [];
+        }
+        const unlockedTier = meta.vendorTiersUnlocked[vendorId] ?? 0;
+        return listVendorOffers(vendorId, hero.inGameDay + vendorRerollsUsedToday).filter((offer) => offer.tier <= unlockedTier);
+      },
+
+      getDailyRerollsRemaining: () => {
+        const { meta, vendorRerollsUsedToday } = get();
+        const allowance = meta.apUpgrades.includes("vendor_reroll_1") ? 1 : 0;
+        return Math.max(0, allowance - vendorRerollsUsedToday);
+      },
+
+      rerollVendor: (vendorId) => {
+        const { hero, vendorRerollsUsedToday } = get();
+        if (hero === null) {
+          return false;
+        }
+        if (get().getDailyRerollsRemaining() <= 0) {
+          return false;
+        }
+        if (hero.gold < 10) {
+          return false;
+        }
+        const nextHero = { ...hero, gold: hero.gold - 10 };
+        set({
+          hero: nextHero,
+          vendorRerollsUsedToday: vendorRerollsUsedToday + 1,
+          todayTransactions: [
+            ...get().todayTransactions,
+            { kind: "vendor_purchase", label: `Rerolled ${vendorId} offers`, goldSpent: 10 },
+          ],
+        });
+        return true;
+      },
+
+      buyVendorOffer: (offer) => {
+        const { hero, meta, directEnergySpentToday, todayTransactions } = get();
+        if (hero === null) {
+          return false;
+        }
+        const discountPct = meta.evolutionBonuses.vendorDiscountPct ?? 0;
+        const goldCost = applyDiscount(offer.costs.gold ?? 0, discountPct);
+        const materialCosts = offer.costs.materials ?? {};
+        if (hero.gold < goldCost || !canAffordMaterials(hero.materials, materialCosts)) {
+          return false;
+        }
+        if (offer.rewards.recipeUnlocks !== undefined) {
+          const allKnown = offer.rewards.recipeUnlocks.every((id) => hero.knownRecipes.includes(id));
+          if (allKnown) {
+            return false;
+          }
+        }
+        if (directEnergySpentToday + 1 > meta.maxEnergy) {
+          return false;
+        }
+        let nextHero: Hero = {
+          ...hero,
+          gold: hero.gold - goldCost,
+          materials: addMaterials(hero.materials, {}),
+          knownRecipes: [...hero.knownRecipes],
+        };
+        if (Object.keys(materialCosts).length > 0) {
+          const spend = Object.entries(materialCosts).reduce<Partial<Record<MaterialId, number>>>((acc, [id, amount]) => {
+            acc[id as MaterialId] = -amount;
+            return acc;
+          }, {});
+          nextHero = { ...nextHero, materials: addMaterials(nextHero.materials, spend) };
+        }
+        if (offer.rewards.materials !== undefined) {
+          nextHero = { ...nextHero, materials: addMaterials(nextHero.materials, offer.rewards.materials) };
+        }
+        if (offer.rewards.recipeUnlocks !== undefined) {
+          nextHero = { ...nextHero, knownRecipes: [...new Set([...nextHero.knownRecipes, ...offer.rewards.recipeUnlocks])] };
+        }
+        if (offer.rewards.fixedItemId !== undefined) {
+          const fixedItem = GEAR_ITEMS[offer.rewards.fixedItemId];
+          if (fixedItem !== undefined) {
+            const current = nextHero.gear[fixedItem.slot];
+            if (current === null || fixedItem.itemPower > current.itemPower) {
+              nextHero = { ...nextHero, gear: { ...nextHero.gear, [fixedItem.slot]: fixedItem } };
+            }
+          }
+        }
+        set({
+          hero: nextHero,
+          directEnergySpentToday: directEnergySpentToday + 1,
+          todayTransactions: [
+            ...todayTransactions,
+            {
+              kind: "vendor_purchase",
+              label: `Bought ${offer.name}`,
+              energySpent: 1,
+              goldSpent: goldCost,
+              materialsDelta: {
+                ...Object.entries(materialCosts).reduce<Partial<Record<MaterialId, number>>>((acc, [id, amount]) => {
+                  acc[id as MaterialId] = -amount;
+                  return acc;
+                }, {}),
+                ...(offer.rewards.materials ?? {}),
+              },
+            },
+          ],
+        });
+        return true;
+      },
+
+      craftRecipe: (recipeId) => {
+        const { hero, meta, directEnergySpentToday, todayTransactions } = get();
+        if (hero === null) {
+          return false;
+        }
+        const recipe = RECIPE_DEFINITIONS[recipeId];
+        if (recipe.requiresKnownRecipe === true && !hero.knownRecipes.includes(recipeId)) {
+          return false;
+        }
+        const goldCost = applyDiscount(recipe.goldCost, (meta.evolutionBonuses.recipeDiscountPct ?? 0) + meta.craftingEfficiency);
+        if (hero.gold < goldCost) {
+          return false;
+        }
+        if (!canAffordMaterials(hero.materials, recipe.materialsCost)) {
+          return false;
+        }
+        if (directEnergySpentToday + recipe.energyCost > meta.maxEnergy) {
+          return false;
+        }
+        const costDelta = Object.entries(recipe.materialsCost).reduce<Partial<Record<MaterialId, number>>>((acc, [id, amount]) => {
+          acc[id as MaterialId] = -amount;
+          return acc;
+        }, {});
+        const currentInSlot = hero.gear[recipe.slot];
+        const generated = generateGear(hero.heroClass, recipe.slot, recipe.rarity, hero.level, hero.gear);
+        const upgradedItem = recipe.rarity === "purple"
+          ? { ...generated, itemPower: Math.round(generated.itemPower * (1 + (meta.evolutionBonuses.purpleCraftBonusPct ?? 0))) }
+          : generated;
+        const shouldEquip = currentInSlot === null || upgradedItem.itemPower > currentInSlot.itemPower;
+        set({
+          hero: {
+            ...hero,
+            gold: hero.gold - goldCost,
+            materials: addMaterials(hero.materials, costDelta),
+            gear: shouldEquip ? { ...hero.gear, [recipe.slot]: upgradedItem } : hero.gear,
+          },
+          directEnergySpentToday: directEnergySpentToday + recipe.energyCost,
+          todayTransactions: [
+            ...todayTransactions,
+            {
+              kind: "craft",
+              label: `Crafted ${recipe.rarity} ${recipe.slot}`,
+              energySpent: recipe.energyCost,
+              goldSpent: goldCost,
+              materialsDelta: costDelta,
+            },
+          ],
+        });
+        return true;
       },
 
       spendAP: (upgradeId) => {
@@ -506,6 +749,7 @@ export const useGameStore = create<GameState>()(
           screen: "main_menu",
           hero: null,
           energyUsedToday: 0,
+          directEnergySpentToday: 0,
           plannedActivities: [],
           currentDayActivities: [],
           currentDayEvents: [],
@@ -513,15 +757,17 @@ export const useGameStore = create<GameState>()(
           lastDayResults: null,
           deathSummary: null,
           defeatedRaidsThisRun: [],
+          todayTransactions: [],
+          vendorRerollsUsedToday: 0,
         });
       },
     }),
     {
       name: "nanoraider-save",
-      version: 2,
+      version: GAMESTORE_VERSION,
       partialize: (state) => ({ meta: state.meta }),
       migrate: (persistedState, version) => {
-        if (version < 2) {
+        if (version < GAMESTORE_VERSION) {
           if (typeof window !== "undefined") {
             window.localStorage.removeItem("nanoraider-save");
           }
@@ -536,9 +782,17 @@ export const useGameStore = create<GameState>()(
         return {
           ...state,
           meta: {
+            ...buildInitialMeta(),
             ...state.meta,
             bossKnowledgeBank: normalizedBank,
             dungeonFamiliarityBank: normalizedDungeonBank,
+            vendorTiersUnlocked: {
+              ...baseVendorTierUnlocks(),
+              ...state.meta.vendorTiersUnlocked,
+            },
+            knownRecipes: Array.from(new Set([...state.meta.knownRecipes, ...defaultKnownRecipes()])),
+            craftingEfficiency: state.meta.craftingEfficiency,
+            salvageYieldBonus: state.meta.salvageYieldBonus,
           },
         };
       },
@@ -595,9 +849,24 @@ function finalizeDeath(
       combatBonus: stackedBonuses.combatBonus,
       bossKnowledgeBonus: stackedBonuses.bossKnowledgeBonus,
       knowledgeTransferMultiplier: stackedBonuses.knowledgeTransferMultiplier,
+      vendorDiscountPct: stackedBonuses.vendorDiscountPct,
+      recipeDiscountPct: stackedBonuses.recipeDiscountPct,
+      purpleCraftBonusPct: stackedBonuses.purpleCraftBonusPct,
+      brokerTierStart: stackedBonuses.brokerTierStart,
+      raidProvisionerUnlocked: stackedBonuses.raidProvisionerUnlocked,
     },
     bossKnowledgeBank: updatedKnowledgeBank,
     dungeonFamiliarityBank: updatedDungeonBank,
+    knownRecipes: Array.from(new Set([...meta.knownRecipes, ...hero.knownRecipes])),
+    vendorTiersUnlocked: {
+      ...meta.vendorTiersUnlocked,
+      quartermaster: clampVendorTier(Math.max(1, meta.vendorTiersUnlocked.quartermaster ?? 1)),
+      artisan: clampVendorTier(Math.max(1, meta.vendorTiersUnlocked.artisan ?? 1)),
+      broker: clampVendorTier(Math.max(meta.vendorTiersUnlocked.broker ?? 1, stackedBonuses.brokerTierStart)),
+      ...(stackedBonuses.raidProvisionerUnlocked ? { raid_provisioner: 1 as const } : {}),
+    },
+    craftingEfficiency: Math.min(0.2, Math.max(meta.craftingEfficiency, stackedBonuses.recipeDiscountPct)),
+    salvageYieldBonus: Math.min(2, Math.max(meta.salvageYieldBonus, stackedBonuses.vendorDiscountPct * 10)),
   };
 
   const deathSummary: DeathSummary = {
@@ -630,10 +899,13 @@ function finalizeDeath(
     deathSummary,
     screen: "death",
     energyUsedToday: 0,
+    directEnergySpentToday: 0,
     plannedActivities: [],
     currentDayActivities: [],
     currentDayEvents: [],
     pendingEvent: null,
     defeatedRaidsThisRun: defeatedRaids,
+    todayTransactions: [],
+    vendorRerollsUsedToday: 0,
   });
 }

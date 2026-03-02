@@ -1,7 +1,9 @@
 import { useCallback, useState } from "react";
-import type { GearRarity, GearSlot, Hero } from "../data/types";
+import type { GearSlot, Hero, MaterialId } from "../data/types";
 import { EnergyBar } from "./EnergyBar";
 import { getBossReadiness } from "../game/bossKnowledge";
+import { MATERIAL_LABELS } from "../data/crafting";
+import { RARITY_LABELS } from "../data/rarity";
 
 interface HeroStatusProps {
   hero: Hero;
@@ -15,13 +17,6 @@ const RARITY_COLOR: Record<string, string> = {
   green: "text-green-400",
   blue: "text-blue-400",
   purple: "text-purple-400",
-};
-
-const RARITY_LABEL: Record<GearRarity, string> = {
-  gray: "Common",
-  green: "Uncommon",
-  blue: "Rare",
-  purple: "Epic",
 };
 
 const SLOT_LABELS: Record<GearSlot, string> = {
@@ -111,6 +106,13 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
         <div className="text-gray-400 text-xs">
           STR {hero.coreStats.strength} · AGI {hero.coreStats.agility} · INT {hero.coreStats.intelligence} · STA {hero.coreStats.stamina} · CHR {hero.coreStats.charismaInfluence}
         </div>
+        <div className="text-gray-500 text-xs">
+          {Object.keys(hero.materials).length === 0
+            ? "No crafting materials"
+            : (Object.keys(hero.materials) as MaterialId[])
+              .map((id) => `${String(MATERIAL_LABELS[id] ?? id)}: ${String(hero.materials[id] ?? 0)}`)
+              .join(" · ")}
+        </div>
       </div>
 
       {/* Gear slots */}
@@ -125,7 +127,7 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
               }`}
               key={slot}
               onClick={() => toggleSelectedSlot(slot)}
-              title={item !== null ? `${item.name} (${RARITY_LABEL[item.rarity]}) · ${item.itemPower} IP` : "Empty"}
+              title={item !== null ? `${item.name} (${RARITY_LABELS[item.rarity]}) · ${item.itemPower} IP` : "Empty"}
               type="button"
             >
               <div className="text-gray-500 text-xs">{label}</div>
@@ -148,7 +150,7 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
               {selectedItem.name}
             </div>
             <div className="text-gray-300 text-xs">
-              {RARITY_LABEL[selectedItem.rarity]} · {selectedItem.itemPower} Item Power
+              {RARITY_LABELS[selectedItem.rarity]} · {selectedItem.itemPower} Item Power
             </div>
           </div>
         ) : (
