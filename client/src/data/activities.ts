@@ -44,9 +44,8 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     gearReadiness: {
       metric: "greenPlusSlots",
       bands: [
-        { max: 1, riskFloor: 0.5, label: "Undergeared (<40% green+)." },
-        { min: 2, max: 3, riskFloor: 0.3, label: "Borderline readiness (2-3 green+ slots)." },
-        { min: 4, riskFloor: 0.15, label: "Recommended readiness (4+ green+ slots)." },
+        { max: 1, riskFloor: 0.5, label: "Undergeared (0-1 green+)." },
+        { min: 2, riskFloor: 0.15, label: "Recommended readiness (2+ green+ slots)." },
       ],
     },
     deathRisk: 0.18,
@@ -88,9 +87,8 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     gearReadiness: {
       metric: "greenPlusSlots",
       bands: [
-        { max: 1, riskFloor: 0.5, label: "Undergeared (<40% green+)." },
-        { min: 2, max: 3, riskFloor: 0.3, label: "Borderline readiness (2-3 green+ slots)." },
-        { min: 4, riskFloor: 0.15, label: "Recommended readiness (4+ green+ slots)." },
+        { max: 1, riskFloor: 0.5, label: "Undergeared (0-1 green+)." },
+        { min: 2, riskFloor: 0.15, label: "Recommended readiness (2+ green+ slots)." },
       ],
     },
     deathRisk: 0.2,

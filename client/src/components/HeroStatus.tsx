@@ -13,7 +13,7 @@ interface HeroStatusProps {
 }
 
 const RARITY_COLOR: Record<string, string> = {
-  gray: "text-gray-400",
+  gray: "text-white",
   green: "text-green-400",
   blue: "text-blue-400",
   purple: "text-purple-400",

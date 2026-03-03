@@ -268,8 +268,8 @@ export function PlanningScreen() {
   } = useGameStore();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [vendorTab, setVendorTab] = useState<VendorId>("quartermaster");
-  const [showVendors, setShowVendors] = useState(false);
-  const [showForge, setShowForge] = useState(false);
+  type VendorsForgeTab = "vendors" | "forge";
+  const [vendorsForgeTab, setVendorsForgeTab] = useState<VendorsForgeTab | null>(null);
   const [forgeTier, setForgeTier] = useState<ForgeTier>("green");
   const [selectedForgeSlot, setSelectedForgeSlot] = useState<GearSlot>("head");
   const availableActivities = useMemo(() => hero !== null ? ACTIVITY_LIST.filter((def) => isActivityUnlocked(hero, def)) : null, [hero]);
@@ -326,20 +326,20 @@ export function PlanningScreen() {
 
       <div className="flex gap-2">
         <button
-          className="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 font-bold py-2 rounded text-sm"
-          onClick={() => { setShowVendors((prev) => !prev); }}
+          className={`flex-1 font-bold py-2 rounded text-sm border ${vendorsForgeTab === "vendors" ? "bg-gray-700 border-gray-500 text-white" : "bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-200"}`}
+          onClick={() => { setVendorsForgeTab((prev) => (prev === "vendors" ? null : "vendors")); }}
         >
           Visit Vendors
         </button>
         <button
-          className="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 font-bold py-2 rounded text-sm"
-          onClick={() => { setShowForge((prev) => !prev); }}
+          className={`flex-1 font-bold py-2 rounded text-sm border ${vendorsForgeTab === "forge" ? "bg-gray-700 border-gray-500 text-white" : "bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-200"}`}
+          onClick={() => { setVendorsForgeTab((prev) => (prev === "forge" ? null : "forge")); }}
         >
           Forge / Upgrade
         </button>
       </div>
 
-      {showVendors ? (
+      {vendorsForgeTab === "vendors" ? (
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest">Vendors</h3>
@@ -394,7 +394,7 @@ export function PlanningScreen() {
         </div>
       ) : null}
 
-      {showForge ? (
+      {vendorsForgeTab === "forge" ? (
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-3">
           <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest">Forge / Upgrade</h3>
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -468,7 +468,7 @@ export function PlanningScreen() {
                 <button
                   className="bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-200 text-xs font-bold px-2 py-1 rounded"
                   onClick={() => {
-                    setShowVendors(true);
+                    setVendorsForgeTab("vendors");
                     setVendorTab("artisan");
                   }}
                   type="button"
