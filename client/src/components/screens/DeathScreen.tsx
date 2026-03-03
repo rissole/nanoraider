@@ -55,7 +55,7 @@ export function DeathScreen() {
             <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest">Run Statistics</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <Stat label="Level Reached" value={`${summary.level}`} />
-              <Stat label="In-Game Days" value={`${summary.inGameDay} / 18`} />
+              <Stat label="In-Game Days" value={`${summary.inGameDay} / 12`} />
               <Stat label="Gold at Death" value={`${summary.gold}g`} />
               <Stat label="Total XP Earned" value={`${summary.totalXpGained}`} />
               <Stat label="Raid Defeated" value={summary.defeatedRaids.length > 0 ? "Yes ✓" : "No"} />
@@ -158,10 +158,12 @@ export function DeathScreen() {
           <div className="bg-gray-900 border border-green-800 rounded-lg p-4 space-y-3">
             <h3 className="text-green-400 text-xs font-bold uppercase tracking-widest">Permanent Rewards</h3>
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300 text-sm">Max Energy</span>
-                <span className="text-yellow-400 font-bold">+{summary.energyBonusGranted} → {meta.maxEnergy} total</span>
-              </div>
+              {summary.energyBonusGranted > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300 text-sm">Max Energy</span>
+                  <span className="text-yellow-400 font-bold">+{summary.energyBonusGranted} → {meta.maxEnergy} total</span>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-gray-300 text-sm">Achievement Points</span>
                 <span className="text-blue-400 font-bold">+{summary.apGranted} → {meta.achievementPoints} total</span>

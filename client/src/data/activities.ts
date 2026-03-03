@@ -45,7 +45,7 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
       metric: "greenPlusSlots",
       bands: [
         { max: 1, riskFloor: 0.5, label: "Undergeared (0-1 green+)." },
-        { min: 2, riskFloor: 0.15, label: "Recommended readiness (2+ green+ slots)." },
+        { min: 2, riskFloor: 0, label: "Ready" },
       ],
     },
     deathRisk: 0.18,
@@ -88,7 +88,7 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
       metric: "greenPlusSlots",
       bands: [
         { max: 1, riskFloor: 0.5, label: "Undergeared (0-1 green+)." },
-        { min: 2, riskFloor: 0.15, label: "Recommended readiness (2+ green+ slots)." },
+        { min: 2, riskFloor: 0, label: "Ready" },
       ],
     },
     deathRisk: 0.2,
@@ -133,7 +133,7 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
       bands: [
         { max: 1, riskFloor: 0.5, label: "Undergeared (<40% green+)." },
         { min: 2, max: 3, riskFloor: 0.3, label: "Borderline readiness (2-3 green+ slots)." },
-        { min: 4, riskFloor: 0.15, label: "Recommended readiness (4+ green+ slots)." },
+        { min: 4, riskFloor: 0, label: "Ready" },
       ],
     },
     deathRisk: 0.15,
@@ -178,7 +178,7 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
       bands: [
         { max: 1, riskFloor: 0.5, label: "Undergeared (<40% green+)." },
         { min: 2, max: 3, riskFloor: 0.3, label: "Borderline readiness (2-3 green+ slots)." },
-        { min: 4, riskFloor: 0.15, label: "Recommended readiness (4+ green+ slots)." },
+        { min: 4, riskFloor: 0, label: "Ready" },
       ],
     },
     deathRisk: 0.25,
@@ -350,14 +350,13 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     },
     unlockConditions: {
       minLevel: 12,
-      minBossKnowledge: { molten_fury: 15 },
     },
     gearReadiness: {
       metric: "bluePlusSlots",
       bands: [
-        { max: 2, riskFloor: 0.8, label: "Entry raid without enough blue gear is near-suicidal." },
-        { min: 3, max: 4, riskFloor: 0.6, label: "Almost raid-ready. Still very risky without full blue." },
-        { min: 5, riskFloor: 0.35, label: "Raid-ready baseline (5/5 blue+)." },
+        { max: 2, riskFloor: 0.8, label: "Undergeared (0-2 blue+)." },
+        { min: 3, max: 4, riskFloor: 0.6, label: "Borderline readiness (3-4 blue+)." },
+        { min: 5, riskFloor: 0, label: "Ready" },
       ],
     },
     deathRisk: 0.4,
@@ -403,9 +402,9 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     gearReadiness: {
       metric: "purpleSlots",
       bands: [
-        { min: 5, riskFloor: 0.12, label: "Capstone-ready: full purple gear." },
-        { min: 3, max: 4, riskFloor: 0.55, label: "Under-prepared for capstone. Missing full purple." },
-        { max: 2, riskFloor: 0.95, label: "Not full purple. Near-certain death in capstone." },
+        { max: 2, riskFloor: 0.95, label: "Undergeared (0-2 purple)." },
+        { min: 3, max: 4, riskFloor: 0.55, label: "Borderline readiness (3-4 purple)." },
+        { min: 5, riskFloor: 0, label: "Ready" },
       ],
     },
     deathRisk: 0.7,

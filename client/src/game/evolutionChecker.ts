@@ -194,7 +194,13 @@ export function getTopEvolutionRecommendations(
   maxCount = 3,
 ): EvolutionRecommendation[] {
   const alreadyUnlocked = new Set(meta.unlockedEvolutions);
-  const locked = Object.values(EVOLUTIONS).filter((e) => !alreadyUnlocked.has(e.id));
+  const locked = Object.values(EVOLUTIONS).filter((e) => {
+    if (alreadyUnlocked.has(e.id)) {
+      return false;
+    }
+
+    return e.prerequisites.every((p) => alreadyUnlocked.has(p));
+  });
   if (locked.length === 0) {
     return [];
   }

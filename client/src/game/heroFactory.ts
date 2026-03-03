@@ -1,15 +1,8 @@
-import type { BossId, CoreStats, DungeonActivityId, Hero, MetaProgression, PersonalityAxes } from "../data/types";
+import type { BossId, DungeonActivityId, Hero, MetaProgression, PersonalityAxes } from "../data/types";
 import { defaultKnownRecipes } from "../data/crafting";
+import { BASE_CORE_STATS, STARTING_GEAR_SPEC } from "./characterCreation";
 import { applyFlatStartingKnowledgeBonus, normalizeBossKnowledgeBank } from "./bossKnowledge";
 import { generateGear, randomHeroClass } from "./gearGenerator";
-
-const BASE_CORE_STATS: CoreStats = {
-  strength: 5,
-  agility: 5,
-  intelligence: 5,
-  stamina: 5,
-  charismaInfluence: 5,
-};
 
 const BASE_PERSONALITY: PersonalityAxes = {
   combatStyle: 0,
@@ -56,13 +49,16 @@ export function createHero(name: string, meta: MetaProgression): Hero {
     offhand: null,
   };
 
-  const startingGear = {
-    head: generateGear(heroClass, "head", "gray", 1, emptyGear),
-    chest: generateGear(heroClass, "chest", "gray", 1, emptyGear),
-    legs: generateGear(heroClass, "legs", "gray", 1, emptyGear),
-    mainhand: generateGear(heroClass, "mainhand", "gray", 1, emptyGear),
-    offhand: generateGear(heroClass, "offhand", "gray", 1, emptyGear),
+  const startingGear: Hero["gear"] = {
+    head: null,
+    chest: null,
+    legs: null,
+    mainhand: null,
+    offhand: null,
   };
+  for (const slot of STARTING_GEAR_SPEC.slots) {
+    startingGear[slot] = generateGear(heroClass, slot, STARTING_GEAR_SPEC.rarity, STARTING_GEAR_SPEC.level, emptyGear);
+  }
 
   return {
     name,

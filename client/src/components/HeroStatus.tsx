@@ -80,10 +80,10 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename, onChang
   const effectiveStats = getEffectiveCoreStats(hero);
 
   const agePhase = (() => {
-    if (hero.inGameDay <= 5) {return { label: "Young", color: "text-green-400" };}
-    if (hero.inGameDay <= 9) {return { label: "Prime", color: "text-blue-400" };}
-    if (hero.inGameDay <= 12) {return { label: "Experienced", color: "text-yellow-400" };}
-    if (hero.inGameDay <= 15) {return { label: "Aging", color: "text-orange-400" };}
+    if (hero.inGameDay <= 3) {return { label: "Young", color: "text-green-400" };}
+    if (hero.inGameDay <= 6) {return { label: "Prime", color: "text-blue-400" };}
+    if (hero.inGameDay <= 9) {return { label: "Experienced", color: "text-yellow-400" };}
+    if (hero.inGameDay <= 12) {return { label: "Aging", color: "text-orange-400" };}
     return { label: "Elderly", color: "text-red-400" };
   })();
 
@@ -142,7 +142,7 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename, onChang
         </div>
         <div className="text-right">
           <div className={`font-bold text-sm ${agePhase.color}`}>{agePhase.label}</div>
-          <div className="text-gray-400 text-xs">Day {hero.inGameDay} / 18</div>
+          <div className="text-gray-400 text-xs">Day {hero.inGameDay} / 12</div>
         </div>
       </div>
 

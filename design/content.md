@@ -296,9 +296,9 @@ Raids are the ultimate challenge. **6h in-game time, 30 energy cost**, weekly lo
 
 - Attempt any boss = locks THAT boss for 7 in-game days
 - Can attempt other bosses during same in-game week
-- Die to Boss 1 on In-Game Day 10? Can't retry until In-Game Day 17
+- Die to Boss 1 on In-Game Day 7? Can't retry until Day 14 (if you survive)
 - Creates strategic tension: "Am I ready or should I farm more?"
-- With aging kicking in at Day 13+, late raid attempts have high stakes
+- With aging kicking in at Day 8+, late raid attempts have high stakes
 
 **Optional: Heroic Mode**
 - After defeating normal mode, unlock Heroic (same boss, +15% death risk)
@@ -595,14 +595,14 @@ The event system drives early-game character building and mid/late-game strategi
 - Activities: 50% raids/study, 30% final path push, 20% gear optimization
 - Legacy path tracking: Final push to meet path thresholds
 
-**In-Game Day 15-18+ (Overtime):**
+**In-Game Day 10-12+ (Overtime):**
 - Aging penalties kick in
 - Last chance to shift legacy path trajectory
 - Death approaching = path reveal imminent
 - Real-time: ~1-4 real days
 
 **Total Character Run:**
-- **18 in-game days** minimum to reach endgame
+- **12 in-game days** maximum lifespan to reach endgame
 - **Death reveals which legacy path you unlocked** (core moment)
 - **Real-time varies:**
   - Casual (50 energy): 2-4 weeks per run

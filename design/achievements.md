@@ -37,12 +37,6 @@ Use this as the tone/structure baseline for future path rewrites:
    - Behavior signal: Repeated raid leadership + near-max readiness + successful endgame command identity.
    - Reward shape: Endgame leadership power (raid planning/readiness and execution support).
 
-**Energy Growth:**
-- Base energy: 50 per session
-- +5 energy per character death (automatic)
-- +10-50 energy per legacy path discovered (tier-based)
-- By run 30+, you'll have 200+ energy capacity for marathon sessions
-
 ---
 
 ## Tier 1: Foundation Evolutions (Runs 1-5)
@@ -53,7 +47,7 @@ These basic evolutions define your first playstyle specializations. Unlock at le
 **Theme:** Pure combat rush - prioritize dungeons and boss kills over everything else
 
 **Requirements:**
-- Defeat at least 3 dungeon bosses before In-Game Day 8
+- Defeat at least 3 dungeon bosses before In-Game Day 5
 - Spend 75%+ of actions on combat activities (dungeons, raids, grinding)
 - Die with at least 4/8 gear slots filled with dungeon drops
 
@@ -104,7 +98,7 @@ These basic evolutions define your first playstyle specializations. Unlock at le
 **Theme:** World discovery - visit all zones and uncover the map
 
 **Requirements:**
-- Visit all 6 zones before In-Game Day 12
+- Visit all 6 zones before In-Game Day 8
 - Complete at least 1 quest in each zone
 - Travel at least 50 total hours during the run
 
@@ -164,7 +158,7 @@ Advanced evolutions that combine foundation playstyles. Require 2+ Tier 1 evolut
 
 **Requirements:**
 - Defeat exactly 4 out of 5 raid bosses
-- Reach In-Game Day 15+ (survive into Late phase)
+- Reach In-Game Day 10+ (survive into Late phase)
 - Die with average 70%+ boss knowledge across all raid bosses
 
 **Unlocks:**
@@ -226,8 +220,8 @@ Advanced evolutions that combine foundation playstyles. Require 2+ Tier 1 evolut
 - **Berserker Evolution** (combat focus)
 
 **Requirements:**
-- Defeat at least 1 raid boss before In-Game Day 10
-- Reach level 30 before In-Game Day 8
+- Defeat at least 1 raid boss before In-Game Day 7
+- Reach level 30 before In-Game Day 5
 - Take high-risk combat choices (50%+ death risk) at least 5 times
 
 **Unlocks:**
@@ -247,12 +241,12 @@ Advanced evolutions that combine foundation playstyles. Require 2+ Tier 1 evolut
 - **Craftsman Evolution** (self-sufficiency)
 
 **Requirements:**
-- Reach In-Game Day 18+ (survive entire Late phase)
+- Reach In-Game Day 12+ (survive entire Late phase)
 - Never fall below 30% HP during any combat activity
 - Use consumables at least 10 times during the run
 
 **Unlocks:**
-- **+2 in-game days max lifespan** - Late phase extends from 15-18 to 15-20
+- **+2 in-game days max lifespan** - Late phase extends from 10-12 to 10-14
 - **Survivor's Instinct** - Warning indicator when entering deadly encounters
 - +15 max energy capacity
 
@@ -296,7 +290,7 @@ Ultimate achievements requiring extensive prerequisites and near-perfect executi
 
 **Requirements:**
 - Defeat all 5 raid bosses in a single run
-- Reach In-Game Day 15+ (survive to attempt all bosses)
+- Reach In-Game Day 10+ (survive to attempt all bosses)
 - Die with average 80%+ boss knowledge across all raid bosses
 
 **Unlocks:**
@@ -320,7 +314,7 @@ Ultimate achievements requiring extensive prerequisites and near-perfect executi
 **Requirements:**
 - Defeat all 5 raid bosses
 - Accumulate 5,000+ gold
-- Reach In-Game Day 18+
+- Reach In-Game Day 12+
 - Complete at least 10 guild events
 
 **Unlocks:**
@@ -362,7 +356,7 @@ Ultimate achievements requiring extensive prerequisites and near-perfect executi
 **Requirements:**
 - Defeat all 5 raid bosses without dying once during the run
 - This must be your FIRST time achieving Ultimate Raider (virgin kill)
-- Reach In-Game Day 18+
+- Reach In-Game Day 12+
 
 **Unlocks:**
 - **Ironman Mode** - Optional permadeath challenge mode (high prestige)
@@ -427,7 +421,7 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
    - Less gold spent on potions early game
 
 3. **+2 in-game days max lifespan** (from Death Defier prerequisite)
-   - Extends endgame window from 18 to 20 days
+   - Extends endgame window from 12 to 14 days
    - More time to defeat all 5 bosses AND accumulate 5,000g
 
 4. **Start with 500g** (from Merchant King prerequisite)
@@ -528,7 +522,7 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 **Recommended Order:**
 1. **Runs 6-8:** Focus on Raid Legend
    - Requires: Berserker + Scholar (already have both)
-   - Requirements: Defeat 4/5 bosses, survive to Day 15+
+   - Requirements: Defeat 4/5 bosses, survive to Day 10+
    - Multiple attempts likely needed to learn raid mechanics
 
 2. **Runs 9-11:** Focus on Master Crafter
@@ -565,7 +559,7 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 
 2. **Runs 26-30:** Focus on Perfect Run
    - Requires: Ultimate Raider + 3 other Tier 2 evolutions
-   - Near-impossible achievement (all bosses + 5000g + Day 18+)
+   - Near-impossible achievement (all bosses + 5000g + Day 12+)
    - Unlocks Start at Level 20 (skips entire early game)
 
 3. **Runs 20+:** Discover Shapeshifter (hidden)

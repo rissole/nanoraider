@@ -11,14 +11,14 @@ Energy is the primary meta-resource that gates **how many activities you can do 
 - Each activity costs energy (in addition to in-game time)
 - **Energy refills to max at the start of each new in-game day**
 - Max energy increases through death bonuses and legacy path unlocks
-- **Higher max energy = more activities per day = more accomplishments per 18-day lifespan**
+- **Higher max energy = more activities per day = more accomplishments per 12-day lifespan**
 - **Advanced legacy paths mathematically impossible without high max energy**
 
 **Critical Design Principle:**
 - Energy is NOT about real-time gating (this is single-player, convenience is good)
 - Energy is about **what you can accomplish in one hero's lifetime**
-- 18-day lifespan × 50 energy/day = 900 total energy budget
-- 18-day lifespan × 150 energy/day = 2,700 total energy budget
+- 12-day lifespan × 50 energy/day = 600 total energy budget
+- 12-day lifespan × 150 energy/day = 1,800 total energy budget
 - **Ultimate Raider path needs ~2,700 energy to achieve** → IMPOSSIBLE with base 50 energy/day
 
 ### Energy Costs & UI Transparency
@@ -63,36 +63,36 @@ The list of available activities is **not static**. As players level up specific
 - **Energy refills to max at the start of each new in-game day**
 - Think of it like "daily quest energy" in other games, but for in-game days not real days
 - Can spend all 50 energy on Day 1 activities, then Day 2 starts with full 50 energy again
-- Real-time doesn't matter - play 1 day per session or 18 days in one sitting
+- Real-time doesn't matter - play 1 day per session or 12 days in one sitting
 
 **Base Stats (New Player):**
 - Max Energy: 50 per in-game day
-- Total energy budget over 18-day lifespan: **900 energy**
+- Total energy budget over 12-day lifespan: **600 energy**
 
 **What New Players Can Do Per Day:**
 - Example Day 1: Quest (10) + Quest (10) + Dungeon (15) + Dungeon (15) = 50 energy
 - That's ~4-5 activities per day
-- **Over 18 days:** ~72-90 activities total in hero's lifetime
+- **Over 12 days:** ~48-60 activities total in hero's lifetime
 
 **Veteran Stats (150 max energy):**
 - Max Energy: 150 per in-game day
-- Total energy budget over 18-day lifespan: **2,700 energy**
+- Total energy budget over 12-day lifespan: **1,800 energy**
 
 **What Veterans Can Do Per Day:**
 - Example Day 1: Quest (10) × 3 + Dungeon (15) × 6 + Study (12) × 2 = 144 energy
 - That's ~12-15 activities per day
-- **Over 18 days:** ~216-270 activities total in hero's lifetime
+- **Over 12 days:** ~144-180 activities total in hero's lifetime
 
 **Veteran Stats (275 max energy - fully upgraded):**
 - Max Energy: 275 per in-game day
-- Total energy budget over 18-day lifespan: **4,950 energy**
-- **Over 18 days:** ~400+ activities total - can do EVERYTHING
+- Total energy budget over 12-day lifespan: **3,300 energy**
+- **Over 12 days:** ~260+ activities total - can do EVERYTHING
 
 ### Session Flexibility (Real-Time Doesn't Matter)
 
 **The Beauty of Per-Day Energy:**
 - Real-time session length is irrelevant
-- Play 1 in-game day per session or 18 in a marathon - your choice
+- Play 1 in-game day per session or 12 in a marathon - your choice
 - No pressure to "check in" - come back whenever you want
 - Single-player game means convenience is king
 
@@ -119,7 +119,7 @@ The list of available activities is **not static**. As players level up specific
 **Energy Level Doesn't Change Session Style:**
 - 50 energy/day: Just means fewer activities per in-game day
 - 275 energy/day: Means more activities per in-game day
-- Both can play 1 day or 18 days per session
+- Both can play 1 day or 12 days per session
 
 ### Legacy Path Energy Requirements (CRITICAL HARD GATES)
 
@@ -156,47 +156,47 @@ The list of available activities is **not static**. As players level up specific
 **Raid Legend (Defeat 4/5 raid bosses):**
 - Prerequisites: Berserker + Scholar legacy paths already unlocked
 - Energy needed:
-  - Days 1-5: Leveling (10 energy/day × 5 = 50 energy)
-  - Days 6-10: Dungeon farming for gear (15 energy × 6/day × 5 days = 450 energy)
-  - Days 11-14: Study 4 raid bosses (12 energy × 5 sessions × 4 bosses = 240 energy)
-  - Days 15-18: Attempt 4 raid bosses (30 energy × 4 = 120 energy)
-  - **Total: ~860 energy over 18 days**
-  - **50 energy/day:** 18 days × 50 = 900 total → **BARELY POSSIBLE** ⚠️
-  - **100 energy/day:** 18 days × 100 = 1,800 total → **COMFORTABLE** ✅
+  - Days 1-3: Leveling (10 energy/day × 3 = 30 energy)
+  - Days 4-7: Dungeon farming for gear (15 energy × 6/day × 4 days = 360 energy)
+  - Days 8-10: Study 4 raid bosses (12 energy × 5 sessions × 4 bosses = 240 energy)
+  - Days 11-12: Attempt 4 raid bosses (30 energy × 4 = 120 energy)
+  - **Total: ~750 energy over 12 days**
+  - **50 energy/day:** 12 days × 50 = 600 total → **BARELY POSSIBLE** ⚠️
+  - **100 energy/day:** 12 days × 100 = 1,200 total → **COMFORTABLE** ✅
 
 **Master Crafter (Profession mastery):**
 - Prerequisites: Merchant King + Scholar legacy paths already unlocked
 - Energy needed:
-  - Days 1-5: Leveling (50 energy)
-  - Days 6-15: Heavy crafting + material farming (10 craft + 15 dungeon × 3 = 55/day × 10 days = 550 energy)
-  - Days 16-18: Final crafts (10 energy × 5/day × 3 days = 150 energy)
-  - **Total: ~750 energy over 18 days**
-  - **50 energy/day:** 18 days × 50 = 900 total → **BARELY POSSIBLE** ⚠️
-  - **100 energy/day:** 18 days × 100 = 1,800 total → **COMFORTABLE** ✅
+  - Days 1-3: Leveling (30 energy)
+  - Days 4-9: Heavy crafting + material farming (10 craft + 15 dungeon × 3 = 55/day × 6 days = 330 energy)
+  - Days 10-12: Final crafts (10 energy × 5/day × 3 days = 150 energy)
+  - **Total: ~510 energy over 12 days**
+  - **50 energy/day:** 12 days × 50 = 600 total → **BARELY POSSIBLE** ⚠️
+  - **100 energy/day:** 12 days × 100 = 1,200 total → **COMFORTABLE** ✅
 
 #### Tier 3 Legacy Paths (Need 150-200+ energy/day)
 
 **Ultimate Raider (Defeat ALL 5 raid bosses):**
 - Prerequisites: Must have Raid Legend + Master Crafter + Scholar + Treasure Hunter unlocked
 - Energy needed:
-  - Days 1-3: Speed leveling to 30 (10 energy × 4/day × 3 = 120 energy)
-  - Days 4-6: Craft epic weapon using Master Crafter blueprints (10 energy × 5/day × 3 = 150 energy)
-  - Days 7-10: Farm dungeons for epic materials + remaining gear (15 energy × 8/day × 4 days = 480 energy)
-  - Days 11-14: Study ALL 5 raid bosses intensively (12 energy × 8 sessions × 5 bosses = 480 energy, spread over 4 days = 120/day)
-  - Days 15-18: Attempt all 5 raid bosses (30 energy × 5 = 150 energy) + backup dungeon runs if failures (15 energy × 10 = 150 energy)
-  - **Total: ~1,530 energy over 18 days**
-  - **50 energy/day:** 18 days × 50 = 900 total → **IMPOSSIBLE** ❌
-  - **100 energy/day:** 18 days × 100 = 1,800 total → **BARELY POSSIBLE** ⚠️
-  - **150 energy/day:** 18 days × 150 = 2,700 total → **COMFORTABLE** ✅
+  - Days 1-2: Speed leveling to 30 (10 energy × 4/day × 2 = 80 energy)
+  - Days 3-5: Craft epic weapon using Master Crafter blueprints (10 energy × 5/day × 3 = 150 energy)
+  - Days 6-8: Farm dungeons for epic materials + remaining gear (15 energy × 8/day × 3 days = 360 energy)
+  - Days 9-10: Study ALL 5 raid bosses intensively (12 energy × 8 sessions × 5 bosses = 480 energy, spread over 2 days = 240/day)
+  - Days 11-12: Attempt all 5 raid bosses (30 energy × 5 = 150 energy) + backup dungeon runs if failures (15 energy × 10 = 150 energy)
+  - **Total: ~1,430 energy over 12 days**
+  - **50 energy/day:** 12 days × 50 = 600 total → **IMPOSSIBLE** ❌
+  - **100 energy/day:** 12 days × 100 = 1,200 total → **BARELY POSSIBLE** ⚠️
+  - **150 energy/day:** 12 days × 150 = 1,800 total → **COMFORTABLE** ✅
 
-**Perfect Run (All bosses + 5000g + Day 18+):**
+**Perfect Run (All bosses + 5000g + Day 12+):**
 - Prerequisites: Ultimate Raider + Merchant King + Death Defier + Speed Demon
 - Energy needed: Similar to Ultimate Raider BUT also need heavy gold farming
-  - Ultimate Raider requirements: 1,530 energy
-  - Gold farming for 5000g: (8 energy × 10 sessions = 80 energy per day × 10 days = 800 energy)
-  - **Total: ~2,330 energy over 18 days**
-  - **150 energy/day:** 18 days × 150 = 2,700 total → **BARELY POSSIBLE** ⚠️
-  - **200 energy/day:** 18 days × 200 = 3,600 total → **COMFORTABLE** ✅
+  - Ultimate Raider requirements: 1,430 energy
+  - Gold farming for 5000g: (8 energy × 10 sessions = 80 energy per day × 7 days = 560 energy)
+  - **Total: ~1,990 energy over 12 days**
+  - **150 energy/day:** 12 days × 150 = 1,800 total → **BARELY POSSIBLE** ⚠️
+  - **200 energy/day:** 12 days × 200 = 2,400 total → **COMFORTABLE** ✅
 
 **Key Insight:**
 - **Tier 1 legacy paths:** Designed for 50-70 energy/day (new players)
@@ -316,8 +316,8 @@ Each hero has hidden personality metrics that shift throughout the run:
 - Wing it with minimal prep = Improviser +5
 
 **Ambition Examples:**
-- Attempt first raid by Day 8 = Glory-Seeker +10
-- Play conservatively, survive to Day 15+ = Survivor +10
+- Attempt first raid by Day 5 = Glory-Seeker +10
+- Play conservatively, survive to Day 10+ = Survivor +10
 - Kill 3+ raid bosses in one run = Glory-Seeker +15
 
 ### Legacy Path Determination Formula
@@ -327,7 +327,7 @@ Upon death, the game calculates legacy path unlocks based on:
 ```
 Primary Personality = Highest tracked stat (must be 30+)
 Secondary Personality = Second-highest stat (must be 20+)
-Milestone Achievements = Specific accomplishments (killed raid boss, reached Day 15, etc.)
+Milestone Achievements = Specific accomplishments (killed raid boss, reached Day 10, etc.)
 Dominance Check = Primary behavior ratio is meaningfully above alternatives
 Path Tier = Based on total personality points + achievement count
 ```
@@ -388,7 +388,7 @@ Combined mastery identity (role + coordination), generally requiring prior Tier 
   - Knowledge Transfer: Smart loot weights doubled
   - Prerequisite: Explorer path unlocked
 
-- **Speed Demon** - Reckless + Glory-Seeker, killed raid boss before Day 7
+- **Speed Demon** - Reckless + Glory-Seeker, killed raid boss before Day 5
   - Bonus: +12 max energy, +10% activity speed
   - Knowledge Transfer: Skip to level 15 on new heroes
   - Prerequisite: Berserker path unlocked
@@ -402,7 +402,7 @@ Apex social/endgame role identity with high execution demands and strong prerequ
   - Knowledge Transfer: 100% boss knowledge for all raid bosses
   - Prerequisite: Raid Legend + Speed Demon paths unlocked
 
-- **Perfect Run** - Survived to Day 18+, full BiS gear, killed all bosses
+- **Perfect Run** - Survived to Day 12+, full BiS gear, killed all bosses
   - Bonus: +40 max energy, +25% rewards permanently
   - Knowledge Transfer: Start with full blue gear set
   - Prerequisite: 3+ Tier 2 paths unlocked
@@ -606,19 +606,19 @@ Raids have weekly lockouts to create strategic tension and prevent spam-running 
 **Weekly Lockout Rule:**
 - Attempt any raid boss = locks THAT boss for 7 in-game days
 - Can attempt other bosses during same in-game week
-- Die to Boss 1 on Day 10? Can't retry until Day 17
+- Die to Boss 1 on Day 7? Can't retry until Day 14 (if you survive that long)
 
 **Strategic Tension:**
 - "Am I ready or should I farm more?"
-- With aging kicking in at Day 13+, late raid attempts have high stakes
+- With aging kicking in at Day 8+, late raid attempts have high stakes
 - Forces players to prepare properly before attempts
 - Creates meaningful "do or die" moments
 
 **Example:**
-- Day 9: Attempt Molten Fury (Boss 1), succeed!
-- Day 10: Can't retry Molten Fury (locked), can attempt Boss 2
-- Day 16: Molten Fury unlocked again, but you're aging now
-- Day 17: Final chance before old age penalties get severe
+- Day 6: Attempt Molten Fury (Boss 1), succeed!
+- Day 7: Can't retry Molten Fury (locked), can attempt Boss 2
+- Day 10: Molten Fury unlocked again, but you're aging now
+- Day 11-12: Final chance before old age penalties get severe
 
 ---
 
@@ -630,12 +630,11 @@ Heroes age based on in-game days completed, creating natural character arc and e
 
 | In-Game Days | Phase | Stat Modifier | Reward Modifier | Notes |
 |--------------|-------|---------------|-----------------|-------|
-| 1-5 | Young | +0% | +0% | Learning phase, low death risk |
-| 6-9 | Prime | +5% all stats | +0% | Peak performance |
-| 10-12 | Experienced | +0% | +10% rewards | Stats normalize, better loot |
-| 13-15 | Aging | -10% physical stats | +25% rewards | Trade power for rewards |
-| 16-18 | Elderly | -25% physical stats | +50% rewards | High risk, high reward |
-| 19+ | Ancient | -40% physical stats | +100% rewards | Death risk each day |
+| 1-3 | Young | +0% | +0% | Learning phase, low death risk |
+| 4-6 | Prime | +5% all stats | +0% | Peak performance |
+| 7-9 | Experienced | +0% | +10% rewards | Stats normalize, better loot |
+| 10-12 | Aging | -10% physical stats | +25% rewards | Trade power for rewards; death risk rises |
+| 13+ | Elderly | -25% physical stats | +50% rewards | Rare; high death risk each day |
 
 **Key Point:** These are in-game days, not real-world days. A casual player might take 2 weeks to reach Day 10, while a veteran could reach it in 3 days.
 
@@ -655,12 +654,13 @@ Heroes age based on in-game days completed, creating natural character arc and e
 
 ### Death from Old Age
 
-Starting at Day 16 (Elderly):
-- 5% chance of natural death per in-game day (after activities resolve)
-- +5% each subsequent in-game day
+Starting at Day 10 (Aging):
+- 12% chance of natural death per in-game day (after activities resolve)
+- +12% each subsequent in-game day
 - Triggers "Died of Old Age" achievement (peaceful ending)
+- Characters rarely survive past Day 12
 
-**Design Intent:** Encourages aggressive play in late lifecycle. "I'm Day 15, I need to attempt this raid NOW before I'm too old."
+**Design Intent:** Encourages aggressive play in late lifecycle. "I'm Day 9, I need to attempt this raid NOW before I'm too old."
 
 ---
 
@@ -800,7 +800,7 @@ Permadeath is central, but failure teaches.
 - Failed raid encounter (high risk, partially mitigated by prep)
 
 **Old Age Death:**
-- Random chance starting Day 16+
+- Random chance starting Day 10+
 - Unavoidable eventually (creates urgency)
 
 **Exhaustion Death:**
@@ -818,7 +818,7 @@ Death % = Base Risk - (Gear Score Modifier) - (Boss Knowledge) - (Consumable Bon
 - Gear Score Modifier: -30% (solid Pre-BiS)
 - Boss Knowledge: -15% (studied 7-8 times)
 - Consumable Bonus: -10% (used potions)
-- Age Penalty: +5% (Day 12)
+- Age Penalty: +6% (Day 10)
 - **Final Death Risk: 10%**
 - RNG roll determines outcome
 
@@ -1153,7 +1153,7 @@ Gold and consumables create additional planning layer.
 ## Key System Interactions
 
 ### Energy + Time = Evolution Accessibility
-Energy gates how many activities per in-game day, time determines what fits in a 24h day. More max energy = more complex evolutions accessible within 18-day lifespan.
+Energy gates how many activities per in-game day, time determines what fits in a 24h day. More max energy = more complex evolutions accessible within 12-day lifespan.
 
 ### Personality + Choices = Evolution Path
 Every decision tracks personality stats, creating unique evolution upon death. Hidden during gameplay to prevent min-maxing.

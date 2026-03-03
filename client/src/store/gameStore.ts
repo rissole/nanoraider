@@ -34,10 +34,9 @@ import { applyKnowledgeGain, normalizeBossKnowledgeBank } from "../game/bossKnow
 import { generateGear, sumGearStats } from "../game/gearGenerator";
 
 const BASE_ENERGY = 50;
-const ENERGY_PER_DEATH = 5;
 const AP_PER_RUN = 25;
-const OLD_AGE_START_DAY = 16;
-const OLD_AGE_DEATH_CHANCE_PER_DAY = 0.05;
+const OLD_AGE_START_DAY = 10;
+const OLD_AGE_DEATH_CHANCE_PER_DAY = 0.12;
 const TRACKED_BOSSES: BossId[] = ["molten_fury", "eternal_throne"];
 const TRACKED_DUNGEONS: DungeonActivityId[] = [
   "dungeon_irondeep",
@@ -769,7 +768,7 @@ export const useGameStore = create<GameState>()(
         const newUpgrades = [...meta.apUpgrades, upgradeId as MetaProgression["apUpgrades"][number]];
         const energyBonus = newUpgrades.filter((id) => id === "energy_10").length * 10;
         const stackedBonuses = stackEvolutionBonuses(meta.unlockedEvolutions);
-        const newMaxEnergy = BASE_ENERGY + ENERGY_PER_DEATH * meta.totalRuns + stackedBonuses.energyBonus + energyBonus;
+        const newMaxEnergy = BASE_ENERGY + stackedBonuses.energyBonus + energyBonus;
 
         set({
           meta: {
@@ -853,7 +852,8 @@ function finalizeDeath(
   const apGained = AP_PER_RUN + Math.floor(hero.level / 5) * 10;
   const newUnlocked = unlocked !== null ? [...meta.unlockedEvolutions, unlocked] : meta.unlockedEvolutions;
   const stackedBonuses = stackEvolutionBonuses(newUnlocked);
-  const newMaxEnergy = BASE_ENERGY + ENERGY_PER_DEATH * (meta.totalRuns + 1) + stackedBonuses.energyBonus;
+  const apEnergyBonus = meta.apUpgrades.filter((id) => id === "energy_10").length * 10;
+  const newMaxEnergy = BASE_ENERGY + stackedBonuses.energyBonus + apEnergyBonus;
 
   const normalizedKnowledgeBank = normalizeBossKnowledgeBank(meta.bossKnowledgeBank, TRACKED_BOSSES);
   const updatedKnowledgeBank: MetaProgression["bossKnowledgeBank"] = { ...normalizedKnowledgeBank };
@@ -920,7 +920,7 @@ function finalizeDeath(
     whyUnlocked,
     almostUnlocked,
     almostReason,
-    energyBonusGranted: ENERGY_PER_DEATH,
+    energyBonusGranted: 0,
     apGranted: apGained,
     personalitySnapshot: hero.personality,
     coreStatsSnapshot: hero.coreStats,

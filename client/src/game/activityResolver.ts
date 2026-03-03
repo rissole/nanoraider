@@ -19,7 +19,7 @@ import type {
   ResolvedActivity,
 } from "../data/types";
 import { applyKnowledgeGain, getBossReadiness } from "./bossKnowledge";
-import { generateGear, getEffectiveCoreStats, randomGearSlot, sumGearStats } from "./gearGenerator";
+import { generateGear, getEffectiveCoreStats, getExpectedFreshHeroEffectiveStats, randomGearSlot, sumGearStats } from "./gearGenerator";
 
 function roll(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -215,7 +215,7 @@ function resolveReadinessFloor(hero: Hero, def: ActivityDefinition): { floor: nu
 
   const value = readinessValue(hero, rule.metric);
   const matchedBand = rule.bands.find((band) => bandMatches(value, band));
-  if (matchedBand === undefined) {
+  if (matchedBand === undefined || matchedBand.riskFloor <= 0) {
     return { floor: 0, label: null };
   }
 
@@ -308,34 +308,45 @@ function mergeRiskProfile(def: ActivityDefinition): Required<NonNullable<Activit
   };
 }
 
-function toPercentDelta(value: number): string {
-  const pct = Math.round(value * 100);
-  return `${pct >= 0 ? "+" : ""}${pct}%`;
+const WEAK = "✗";  // penalty: you're vulnerable
+const STRONG = "✓"; // mitigation: you're strong
+
+function buildRiskHintRow(label: string, kind: "penalty" | "mitigation"): string {
+  const marker = kind === "penalty" ? WEAK : STRONG;
+  return `${marker} ${label}`;
 }
 
-function buildRiskHints(def: ActivityDefinition, breakdown: ActivityRiskBreakdown): string[] {
+export function buildRiskHints(def: ActivityDefinition, breakdown: ActivityRiskBreakdown): string[] {
   const rows: Array<{ label: string; amount: number; kind: "penalty" | "mitigation" }> = [
-    { label: "Base danger", amount: breakdown.baseRisk, kind: "penalty" },
-    { label: "Gear readiness floor", amount: breakdown.readinessFloor, kind: "penalty" },
-    { label: "Level mismatch", amount: breakdown.levelPenalty, kind: "penalty" },
-    { label: "Level advantage", amount: breakdown.levelMitigation, kind: "mitigation" },
-    { label: "Core stats", amount: breakdown.coreStatMitigation, kind: "mitigation" },
-    { label: "Preparation", amount: breakdown.prepMitigation + breakdown.knowledgeMitigation, kind: "mitigation" },
-    { label: "Dungeon familiarity", amount: breakdown.dungeonFamiliarityMitigation, kind: "mitigation" },
-    { label: "Legacy combat bonus", amount: breakdown.metaMitigation, kind: "mitigation" },
-    { label: "Age pressure", amount: breakdown.agePenalty, kind: "penalty" },
-    { label: "Reckless pressure", amount: breakdown.recklessPressure, kind: "penalty" },
+    { label: breakdown.readinessLabel ?? "stats too low", amount: breakdown.readinessFloor, kind: "penalty" },
+    { label: "under-levelled", amount: breakdown.levelPenalty, kind: "penalty" },
+    { label: "over-levelled", amount: breakdown.levelMitigation, kind: "mitigation" },
+    { label: "high stats", amount: breakdown.coreStatMitigation, kind: "mitigation" },
+    { label: "well prepared", amount: breakdown.prepMitigation + breakdown.knowledgeMitigation, kind: "mitigation" },
+    { label: "familiar", amount: breakdown.dungeonFamiliarityMitigation, kind: "mitigation" },
+    { label: "legacy bonus", amount: breakdown.metaMitigation, kind: "mitigation" },
+    { label: "elderly", amount: breakdown.agePenalty, kind: "penalty" },
+    { label: "reckless", amount: breakdown.recklessPressure, kind: "penalty" },
   ];
 
   if (def.deathRisk <= 0) {
-    return ["No lethal risk for this activity"];
+    return ["No lethal risk"];
   }
 
-  return rows
-    .filter((row) => row.amount > 0.005)
+  const filteredRows = rows.filter((row) => row.amount > 0.005);
+
+  // If we have a readiness floor penalty, we should hide "high stats" mitigation
+  // because the floor is overriding the mitigation, making it confusing to show both.
+  const hasReadinessPenalty = filteredRows.some(r => r.label === (breakdown.readinessLabel ?? "stats too low") && r.kind === "penalty");
+  
+  const finalRows = hasReadinessPenalty 
+    ? filteredRows.filter(r => r.label !== "high stats")
+    : filteredRows;
+
+  return finalRows
     .sort((a, b) => b.amount - a.amount)
-    .slice(0, 3)
-    .map((row) => `${row.label} ${row.kind === "penalty" ? toPercentDelta(row.amount) : toPercentDelta(-row.amount)}`);
+    .slice(0, 5)
+    .map((row) => buildRiskHintRow(row.label, row.kind));
 }
 
 export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: MetaProgression): ActivityRiskBreakdown {
@@ -364,7 +375,9 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
   const statWeights = profile.coreStats;
   const weightedStats = (Object.entries(statWeights) as [CoreStatKey, number][])
     .reduce((sum, [key, weight]) => sum + effectiveStats[key] * weight, 0);
-  const baselineStats = 5;
+  const expectedFreshStats = getExpectedFreshHeroEffectiveStats(hero.heroClass);
+  const baselineStats = (Object.entries(statWeights) as [CoreStatKey, number][])
+    .reduce((sum, [key, weight]) => sum + expectedFreshStats[key] * weight, 0);
   const coreStatMitigation = Math.max(0, (weightedStats - baselineStats) * 0.0075);
 
   const prepMitigation = Math.max(0, hero.personality.preparation) * profile.prepFactor;
@@ -387,10 +400,10 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
     : 0;
 
   let agePenalty = 0;
-  if (hero.inGameDay >= 13 && hero.inGameDay <= 15) {
-    agePenalty = (hero.inGameDay - 12) * 0.015;
-  } else if (hero.inGameDay >= 16) {
-    agePenalty = 0.06 + (hero.inGameDay - 16) * 0.04;
+  if (hero.inGameDay >= 8 && hero.inGameDay <= 9) {
+    agePenalty = (hero.inGameDay - 7) * 0.02;
+  } else if (hero.inGameDay >= 10) {
+    agePenalty = 0.06 + (hero.inGameDay - 10) * 0.05;
   }
 
   const recklessPressure =
@@ -398,7 +411,7 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
       ? Math.max(0, hero.personality.ambition - 18) * 0.001 + Math.max(0, hero.personality.combatStyle - 22) * 0.0009
       : 0;
 
-  const unclamped = def.deathRisk
+  const unclampedWithoutAge = def.deathRisk
     - coreStatMitigation
     - prepMitigation
     - knowledgeMitigation
@@ -406,14 +419,14 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
     - dungeonFamiliarityMitigation
     - levelAdjustment.levelMitigation
     + levelAdjustment.levelPenalty
-    + agePenalty
     + recklessPressure;
-  const clampedRisk = clamp(unclamped, profile.minRisk, profile.maxRisk);
+  const clampedWithoutAge = clamp(unclampedWithoutAge, profile.minRisk, profile.maxRisk);
   const readiness = resolveReadinessFloor(hero, def);
   const adjustedReadinessFloor = isDungeonTier(def.progressionTier)
     ? Math.max(0, readiness.floor - levelAdjustment.levelMitigation)
     : readiness.floor;
-  const finalRisk = Math.max(clampedRisk, adjustedReadinessFloor);
+  const riskBeforeAge = Math.max(clampedWithoutAge, adjustedReadinessFloor);
+  const finalRisk = Math.min(profile.maxRisk, riskBeforeAge + agePenalty);
 
   return {
     baseRisk: def.deathRisk,

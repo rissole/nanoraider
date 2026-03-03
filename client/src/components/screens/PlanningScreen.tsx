@@ -4,7 +4,7 @@ import { EVOLUTIONS, EVOLUTION_TIER_LABELS } from "../../data/evolutions";
 import { RARITY_LABELS } from "../../data/rarity";
 import type { ActivityDefinition, ActivityId, GearSlot, MaterialId, RecipeId, RiskBand, VendorId } from "../../data/types";
 import { useGameStore } from "../../store/gameStore";
-import { computeActivityRisk, isActivityUnlocked } from "../../game/activityResolver";
+import { buildRiskHints, computeActivityRisk, isActivityUnlocked } from "../../game/activityResolver";
 import { getTopEvolutionRecommendations } from "../../game/evolutionChecker";
 import { HeroStatus } from "../HeroStatus";
 import { useMemo, useState } from "react";
@@ -224,7 +224,7 @@ function ActivityCard({
           <p className="text-red-300 text-[10px] mt-2">Needs: {blockedReasons.join(", ")}</p>
         )}
         {def.deathRisk > 0 && riskHints.length > 0 && (
-          <p className="text-gray-400 text-[10px] mt-2">{riskHints.join(" · ")}</p>
+          <p className="text-gray-400 text-[10px] mt-2">{riskHints.join(" • ")}</p>
         )}
       </div>
       <div className="flex items-center justify-between gap-2">
@@ -574,15 +574,7 @@ export function PlanningScreen() {
               key={def.id}
               onExecute={() => { planActivity(def.id); }}
               riskBand={previewRisk.riskBand}
-              riskHints={[
-                ...(previewRisk.readinessLabel !== null ? [previewRisk.readinessLabel] : []),
-                ...(previewRisk.levelPenalty > 0.005 ? [`Level pressure +${Math.round(previewRisk.levelPenalty * 100)}%`] : []),
-                ...(previewRisk.levelMitigation > 0.005 ? [`Overlevel advantage -${Math.round(previewRisk.levelMitigation * 100)}%`] : []),
-                ...(previewRisk.knowledgeMitigation > 0.005 ? [`Knowledge -${Math.round(previewRisk.knowledgeMitigation * 100)}%`] : []),
-                ...(previewRisk.coreStatMitigation > 0.005 ? [`Stats -${Math.round(previewRisk.coreStatMitigation * 100)}%`] : []),
-                ...(previewRisk.agePenalty > 0.005 ? [`Age +${Math.round(previewRisk.agePenalty * 100)}%`] : []),
-                ...(previewRisk.recklessPressure > 0.005 ? [`Reckless +${Math.round(previewRisk.recklessPressure * 100)}%`] : []),
-              ].slice(0, 3)}
+              riskHints={buildRiskHints(def, previewRisk)}
             />
             );
           })}
@@ -613,7 +605,7 @@ export function PlanningScreen() {
                       key={def.id}
                       onExecute={() => { planActivity(def.id); }}
                       riskBand={previewRisk.riskBand}
-                      riskHints={[]}
+                      riskHints={buildRiskHints(def, previewRisk)}
                     />
                   );
                 })}
@@ -676,7 +668,7 @@ export function PlanningScreen() {
           Planned actions: {plannedActivities.length}
         </div>
 
-        {hero.inGameDay >= 16 && (
+        {hero.inGameDay >= 10 && (
           <div className="text-orange-400 text-xs text-center">
             ⚠ Day {hero.inGameDay}: Old age approaches. Death risk rises each day.
           </div>

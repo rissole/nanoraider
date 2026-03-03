@@ -5,7 +5,6 @@ import { PlanningScreen } from "./components/screens/PlanningScreen";
 import { DayResults } from "./components/screens/DayResults";
 import { DeathScreen } from "./components/screens/DeathScreen";
 import { CollectionScreen } from "./components/screens/CollectionScreen";
-import { UpgradesScreen } from "./components/screens/UpgradesScreen";
 import { DailyEventScreen } from "./components/screens/DailyEventScreen";
 
 export default function App() {
@@ -20,7 +19,6 @@ export default function App() {
       {screen === "day_results" && <DayResults />}
       {screen === "death" && <DeathScreen />}
       {screen === "collection" && <CollectionScreen />}
-      {screen === "upgrades" && <UpgradesScreen />}
     </div>
   );
 }

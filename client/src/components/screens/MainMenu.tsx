@@ -88,12 +88,6 @@ export function MainMenu() {
           ◈ Legacy Paths ({unlockedCount}/{totalEvolutions})
         </button>
         <button
-          className="bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-lg transition-colors border border-gray-600"
-          onClick={() => { goTo("upgrades"); }}
-        >
-          ✦ Upgrades · {meta.achievementPoints} AP
-        </button>
-        <button
           className="bg-red-900 hover:bg-red-800 text-red-100 font-bold py-3 px-6 rounded-lg transition-colors border border-red-700"
           onClick={resetGame}
         >

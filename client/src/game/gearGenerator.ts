@@ -11,6 +11,7 @@ import type {
   HeroClass,
   WeaponSlot,
 } from "../data/types";
+import { BASE_CORE_STATS, STARTING_GEAR_SPEC } from "./characterCreation";
 
 const CLASS_ARMOR_WEIGHT: Record<HeroClass, ArmorWeight> = {
   warrior: "plate",
@@ -233,6 +234,19 @@ export function getEffectiveCoreStats(hero: Hero): CoreStats {
     }
   }
   return base;
+}
+
+/** Expected effective core stats for a fresh hero (uses characterCreation config). */
+export function getExpectedFreshHeroEffectiveStats(heroClass: HeroClass): CoreStats {
+  const result: CoreStats = { ...BASE_CORE_STATS };
+  const budget = statBudgetForLevel(STARTING_GEAR_SPEC.rarity, STARTING_GEAR_SPEC.level);
+  for (const slot of STARTING_GEAR_SPEC.slots) {
+    const weights = STAT_WEIGHTS[heroClass][slot];
+    for (const [key, weight] of Object.entries(weights)) {
+      result[key as CoreStatKey] += budget * weight;
+    }
+  }
+  return result;
 }
 
 export const STAT_SHORT_LABELS: Record<CoreStatKey, string> = {
