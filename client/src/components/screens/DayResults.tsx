@@ -1,6 +1,7 @@
 import { useGameStore } from "../../store/gameStore";
 import { ACTIVITIES } from "../../data/activities";
 import { MATERIAL_LABELS } from "../../data/crafting";
+import { formatGearStats } from "../../game/gearGenerator";
 
 const RARITY_COLOR: Record<string, string> = {
   gray: "text-white",
@@ -60,7 +61,7 @@ export function DayResults() {
           {results.lootObtained.map((item, i) => (
             <div className="flex items-center justify-between" key={`${item.id}-${i}`}>
               <span className={`font-bold text-sm ${RARITY_COLOR[item.rarity] ?? "text-gray-400"}`}>{item.name}</span>
-              <span className="text-gray-500 text-xs capitalize">{item.slot} · {item.itemPower} IP</span>
+              <span className="text-gray-500 text-xs capitalize">{item.slot}{formatGearStats(item.stats) ? ` · ${formatGearStats(item.stats)}` : ""}</span>
             </div>
           ))}
         </div>

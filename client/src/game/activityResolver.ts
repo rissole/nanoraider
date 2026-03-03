@@ -19,7 +19,7 @@ import type {
   ResolvedActivity,
 } from "../data/types";
 import { applyKnowledgeGain, getBossReadiness } from "./bossKnowledge";
-import { generateGear, randomGearSlot } from "./gearGenerator";
+import { generateGear, getEffectiveCoreStats, randomGearSlot, sumGearStats } from "./gearGenerator";
 
 function roll(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -153,10 +153,6 @@ const DEFAULT_RISK_PROFILE: Record<ActivityDefinition["category"], Required<NonN
     maxRisk: 0.85,
   },
 };
-
-function sumGearPower(hero: Hero): number {
-  return Object.values(hero.gear).reduce((sum, item) => sum + (item?.itemPower ?? 0), 0);
-}
 
 function rarityRank(rarity: GearRarity): number {
   switch (rarity) {
@@ -324,7 +320,6 @@ function buildRiskHints(def: ActivityDefinition, breakdown: ActivityRiskBreakdow
     { label: "Level mismatch", amount: breakdown.levelPenalty, kind: "penalty" },
     { label: "Level advantage", amount: breakdown.levelMitigation, kind: "mitigation" },
     { label: "Core stats", amount: breakdown.coreStatMitigation, kind: "mitigation" },
-    { label: "Gear", amount: breakdown.gearMitigation, kind: "mitigation" },
     { label: "Preparation", amount: breakdown.prepMitigation + breakdown.knowledgeMitigation, kind: "mitigation" },
     { label: "Dungeon familiarity", amount: breakdown.dungeonFamiliarityMitigation, kind: "mitigation" },
     { label: "Legacy combat bonus", amount: breakdown.metaMitigation, kind: "mitigation" },
@@ -349,7 +344,6 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
     return {
       baseRisk: 0,
       coreStatMitigation: 0,
-      gearMitigation: 0,
       prepMitigation: 0,
       knowledgeMitigation: 0,
       metaMitigation: 0,
@@ -366,14 +360,12 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
   }
 
   const profile = mergeRiskProfile(def);
+  const effectiveStats = getEffectiveCoreStats(hero);
   const statWeights = profile.coreStats;
   const weightedStats = (Object.entries(statWeights) as [CoreStatKey, number][])
-    .reduce((sum, [key, weight]) => sum + hero.coreStats[key] * weight, 0);
+    .reduce((sum, [key, weight]) => sum + effectiveStats[key] * weight, 0);
   const baselineStats = 5;
   const coreStatMitigation = Math.max(0, (weightedStats - baselineStats) * 0.0075);
-
-  const gearPower = sumGearPower(hero);
-  const gearMitigation = (Math.min(800, gearPower) / 800) * profile.gearFactor;
 
   const prepMitigation = Math.max(0, hero.personality.preparation) * profile.prepFactor;
 
@@ -408,7 +400,6 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
 
   const unclamped = def.deathRisk
     - coreStatMitigation
-    - gearMitigation
     - prepMitigation
     - knowledgeMitigation
     - metaMitigation
@@ -427,7 +418,6 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
   return {
     baseRisk: def.deathRisk,
     coreStatMitigation,
-    gearMitigation,
     prepMitigation,
     knowledgeMitigation,
     metaMitigation,
@@ -497,11 +487,6 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
     }
     if (activityId === "raid_eternal_throne") {
       materialsGained = addMaterials(materialsGained, { ember_core: 2, vault_relic: 1 });
-    }
-    if (activityId === "salvage_gear") {
-      const salvageBonus = Math.round(meta.salvageYieldBonus * 10) / 10;
-      const base = 2;
-      materialsGained = addMaterials(materialsGained, { iron_shards: Math.max(1, Math.round(base + salvageBonus)) });
     }
   }
 
@@ -581,7 +566,7 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
   // Equip better loot automatically
   for (const item of lootDropped) {
     const currentInSlot = updatedHero.gear[item.slot];
-    if (currentInSlot === null || item.itemPower > currentInSlot.itemPower) {
+    if (currentInSlot === null || sumGearStats(item) > sumGearStats(currentInSlot)) {
       updatedHero = {
         ...updatedHero,
         gear: { ...updatedHero.gear, [item.slot]: item },
@@ -592,10 +577,13 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
   return { resolved, updatedHero };
 }
 
-export function isActivityUnlocked(hero: Hero, def: ActivityDefinition): boolean {
+export function isActivityUnlocked(hero: Hero, def: ActivityDefinition, meta: MetaProgression): boolean {
   const cond = def.unlockConditions;
   if (cond === undefined) {
     return true;
+  }
+  if (cond.requiresRaidDeath === true && meta.raidDeaths < 1) {
+    return false;
   }
   if (cond.minLevel !== undefined && hero.level < cond.minLevel) {
     return false;
@@ -628,10 +616,6 @@ export function isActivityUnlocked(hero: Hero, def: ActivityDefinition): boolean
       }
     }
   }
-  const totalItemPower = sumGearPower(hero);
-  if (cond.minItemPower !== undefined && totalItemPower < cond.minItemPower) {
-    return false;
-  }
   if (cond.minGreenPlusSlots !== undefined && countSlotsAtOrAboveRarity(hero, "green") < cond.minGreenPlusSlots) {
     return false;
   }
@@ -644,13 +628,16 @@ export function isActivityUnlocked(hero: Hero, def: ActivityDefinition): boolean
   return true;
 }
 
-export function getActivityUnlockGaps(hero: Hero, def: ActivityDefinition): string[] {
+export function getActivityUnlockGaps(hero: Hero, def: ActivityDefinition, meta: MetaProgression): string[] {
   const cond = def.unlockConditions;
   if (cond === undefined) {
     return [];
   }
 
   const gaps: string[] = [];
+  if (cond.requiresRaidDeath === true && meta.raidDeaths < 1) {
+    gaps.push("Die to a raid once");
+  }
   if (cond.minLevel !== undefined && hero.level < cond.minLevel) {
     gaps.push(`Level ${cond.minLevel}`);
   }
@@ -689,10 +676,6 @@ export function getActivityUnlockGaps(hero: Hero, def: ActivityDefinition): stri
         gaps.push(`${key} knowledge ${Math.round(current)}/${need}`);
       }
     }
-  }
-  const totalItemPower = sumGearPower(hero);
-  if (cond.minItemPower !== undefined && totalItemPower < cond.minItemPower) {
-    gaps.push(`item power ${totalItemPower}/${cond.minItemPower}`);
   }
   const greenPlus = countSlotsAtOrAboveRarity(hero, "green");
   if (cond.minGreenPlusSlots !== undefined && greenPlus < cond.minGreenPlusSlots) {

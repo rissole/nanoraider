@@ -1,15 +1,18 @@
-import { useCallback, useState } from "react";
-import type { GearSlot, Hero, MaterialId } from "../data/types";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { GearSlot, Hero, HeroClass, MaterialId } from "../data/types";
 import { EnergyBar } from "./EnergyBar";
-import { getBossReadiness } from "../game/bossKnowledge";
 import { MATERIAL_LABELS } from "../data/crafting";
 import { RARITY_LABELS } from "../data/rarity";
+import { formatGearStats, getEffectiveCoreStats } from "../game/gearGenerator";
+
+const HERO_CLASSES: HeroClass[] = ["warrior", "rogue", "mage", "guardian", "bard"];
 
 interface HeroStatusProps {
   hero: Hero;
   maxEnergy: number;
   energyUsedToday: number;
   onRename?: (name: string) => void;
+  onChangeClass?: (heroClass: HeroClass) => void;
 }
 
 const RARITY_COLOR: Record<string, string> = {
@@ -31,14 +34,50 @@ function formatClassLabel(heroClass: Hero["heroClass"]): string {
   return `${heroClass.charAt(0).toUpperCase()}${heroClass.slice(1)}`;
 }
 
-export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroStatusProps) {
+export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename, onChangeClass }: HeroStatusProps) {
+  const canChangeCharacter = hero.inGameDay === 1;
   const [selectedSlot, setSelectedSlot] = useState<GearSlot>();
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState(hero.name);
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const toggleSelectedSlot = useCallback((slot: GearSlot) => {
     setSelectedSlot((prev) => prev !== slot ? slot : undefined);
   }, []);
+
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isEditingName]);
+
+  const startEditName = useCallback(() => {
+    if (!canChangeCharacter || onRename === undefined) {
+      return;
+    }
+    setEditNameValue(hero.name);
+    setIsEditingName(true);
+  }, [canChangeCharacter, hero.name, onRename]);
+
+  const commitNameEdit = useCallback(() => {
+    if (!onRename) {
+      return;
+    }
+    const trimmed = editNameValue.trim();
+    if (trimmed.length > 0) {
+      onRename(trimmed);
+    }
+    setIsEditingName(false);
+  }, [editNameValue, onRename]);
+
+  const cancelNameEdit = useCallback(() => {
+    setEditNameValue(hero.name);
+    setIsEditingName(false);
+  }, [hero.name]);
+
   const energyRemaining = maxEnergy - energyUsedToday;
-  const moltenReadiness = getBossReadiness(hero, "molten_fury");
   const selectedItem = selectedSlot !== undefined ? hero.gear[selectedSlot] : null;
+  const effectiveStats = getEffectiveCoreStats(hero);
 
   const agePhase = (() => {
     if (hero.inGameDay <= 5) {return { label: "Young", color: "text-green-400" };}
@@ -53,22 +92,53 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <button
-            className="text-white font-bold text-lg hover:text-yellow-300 transition-colors"
-            onClick={() => {
-              if (onRename === undefined) {
-                return;
-              }
-              const next = window.prompt("Rename hero", hero.name);
-              if (next !== null) {
-                onRename(next);
-              }
-            }}
-            type="button"
-          >
-            {hero.name}
-          </button>
-          <span className="block mt-1 text-gray-400 text-xs capitalize">{formatClassLabel(hero.heroClass)} · Lv.{hero.level}</span>
+          {canChangeCharacter && onRename !== undefined ? (
+            isEditingName ? (
+              <input
+                className="bg-gray-800 border border-yellow-500 rounded px-1 text-white font-bold text-lg w-40 focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                onBlur={commitNameEdit}
+                onChange={(e) => setEditNameValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commitNameEdit();
+                  }
+                  if (e.key === "Escape") {
+                    cancelNameEdit();
+                  }
+                }}
+                ref={nameInputRef}
+                type="text"
+                value={editNameValue}
+              />
+            ) : (
+              <button
+                className="text-white font-bold text-lg hover:text-yellow-300 transition-colors text-left"
+                onClick={startEditName}
+                type="button"
+              >
+                {hero.name}
+              </button>
+            )
+          ) : (
+            <span className="text-white font-bold text-lg">{hero.name}</span>
+          )}
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {canChangeCharacter && onChangeClass !== undefined ? (
+              <select
+                className="bg-gray-800 border border-gray-600 rounded text-gray-200 text-xs px-2 py-0.5 capitalize"
+                onChange={(e) => { onChangeClass(e.target.value as HeroClass); }}
+                value={hero.heroClass}
+              >
+                {HERO_CLASSES.map((c) => (
+                  <option key={c} value={c}>{formatClassLabel(c)}</option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-gray-400 text-xs capitalize">{formatClassLabel(hero.heroClass)}</span>
+            )}
+            <span className="text-gray-500 text-xs">· Lv.{hero.level}</span>
+          </div>
         </div>
         <div className="text-right">
           <div className={`font-bold text-sm ${agePhase.color}`}>{agePhase.label}</div>
@@ -91,20 +161,17 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
         <span className="text-gray-400 text-xs w-24 text-right">{hero.xp} / {hero.xpToNextLevel}</span>
       </div>
 
-      {/* Stats row */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        <div className="flex items-center gap-1">
-          <span className="text-yellow-400">◈</span>
-          <span className="text-white font-bold">{hero.gold}g</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-cyan-400">◉</span>
-          <span className="text-gray-300">
-            Boss Readiness: <span className="text-cyan-400 font-bold">{Math.round(moltenReadiness)}%</span>
-          </span>
-        </div>
-        <div className="text-gray-400 text-xs">
-          STR {hero.coreStats.strength} · AGI {hero.coreStats.agility} · INT {hero.coreStats.intelligence} · STA {hero.coreStats.stamina} · CHR {hero.coreStats.charismaInfluence}
+      {/* Stats row (includes gear bonuses) */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span className="text-yellow-400 text-sm">◈</span>
+          <span className="text-white font-bold text-sm">{hero.gold}g</span>
+          <span className="text-gray-500">|</span>
+          <span className="text-amber-400 font-bold text-sm">STR {effectiveStats.strength}</span>
+          <span className="text-emerald-400 font-bold text-sm">AGI {effectiveStats.agility}</span>
+          <span className="text-blue-400 font-bold text-sm">INT {effectiveStats.intelligence}</span>
+          <span className="text-violet-400 font-bold text-sm">STA {effectiveStats.stamina}</span>
+          <span className="text-pink-400 font-bold text-sm">CHR {effectiveStats.charismaInfluence}</span>
         </div>
         <div className="text-gray-500 text-xs">
           {Object.keys(hero.materials).length === 0
@@ -130,7 +197,7 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
               }`}
               key={slot}
               onClick={() => toggleSelectedSlot(slot)}
-              title={item !== null ? `${item.name} (${RARITY_LABELS[item.rarity]}) · ${item.itemPower} IP` : "Empty"}
+              title={item !== null ? `${item.name} (${RARITY_LABELS[item.rarity]}) · ${formatGearStats(item.stats) || "—"}` : "Empty"}
               type="button"
             >
               <div className="text-gray-500 text-xs">{label}</div>
@@ -153,7 +220,8 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
               {selectedItem.name}
             </div>
             <div className="text-gray-300 text-xs">
-              {RARITY_LABELS[selectedItem.rarity]} · {selectedItem.itemPower} Item Power
+              {RARITY_LABELS[selectedItem.rarity]}
+              {formatGearStats(selectedItem.stats) ? ` · ${formatGearStats(selectedItem.stats)}` : ""}
             </div>
           </div>
         ) : (

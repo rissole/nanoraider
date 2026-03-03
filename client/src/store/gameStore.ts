@@ -3,12 +3,14 @@ import { persist } from "zustand/middleware";
 import type {
   ActivityId,
   BossId,
+  CoreStatKey,
   DayResult,
   DungeonActivityId,
   EconomyTransaction,
   EvolutionId,
   GameScreen,
   Hero,
+  HeroClass,
   MaterialId,
   MetaProgression,
   PendingDailyEvent,
@@ -29,7 +31,7 @@ import { RECIPE_DEFINITIONS, baseVendorTierUnlocks, defaultKnownRecipes, listVen
 import { GEAR_ITEMS } from "../data/gear";
 import { randomHeroName } from "../data/nurture";
 import { applyKnowledgeGain, normalizeBossKnowledgeBank } from "../game/bossKnowledge";
-import { generateGear } from "../game/gearGenerator";
+import { generateGear, sumGearStats } from "../game/gearGenerator";
 
 const BASE_ENERGY = 50;
 const ENERGY_PER_DEATH = 5;
@@ -149,6 +151,7 @@ interface GameState {
   startHeroCreation: () => void;
   createHero: (name: string) => void;
   renameHero: (name: string) => void;
+  changeHeroClass: (heroClass: HeroClass) => void;
 
   // Day loop
   planActivity: (activityId: ActivityId) => void;
@@ -174,6 +177,7 @@ interface GameState {
 function buildInitialMeta(): MetaProgression {
   return {
     totalRuns: 0,
+    raidDeaths: 0,
     maxEnergy: BASE_ENERGY,
     achievementPoints: 0,
     unlockedEvolutions: [],
@@ -185,7 +189,7 @@ function buildInitialMeta(): MetaProgression {
       knowledgeTransferMultiplier: 1,
       vendorDiscountPct: 0,
       recipeDiscountPct: 0,
-      purpleCraftBonusPct: 0,
+      purpleCraftStatBonusPct: 0,
       brokerTierStart: 1,
       raidProvisionerUnlocked: false,
     },
@@ -339,7 +343,29 @@ export const useGameStore = create<GameState>()(
         if (hero === null || name.trim().length === 0) {
           return;
         }
+        if (hero.inGameDay > 1) {
+          return;
+        }
         set({ hero: { ...hero, name: name.trim() } });
+      },
+
+      changeHeroClass: (heroClass) => {
+        const { hero } = get();
+        if (hero === null) {
+          return;
+        }
+        if (hero.inGameDay > 1) {
+          return;
+        }
+        const emptyGear = { head: null, chest: null, legs: null, mainhand: null, offhand: null };
+        const startingGear = {
+          head: generateGear(heroClass, "head", "gray", hero.level, emptyGear),
+          chest: generateGear(heroClass, "chest", "gray", hero.level, emptyGear),
+          legs: generateGear(heroClass, "legs", "gray", hero.level, emptyGear),
+          mainhand: generateGear(heroClass, "mainhand", "gray", hero.level, emptyGear),
+          offhand: generateGear(heroClass, "offhand", "gray", hero.level, emptyGear),
+        };
+        set({ hero: { ...hero, heroClass, gear: startingGear } });
       },
 
       planActivity: (activityId) => {
@@ -349,7 +375,7 @@ export const useGameStore = create<GameState>()(
         }
 
         const def = ACTIVITIES[activityId];
-        if (!isActivityUnlocked(hero, def)) {
+        if (!isActivityUnlocked(hero, def, meta)) {
           return;
         }
         const plannedEnergy = plannedActivities.reduce((sum, id) => sum + ACTIVITIES[id].energyCost, 0);
@@ -453,7 +479,7 @@ export const useGameStore = create<GameState>()(
 
         for (const activityId of plannedActivities) {
           const def = ACTIVITIES[activityId];
-          if (!isActivityUnlocked(currentHero, def)) {
+          if (!isActivityUnlocked(currentHero, def, meta)) {
             continue;
           }
           if (currentHero.gold < (def.goldCost ?? 0)) {
@@ -552,10 +578,10 @@ export const useGameStore = create<GameState>()(
       getActivityUnlockGaps: (activityId) => {
         const { hero } = get();
         const def = ACTIVITIES[activityId];
-        if (hero === null || isActivityUnlocked(hero, def)) {
+        if (hero === null || isActivityUnlocked(hero, def, get().meta)) {
           return [];
         }
-        return getUnlockGapsForActivity(hero, def);
+        return getUnlockGapsForActivity(hero, def, get().meta);
       },
 
       getVendorOffers: (vendorId) => {
@@ -639,7 +665,7 @@ export const useGameStore = create<GameState>()(
           const fixedItem = GEAR_ITEMS[offer.rewards.fixedItemId];
           if (fixedItem !== undefined) {
             const current = nextHero.gear[fixedItem.slot];
-            if (current === null || fixedItem.itemPower > current.itemPower) {
+            if (current === null || sumGearStats(fixedItem) > sumGearStats(current)) {
               nextHero = { ...nextHero, gear: { ...nextHero.gear, [fixedItem.slot]: fixedItem } };
             }
           }
@@ -692,10 +718,18 @@ export const useGameStore = create<GameState>()(
         }, {});
         const currentInSlot = hero.gear[recipe.slot];
         const generated = generateGear(hero.heroClass, recipe.slot, recipe.rarity, hero.level, hero.gear);
-        const upgradedItem = recipe.rarity === "purple"
-          ? { ...generated, itemPower: Math.round(generated.itemPower * (1 + (meta.evolutionBonuses.purpleCraftBonusPct ?? 0))) }
-          : generated;
-        const shouldEquip = currentInSlot === null || upgradedItem.itemPower > currentInSlot.itemPower;
+        const bonusPct = meta.evolutionBonuses.purpleCraftStatBonusPct ?? 0;
+        let upgradedItem = generated;
+        if (recipe.rarity === "purple" && bonusPct > 0) {
+          const boostedStats: Partial<Record<CoreStatKey, number>> = {};
+          for (const [k, v] of Object.entries(generated.stats)) {
+            if (typeof v === "number") {
+              boostedStats[k as CoreStatKey] = Math.round(v * (1 + bonusPct));
+            }
+          }
+          upgradedItem = { ...generated, stats: boostedStats };
+        }
+        const shouldEquip = currentInSlot === null || sumGearStats(upgradedItem) > sumGearStats(currentInSlot);
         set({
           hero: {
             ...hero,
@@ -843,6 +877,9 @@ function finalizeDeath(
   const newMeta: MetaProgression = {
     ...meta,
     totalRuns: meta.totalRuns + 1,
+    raidDeaths:
+      meta.raidDeaths
+      + (cause === "combat" && fatalActivity?.activityId.startsWith("raid_") === true ? 1 : 0),
     maxEnergy: newMaxEnergy,
     achievementPoints: meta.achievementPoints + apGained,
     unlockedEvolutions: newUnlocked,
@@ -854,7 +891,7 @@ function finalizeDeath(
       knowledgeTransferMultiplier: stackedBonuses.knowledgeTransferMultiplier,
       vendorDiscountPct: stackedBonuses.vendorDiscountPct,
       recipeDiscountPct: stackedBonuses.recipeDiscountPct,
-      purpleCraftBonusPct: stackedBonuses.purpleCraftBonusPct,
+      purpleCraftStatBonusPct: stackedBonuses.purpleCraftStatBonusPct,
       brokerTierStart: stackedBonuses.brokerTierStart,
       raidProvisionerUnlocked: stackedBonuses.raidProvisionerUnlocked,
     },

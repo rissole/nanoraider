@@ -58,7 +58,7 @@ function formatBonusTeaser(bonuses: EvolutionBonuses): string[] {
   if ((bonuses.recipeDiscountPct ?? 0) > 0) {
     parts.push("Recipe discount");
   }
-  if ((bonuses.purpleCraftBonusPct ?? 0) > 0) {
+  if ((bonuses.purpleCraftStatBonusPct ?? 0) > 0) {
     parts.push("Purple craft bonus");
   }
   if ((bonuses.brokerTierStart ?? 0) > 1) {
@@ -151,7 +151,7 @@ function EvolutionCard({ evolutionId, unlocked, collectionUnlocked }: EvolutionC
         {(evo.bonuses.bossKnowledgeBonus ?? 0) > 0 && <div className="text-blue-300">+{Math.round((evo.bonuses.bossKnowledgeBonus ?? 0) * 100)}% boss knowledge</div>}
         {(evo.bonuses.vendorDiscountPct ?? 0) > 0 && <div className="text-amber-300">+{Math.round((evo.bonuses.vendorDiscountPct ?? 0) * 100)}% vendor discount</div>}
         {(evo.bonuses.recipeDiscountPct ?? 0) > 0 && <div className="text-orange-300">+{Math.round((evo.bonuses.recipeDiscountPct ?? 0) * 100)}% recipe discount</div>}
-        {(evo.bonuses.purpleCraftBonusPct ?? 0) > 0 && <div className="text-purple-300">+{Math.round((evo.bonuses.purpleCraftBonusPct ?? 0) * 100)}% purple craft</div>}
+        {(evo.bonuses.purpleCraftStatBonusPct ?? 0) > 0 && <div className="text-purple-300">+{Math.round((evo.bonuses.purpleCraftStatBonusPct ?? 0) * 100)}% purple craft</div>}
         {(evo.bonuses.brokerTierStart ?? 1) > 1 && <div className="text-sky-300">Broker tier {evo.bonuses.brokerTierStart} start</div>}
         {evo.bonuses.raidProvisionerUnlocked === true ? <div className="text-violet-300">Raid Provisioner unlocked</div> : null}
       </div>

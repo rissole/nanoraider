@@ -285,7 +285,7 @@ export function stackEvolutionBonuses(unlockedIds: EvolutionId[]) {
   let knowledgeTransferMultiplier = 1;
   let vendorDiscountPct = 0;
   let recipeDiscountPct = 0;
-  let purpleCraftBonusPct = 0;
+  let purpleCraftStatBonusPct = 0;
   let brokerTierStart: 1 | 2 | 3 = 1;
   let raidProvisionerUnlocked = false;
 
@@ -297,7 +297,7 @@ export function stackEvolutionBonuses(unlockedIds: EvolutionId[]) {
     bossKnowledgeBonus += evo.bonuses.bossKnowledgeBonus ?? 0;
     vendorDiscountPct += evo.bonuses.vendorDiscountPct ?? 0;
     recipeDiscountPct += evo.bonuses.recipeDiscountPct ?? 0;
-    purpleCraftBonusPct += evo.bonuses.purpleCraftBonusPct ?? 0;
+    purpleCraftStatBonusPct += evo.bonuses.purpleCraftStatBonusPct ?? 0;
     const candidate = evo.bonuses.brokerTierStart ?? 1;
     const merged = Math.max(brokerTierStart, candidate);
     brokerTierStart = merged >= 3 ? 3 : merged >= 2 ? 2 : 1;
@@ -315,7 +315,7 @@ export function stackEvolutionBonuses(unlockedIds: EvolutionId[]) {
     knowledgeTransferMultiplier,
     vendorDiscountPct,
     recipeDiscountPct,
-    purpleCraftBonusPct,
+    purpleCraftStatBonusPct,
     brokerTierStart,
     raidProvisionerUnlocked,
   };

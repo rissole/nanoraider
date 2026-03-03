@@ -60,7 +60,6 @@ export type ActivityId =
   | "dungeon_whispering_crypts"
   | "dungeon_scholomance"
   | "dungeon_blackrock"
-  | "salvage_gear"
   | "farm_gold"
   | "study_boss"
   | "analyze_logs"
@@ -71,7 +70,6 @@ export type ActivityId =
   | "host_guild_meeting"
   | "black_market_trading"
   | "buy_raid_supplies"
-  | "field_repairs"
   | "commission_enchant";
 
 export type ActivityProgressionTier = "none" | "early_dungeon" | "mid_dungeon" | "entry_raid" | "capstone_raid";
@@ -87,10 +85,10 @@ export interface UnlockConditions {
   minPersonality?: Partial<Record<PersonalityAxisKey, number>>;
   minReputation?: Partial<Record<FactionId, number>>;
   minBossKnowledge?: Partial<Record<BossId, number>>;
-  minItemPower?: number;
   minGreenPlusSlots?: number;
   minBluePlusSlots?: number;
   minPurpleSlots?: number;
+  requiresRaidDeath?: boolean;
 }
 
 export type GearReadinessMetric = "greenPlusSlots" | "bluePlusSlots" | "purpleSlots";
@@ -185,7 +183,7 @@ export interface PendingDailyEvent {
 
 // ─── Gear ─────────────────────────────────────────────────────────────────────
 
-export type HeroClass = "warrior" | "mage" | "priest" | "rogue" | "hunter";
+export type HeroClass = "warrior" | "rogue" | "mage" | "guardian" | "bard";
 export type ArmorWeight = "plate" | "cloth" | "leather";
 export type GearSlot = "head" | "chest" | "legs" | "mainhand" | "offhand";
 export type ArmorSlot = "head" | "chest" | "legs";
@@ -197,7 +195,7 @@ export interface GearItem {
   name: string;
   slot: GearSlot;
   rarity: GearRarity;
-  itemPower: number;
+  stats: Partial<Record<CoreStatKey, number>>;
 }
 
 export type MaterialId = "iron_shards" | "arcane_essence" | "ember_core" | "vault_relic";
@@ -295,7 +293,7 @@ export interface EvolutionBonuses {
   knowledgeTransferMultiplier?: number; // multiplier on study gains
   vendorDiscountPct?: number; // additive vendor discount
   recipeDiscountPct?: number; // additive recipe crafting discount
-  purpleCraftBonusPct?: number; // additive output item power bonus for purple crafts
+  purpleCraftStatBonusPct?: number; // additive output stat bonus for purple crafts
   brokerTierStart?: VendorTier; // starting broker tier access
   raidProvisionerUnlocked?: boolean; // access to raid provisioner vendor
 }
@@ -375,7 +373,6 @@ export type RiskBand = "safe" | "manageable" | "dangerous" | "lethal";
 export interface ActivityRiskBreakdown {
   baseRisk: number;
   coreStatMitigation: number;
-  gearMitigation: number;
   prepMitigation: number;
   knowledgeMitigation: number;
   metaMitigation: number;
@@ -410,6 +407,7 @@ export interface EconomyTransaction {
 
 export interface MetaProgression {
   totalRuns: number;
+  raidDeaths: number;
   maxEnergy: number; // starts at 50, grows permanently
   achievementPoints: number;
   unlockedEvolutions: EvolutionId[]; // Pokédex collection

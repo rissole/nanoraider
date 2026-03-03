@@ -124,9 +124,6 @@ function prioritizeActivities(hero: ReturnType<typeof useGameStore.getState>["he
       if (trajectory === "combat" && def.progressionTier !== "none") {
         score += 2;
       }
-      if (def.id === "salvage_gear") {
-        score += 1;
-      }
       return { def, score };
     })
     .sort((a, b) => b.score - a.score)
@@ -261,6 +258,7 @@ export function PlanningScreen() {
     getActivityUnlockGaps,
     goTo,
     renameHero,
+    changeHeroClass,
     directEnergySpentToday,
     getVendorOffers,
     buyVendorOffer,
@@ -274,7 +272,10 @@ export function PlanningScreen() {
   const [vendorsForgeTab, setVendorsForgeTab] = useState<VendorsForgeTab | null>(null);
   const [forgeTier, setForgeTier] = useState<ForgeTier>("green");
   const [selectedForgeSlot, setSelectedForgeSlot] = useState<GearSlot>("head");
-  const availableActivities = useMemo(() => hero !== null ? ACTIVITY_LIST.filter((def) => isActivityUnlocked(hero, def)) : null, [hero]);
+  const availableActivities = useMemo(
+    () => hero !== null ? ACTIVITY_LIST.filter((def) => isActivityUnlocked(hero, def, meta)) : null,
+    [hero, meta],
+  );
   const evolutionRecommendations = useMemo(
     () => (hero !== null ? getTopEvolutionRecommendations(hero, meta, [], 3) : []),
     [hero, meta],
@@ -361,7 +362,13 @@ export function PlanningScreen() {
       </div>
 
       {/* Hero status */}
-      <HeroStatus energyUsedToday={totalEnergyUsed} hero={hero} maxEnergy={meta.maxEnergy} onRename={renameHero} />
+      <HeroStatus
+        energyUsedToday={totalEnergyUsed}
+        hero={hero}
+        maxEnergy={meta.maxEnergy}
+        onChangeClass={changeHeroClass}
+        onRename={renameHero}
+      />
 
       <div className="flex gap-2">
         <button
@@ -561,7 +568,7 @@ export function PlanningScreen() {
                 ...(goldRemaining < (def.goldCost ?? 0) ? [`gold ${goldRemaining}/${def.goldCost ?? 0}`] : []),
                 ...getActivityUnlockGaps(def.id),
               ]}
-              canUse={energyRemaining >= def.energyCost && goldRemaining >= (def.goldCost ?? 0) && isActivityUnlocked(hero, def)}
+              canUse={energyRemaining >= def.energyCost && goldRemaining >= (def.goldCost ?? 0) && isActivityUnlocked(hero, def, meta)}
               def={def}
               effectiveDeathRisk={previewRisk.finalRisk}
               key={def.id}
@@ -571,7 +578,6 @@ export function PlanningScreen() {
                 ...(previewRisk.readinessLabel !== null ? [previewRisk.readinessLabel] : []),
                 ...(previewRisk.levelPenalty > 0.005 ? [`Level pressure +${Math.round(previewRisk.levelPenalty * 100)}%`] : []),
                 ...(previewRisk.levelMitigation > 0.005 ? [`Overlevel advantage -${Math.round(previewRisk.levelMitigation * 100)}%`] : []),
-                ...(previewRisk.gearMitigation > 0.005 ? [`Gear -${Math.round(previewRisk.gearMitigation * 100)}%`] : []),
                 ...(previewRisk.knowledgeMitigation > 0.005 ? [`Knowledge -${Math.round(previewRisk.knowledgeMitigation * 100)}%`] : []),
                 ...(previewRisk.coreStatMitigation > 0.005 ? [`Stats -${Math.round(previewRisk.coreStatMitigation * 100)}%`] : []),
                 ...(previewRisk.agePenalty > 0.005 ? [`Age +${Math.round(previewRisk.agePenalty * 100)}%`] : []),
@@ -601,7 +607,7 @@ export function PlanningScreen() {
                         ...(goldRemaining < (def.goldCost ?? 0) ? [`gold ${goldRemaining}/${def.goldCost ?? 0}`] : []),
                         ...getActivityUnlockGaps(def.id),
                       ]}
-                      canUse={energyRemaining >= def.energyCost && goldRemaining >= (def.goldCost ?? 0) && isActivityUnlocked(hero, def)}
+                      canUse={energyRemaining >= def.energyCost && goldRemaining >= (def.goldCost ?? 0) && isActivityUnlocked(hero, def, meta)}
                       def={def}
                       effectiveDeathRisk={previewRisk.finalRisk}
                       key={def.id}

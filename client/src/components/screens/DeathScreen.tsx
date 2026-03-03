@@ -255,7 +255,7 @@ function formatBonuses(evo: {
     knowledgeTransferMultiplier?: number;
     vendorDiscountPct?: number;
     recipeDiscountPct?: number;
-    purpleCraftBonusPct?: number;
+    purpleCraftStatBonusPct?: number;
     brokerTierStart?: number;
     raidProvisionerUnlocked?: boolean;
   };
@@ -289,9 +289,9 @@ function formatBonuses(evo: {
   if (recipeDiscountPct > 0) {
     parts.push(`${Math.round(recipeDiscountPct * 100)}% recipe discount`);
   }
-  const purpleCraftBonusPct = b.purpleCraftBonusPct ?? 0;
-  if (purpleCraftBonusPct > 0) {
-    parts.push(`${Math.round(purpleCraftBonusPct * 100)}% purple craft`);
+  const purpleCraftStatBonusPct = b.purpleCraftStatBonusPct ?? 0;
+  if (purpleCraftStatBonusPct > 0) {
+    parts.push(`${Math.round(purpleCraftStatBonusPct * 100)}% purple craft`);
   }
   const brokerTierStart = b.brokerTierStart ?? 1;
   if (brokerTierStart > 1) {

@@ -21,13 +21,13 @@ export interface BalanceSnapshot {
 export function simulateEarlyProgression(runCount = 5): BalanceSnapshot {
   const questEnergy = ACTIVITIES.quest.energyCost;
   const dungeonEnergy = ACTIVITIES.dungeon_irondeep.energyCost;
-  const salvageEnergy = ACTIVITIES.salvage_gear.energyCost;
+  const farmGoldEnergy = ACTIVITIES.farm_gold.energyCost;
   const blueCraftEnergy = RECIPE_DEFINITIONS.craft_blue_mainhand.energyCost;
 
   const earlyDailyActions = Math.floor(50 / questEnergy);
   const midDailyActions = Math.floor(80 / dungeonEnergy);
 
-  const averageDayToFullGreen = Math.max(2, Math.round((5 * salvageEnergy) / 10));
+  const averageDayToFullGreen = Math.max(2, Math.round((5 * farmGoldEnergy) / 10));
   const averageDayToFullBlue = Math.max(5, Math.round((5 * blueCraftEnergy) / 10) + 2);
   const totalSamples = Math.max(1, runCount);
 
