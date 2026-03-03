@@ -37,38 +37,37 @@ const EVOLUTION_LOCKED_LORE: Record<EvolutionId, string> = {
   raid_leader: "Only one has ever commanded armies against gods and won...",
 };
 
-function formatBonusTeaser(bonuses: EvolutionBonuses): string {
+function formatBonusTeaser(bonuses: EvolutionBonuses): string[] {
   const parts: string[] = [];
-  parts.push("+?? energy");
+  parts.push("Max energy");
   if ((bonuses.startGold ?? 0) > 0) {
-    parts.push("+??g start gold");
+    parts.push("Starting gold");
   }
   if ((bonuses.combatBonus ?? 0) > 0) {
-    parts.push("+??% combat");
+    parts.push("Combat bonus");
   }
   if ((bonuses.knowledgeTransferMultiplier ?? 1) > 1) {
-    parts.push("??x study gains");
+    parts.push("Study multiplier");
   }
   if ((bonuses.bossKnowledgeBonus ?? 0) > 0) {
-    parts.push("+??% boss knowledge");
+    parts.push("Boss knowledge bonus");
   }
   if ((bonuses.vendorDiscountPct ?? 0) > 0) {
-    parts.push("vendor discount");
+    parts.push("Vendor discount");
   }
   if ((bonuses.recipeDiscountPct ?? 0) > 0) {
-    parts.push("recipe discount");
+    parts.push("Recipe discount");
   }
   if ((bonuses.purpleCraftBonusPct ?? 0) > 0) {
-    parts.push("purple craft bonus");
+    parts.push("Purple craft bonus");
   }
   if ((bonuses.brokerTierStart ?? 0) > 1) {
-    parts.push("broker access");
+    parts.push("Broker access");
   }
   if (bonuses.raidProvisionerUnlocked === true) {
-    parts.push("raid provisioner");
+    parts.push("Raid provisioner");
   }
-  const teaser = parts.length > 1 ? `Grants: ${parts.join(", ")}...` : `Grants: ${parts[0] ?? ""} and more...`;
-  return teaser;
+  return parts;
 }
 
 const TIER_COLORS: Record<number, string> = {
@@ -107,10 +106,17 @@ function EvolutionCard({ evolutionId, unlocked, collectionUnlocked }: EvolutionC
           <div className="text-gray-300 font-bold mt-1">???</div>
         </div>
         <p className="text-gray-300 text-sm italic">{EVOLUTION_LOCKED_LORE[evolutionId]}</p>
-        <p className="text-amber-400 text-sm">{formatBonusTeaser(evo.bonuses)}</p>
+        <div className="text-amber-400 text-sm">
+          <div className="text-amber-300/80 text-xs font-bold uppercase tracking-widest mb-1">Grants</div>
+          <ul className="list-disc list-inside space-y-0.5">
+            {formatBonusTeaser(evo.bonuses).map((label) => (
+              <li key={label}>{label}</li>
+            ))}
+          </ul>
+        </div>
         {evo.prerequisites.length > 0 && (
           <div className="text-sm">
-            <span className={prereqsMet ? "text-green-400" : "text-amber-400"}>
+            <span className={prereqsMet ? "text-green-400" : "text-sky-400"}>
               {prereqsMet ? "✓" : "?"} Requires:{" "}
             </span>
             <span className="text-gray-300">
@@ -164,7 +170,7 @@ function EvolutionCard({ evolutionId, unlocked, collectionUnlocked }: EvolutionC
 
 function getStoredMetaExpanded(): boolean {
   const stored = localStorage.getItem(META_EXPANDED_STORAGE_KEY);
-  return stored === null ? true : stored === "true";
+  return stored === null ? false : stored === "true";
 }
 
 export function CollectionScreen() {
