@@ -106,7 +106,7 @@ function EvolutionCard({ evolutionId, unlocked, collectionUnlocked }: EvolutionC
         </div>
         <div className="text-center py-2">
           <div className="text-4xl text-gray-400">{EVOLUTION_ICONS[evolutionId]}</div>
-          <div className="text-gray-300 font-bold mt-1">{displayName}</div>
+          <div className="text-white font-bold mt-1">{displayName}</div>
         </div>
         <p className="text-gray-300 text-sm italic">{displayHint}</p>
         <div className="text-amber-400 text-sm">

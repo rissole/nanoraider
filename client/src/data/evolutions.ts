@@ -15,7 +15,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They lived for the thrill of battle. Their legacy inspires future warriors.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { strength: 28, stamina: 20 },
+      minCoreStats: { strength: 85, stamina: 65 },
       minPersonality: { combatStyle: 30, ambition: 20 },
     },
     bonuses: {
@@ -34,7 +34,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They understood that gold is power. Their fortune funds future heroes.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { charismaInfluence: 20 },
+      minCoreStats: { charismaInfluence: 75 },
       minPersonality: { economicFocus: 32 },
       minGoldAtDeath: 500,
     },
@@ -56,7 +56,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They believed preparation was everything. Their research guides future heroes.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { intelligence: 26 },
+      minCoreStats: { intelligence: 85 },
       minPersonality: { preparation: 30 },
       minBossKnowledge: { molten_fury: 30 },
     },
@@ -79,7 +79,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     prerequisites: ["berserker", "scholar"],
     unlockCondition: {
       mustDefeatRaids: ["molten_fury"],
-      minCoreStats: { strength: 32, intelligence: 24 },
+      minCoreStats: { strength: 95, intelligence: 85 },
       minPersonality: { combatStyle: 24, preparation: 20, ambition: 24 },
     },
     bonuses: {
@@ -101,7 +101,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They stood firm when all others fled. Their resilience shields future heroes.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { stamina: 26, strength: 18 },
+      minCoreStats: { stamina: 85, strength: 55 },
       minPersonality: { preparation: 22, combatStyle: 12 },
     },
     bonuses: {
@@ -120,7 +120,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They calculated every variable. Their theorycrafting perfects future strategies.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { intelligence: 24 },
+      minCoreStats: { intelligence: 75 },
       minPersonality: { preparation: 36 },
       minBossKnowledge: { molten_fury: 25 },
     },
@@ -141,7 +141,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They knew everyone worth knowing. Their connections benefit future heroes.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { charismaInfluence: 22 },
+      minCoreStats: { charismaInfluence: 70 },
       minPersonality: { socialStyle: 24, ambition: 12 },
     },
     bonuses: {
@@ -161,7 +161,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They led from the front, blade in hand. Their command echoes through future battles.",
     prerequisites: ["berserker", "guardian"],
     unlockCondition: {
-      minCoreStats: { strength: 32, stamina: 26 },
+      minCoreStats: { strength: 100, stamina: 80 },
       minPersonality: { combatStyle: 28, ambition: 25 },
     },
     bonuses: {
@@ -181,7 +181,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They cleared a thousand dungeons. Their expertise guides future delvers.",
     prerequisites: ["berserker", "theorycrafter"],
     unlockCondition: {
-      minCoreStats: { strength: 26, intelligence: 22, stamina: 22 },
+      minCoreStats: { strength: 85, intelligence: 70, stamina: 70 },
       minPersonality: { combatStyle: 22, preparation: 25 },
     },
     bonuses: {
@@ -201,7 +201,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They built an empire of loyal allies. Their guild endures beyond any single hero.",
     prerequisites: ["socialite", "merchant"],
     unlockCondition: {
-      minCoreStats: { charismaInfluence: 26 },
+      minCoreStats: { charismaInfluence: 95 },
       minPersonality: { socialStyle: 28, economicFocus: 22 },
       minGoldAtDeath: 350,
     },
@@ -223,7 +223,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They found riches others missed. Their treasure maps guide future seekers.",
     prerequisites: ["merchant", "scholar"],
     unlockCondition: {
-      minCoreStats: { intelligence: 20, charismaInfluence: 18 },
+      minCoreStats: { intelligence: 75, charismaInfluence: 70 },
       minPersonality: { economicFocus: 22, preparation: 18 },
       minGoldAtDeath: 300,
     },
@@ -246,7 +246,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     prerequisites: ["raid_legend", "dungeon_master"],
     unlockCondition: {
       mustDefeatRaids: ["eternal_throne"],
-      minCoreStats: { strength: 30, intelligence: 26 },
+      minCoreStats: { strength: 110, intelligence: 95 },
       minPersonality: { combatStyle: 24, preparation: 22, ambition: 28 },
     },
     bonuses: {

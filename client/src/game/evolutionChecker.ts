@@ -1,5 +1,6 @@
 import { EVOLUTIONS } from "../data/evolutions";
 import type { BossId, EvolutionId, EvolutionUnlockCondition, Hero, MetaProgression } from "../data/types";
+import { getEffectiveCoreStats } from "./gearGenerator";
 import { getBossReadiness } from "./bossKnowledge";
 
 export interface EvolutionCheckResult {
@@ -58,10 +59,11 @@ export function checkEvolutionOnDeath(hero: Hero, meta: MetaProgression, defeate
 
 function evaluateChecks(hero: Hero, cond: EvolutionUnlockCondition, defeatedRaids: BossId[]): Record<string, boolean> {
   const checks: Record<string, boolean> = {};
+  const effectiveStats = getEffectiveCoreStats(hero);
 
   if (cond.minCoreStats !== undefined) {
     for (const [key, value] of Object.entries(cond.minCoreStats)) {
-      checks[`core_${key}`] = hero.coreStats[key as keyof Hero["coreStats"]] >= value;
+      checks[`core_${key}`] = effectiveStats[key as keyof typeof effectiveStats] >= value;
     }
   }
   if (cond.minPersonality !== undefined) {
@@ -91,29 +93,30 @@ function evaluateChecks(hero: Hero, cond: EvolutionUnlockCondition, defeatedRaid
 
 function buildWhyString(id: EvolutionId, hero: Hero, defeatedRaids: BossId[]): string {
   const p = hero.personality;
+  const eff = getEffectiveCoreStats(hero);
   switch (id) {
     case "berserker":
-      return `You lived for dangerous combat (Combat Style: ${p.combatStyle}, Ambition: ${p.ambition}, Strength: ${hero.coreStats.strength}).`;
+      return `You lived for dangerous combat (Combat Style: ${p.combatStyle}, Ambition: ${p.ambition}, Strength: ${eff.strength}).`;
     case "merchant":
-      return `You prioritized wealth and influence (Economic Focus: ${p.economicFocus}, Charisma: ${hero.coreStats.charismaInfluence}, Gold: ${hero.gold}g).`;
+      return `You prioritized wealth and influence (Economic Focus: ${p.economicFocus}, Charisma: ${eff.charismaInfluence}, Gold: ${hero.gold}g).`;
     case "scholar":
-      return `You invested deeply in preparation and study (Preparation: ${p.preparation}, Intelligence: ${hero.coreStats.intelligence}, Molten Fury readiness: ${Math.round(getBossReadiness(hero, "molten_fury"))}%).`;
+      return `You invested deeply in preparation and study (Preparation: ${p.preparation}, Intelligence: ${eff.intelligence}, Molten Fury readiness: ${Math.round(getBossReadiness(hero, "molten_fury"))}%).`;
     case "raid_legend":
       return `You combined high combat and preparation with a raid victory${defeatedRaids.includes("molten_fury") ? " over Molten Fury" : ""}.`;
     case "guardian":
-      return `You stood firm when others fled (Stamina: ${hero.coreStats.stamina}, Preparation: ${p.preparation}).`;
+      return `You stood firm when others fled (Stamina: ${eff.stamina}, Preparation: ${p.preparation}).`;
     case "theorycrafter":
       return `You calculated every variable before stepping inside (Preparation: ${p.preparation}, Molten Fury readiness: ${Math.round(getBossReadiness(hero, "molten_fury"))}%).`;
     case "socialite":
-      return `You knew everyone worth knowing (Social Style: ${p.socialStyle}, Charisma: ${hero.coreStats.charismaInfluence}).`;
+      return `You knew everyone worth knowing (Social Style: ${p.socialStyle}, Charisma: ${eff.charismaInfluence}).`;
     case "warlord":
-      return `You led from the front, blade in hand (Strength: ${hero.coreStats.strength}, Combat Style: ${p.combatStyle}).`;
+      return `You led from the front, blade in hand (Strength: ${eff.strength}, Combat Style: ${p.combatStyle}).`;
     case "dungeon_master":
-      return `You cleared a thousand dungeons and knew every trash pack (Strength: ${hero.coreStats.strength}, Preparation: ${p.preparation}).`;
+      return `You cleared a thousand dungeons and knew every trash pack (Strength: ${eff.strength}, Preparation: ${p.preparation}).`;
     case "guildmaster":
-      return `You built an empire of loyal allies (Social Style: ${p.socialStyle}, Charisma: ${hero.coreStats.charismaInfluence}, Gold: ${hero.gold}g).`;
+      return `You built an empire of loyal allies (Social Style: ${p.socialStyle}, Charisma: ${eff.charismaInfluence}, Gold: ${hero.gold}g).`;
     case "treasure_hunter":
-      return `You found riches others missed (Economic Focus: ${p.economicFocus}, Intelligence: ${hero.coreStats.intelligence}, Gold: ${hero.gold}g).`;
+      return `You found riches others missed (Economic Focus: ${p.economicFocus}, Intelligence: ${eff.intelligence}, Gold: ${hero.gold}g).`;
     case "raid_leader":
       return `You led armies against gods and won${defeatedRaids.includes("eternal_throne") ? " over the Eternal Throne" : ""}.`;
   }
@@ -137,9 +140,10 @@ function buildAlmostReason(
   const parts: string[] = [];
 
   if (cond.minCoreStats !== undefined) {
+    const effectiveStats = getEffectiveCoreStats(hero);
     for (const [key, value] of Object.entries(cond.minCoreStats)) {
       const need = value;
-      const current = hero.coreStats[key as keyof Hero["coreStats"]];
+      const current = effectiveStats[key as keyof typeof effectiveStats];
       if (current < need) {
         parts.push(`${need - current} more ${key} needed`);
       }
