@@ -571,6 +571,12 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
       raidLockouts: { ...updatedHero.raidLockouts, molten_fury: hero.inGameDay },
     };
   }
+  if (activityId === "raid_eternal_throne" && !died) {
+    updatedHero = {
+      ...updatedHero,
+      raidLockouts: { ...updatedHero.raidLockouts, eternal_throne: hero.inGameDay },
+    };
+  }
 
   // Equip better loot automatically
   for (const item of lootDropped) {

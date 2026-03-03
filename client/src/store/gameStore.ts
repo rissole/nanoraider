@@ -36,7 +36,7 @@ const ENERGY_PER_DEATH = 5;
 const AP_PER_RUN = 25;
 const OLD_AGE_START_DAY = 16;
 const OLD_AGE_DEATH_CHANCE_PER_DAY = 0.05;
-const TRACKED_BOSSES: BossId[] = ["molten_fury"];
+const TRACKED_BOSSES: BossId[] = ["molten_fury", "eternal_throne"];
 const TRACKED_DUNGEONS: DungeonActivityId[] = [
   "dungeon_irondeep",
   "dungeon_whispering_crypts",
@@ -466,6 +466,9 @@ export const useGameStore = create<GameState>()(
           nextRunXp += resolved.xpGained;
           if (activityId === "raid_molten_fury" && !resolved.died && !nextDefeatedRaids.includes("molten_fury")) {
             nextDefeatedRaids = [...nextDefeatedRaids, "molten_fury"];
+          }
+          if (activityId === "raid_eternal_throne" && !resolved.died && !nextDefeatedRaids.includes("eternal_throne")) {
+            nextDefeatedRaids = [...nextDefeatedRaids, "eternal_throne"];
           }
 
           if (resolved.died) {

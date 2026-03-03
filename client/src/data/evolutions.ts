@@ -1,5 +1,11 @@
 import type { EvolutionDefinition, EvolutionId } from "./types";
 
+export const EVOLUTION_TIER_LABELS: Record<1 | 2 | 3, string> = {
+  1: "Foundation",
+  2: "Specialist",
+  3: "Mastery",
+};
+
 export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
   berserker: {
     id: "berserker",
@@ -17,7 +23,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
       combatBonus: 0.1,
     },
     hint: "Requires high combat focus — spend energy on dangerous dungeons.",
-    unlocksPath: ["raid_legend"],
+    unlocksPath: ["raid_legend", "warlord", "dungeon_master"],
   },
 
   merchant: {
@@ -39,7 +45,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
       brokerTierStart: 2,
     },
     hint: "Requires high gold focus — farm gold and keep it.",
-    unlocksPath: ["raid_legend"],
+    unlocksPath: ["raid_legend", "guildmaster", "treasure_hunter"],
   },
 
   scholar: {
@@ -61,7 +67,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
       recipeDiscountPct: 0.1,
     },
     hint: "Requires high wisdom — study bosses frequently.",
-    unlocksPath: ["raid_legend"],
+    unlocksPath: ["raid_legend", "treasure_hunter"],
   },
 
   raid_legend: {
@@ -84,6 +90,174 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
       raidProvisionerUnlocked: true,
     },
     hint: "Requires Berserker + Scholar unlocked first, then defeat Molten Fury.",
+    unlocksPath: ["raid_leader"],
+  },
+
+  guardian: {
+    id: "guardian",
+    name: "Guardian",
+    tier: 1,
+    description: "A steadfast protector who endured what others could not.",
+    lore: "They stood firm when all others fled. Their resilience shields future heroes.",
+    prerequisites: [],
+    unlockCondition: {
+      minCoreStats: { stamina: 26, strength: 18 },
+      minPersonality: { preparation: 22, combatStyle: 12 },
+    },
+    bonuses: {
+      energyBonus: 10,
+      combatBonus: 0.08,
+    },
+    hint: "Endure what others cannot. The best offense is not dying.",
+    unlocksPath: ["warlord", "dungeon_master"],
+  },
+
+  theorycrafter: {
+    id: "theorycrafter",
+    name: "Theorycrafter",
+    tier: 1,
+    description: "A spreadsheet warrior who calculated every variable before stepping inside.",
+    lore: "They calculated every variable. Their theorycrafting perfects future strategies.",
+    prerequisites: [],
+    unlockCondition: {
+      minCoreStats: { intelligence: 24 },
+      minPersonality: { preparation: 36 },
+      minBossKnowledge: { molten_fury: 25 },
+    },
+    bonuses: {
+      energyBonus: 10,
+      bossKnowledgeBonus: 0.06,
+      knowledgeTransferMultiplier: 1.5,
+    },
+    hint: "Theory before practice. Data before action. Prepare for everything.",
+    unlocksPath: ["dungeon_master"],
+  },
+
+  socialite: {
+    id: "socialite",
+    name: "Socialite",
+    tier: 1,
+    description: "A community builder who knew everyone worth knowing.",
+    lore: "They knew everyone worth knowing. Their connections benefit future heroes.",
+    prerequisites: [],
+    unlockCondition: {
+      minCoreStats: { charismaInfluence: 22 },
+      minPersonality: { socialStyle: 24, ambition: 12 },
+    },
+    bonuses: {
+      energyBonus: 10,
+      startGold: 35,
+      vendorDiscountPct: 0.05,
+    },
+    hint: "Friends in every tavern. Allies in every guild hall.",
+    unlocksPath: ["guildmaster"],
+  },
+
+  warlord: {
+    id: "warlord",
+    name: "Warlord",
+    tier: 2,
+    description: "A combat commander who led from the front, blade in hand.",
+    lore: "They led from the front, blade in hand. Their command echoes through future battles.",
+    prerequisites: ["berserker", "guardian"],
+    unlockCondition: {
+      minCoreStats: { strength: 32, stamina: 26 },
+      minPersonality: { combatStyle: 28, ambition: 25 },
+    },
+    bonuses: {
+      energyBonus: 15,
+      combatBonus: 0.15,
+      bossKnowledgeBonus: 0.03,
+    },
+    hint: "Strength alone isn't enough. Command it.",
+    unlocksPath: ["raid_leader"],
+  },
+
+  dungeon_master: {
+    id: "dungeon_master",
+    name: "Dungeon Master",
+    tier: 2,
+    description: "An instance expert who cleared a thousand dungeons and knows every trash pack.",
+    lore: "They cleared a thousand dungeons. Their expertise guides future delvers.",
+    prerequisites: ["berserker", "theorycrafter"],
+    unlockCondition: {
+      minCoreStats: { strength: 26, intelligence: 22, stamina: 22 },
+      minPersonality: { combatStyle: 22, preparation: 25 },
+    },
+    bonuses: {
+      energyBonus: 15,
+      combatBonus: 0.12,
+      recipeDiscountPct: 0.08,
+    },
+    hint: "Know every mechanic. Clear every instance. Master the five-man.",
+    unlocksPath: ["raid_leader"],
+  },
+
+  guildmaster: {
+    id: "guildmaster",
+    name: "Guildmaster",
+    tier: 2,
+    description: "A people's champion who built an empire of loyal allies.",
+    lore: "They built an empire of loyal allies. Their guild endures beyond any single hero.",
+    prerequisites: ["socialite", "merchant"],
+    unlockCondition: {
+      minCoreStats: { charismaInfluence: 26 },
+      minPersonality: { socialStyle: 28, economicFocus: 22 },
+      minGoldAtDeath: 350,
+    },
+    bonuses: {
+      energyBonus: 15,
+      startGold: 65,
+      vendorDiscountPct: 0.1,
+      brokerTierStart: 3,
+    },
+    hint: "Manage the bank. Rally the roster. Lead the guild.",
+    unlocksPath: ["raid_leader"],
+  },
+
+  treasure_hunter: {
+    id: "treasure_hunter",
+    name: "Treasure Hunter",
+    tier: 2,
+    description: "A loot goblin who found riches others missed.",
+    lore: "They found riches others missed. Their treasure maps guide future seekers.",
+    prerequisites: ["merchant", "scholar"],
+    unlockCondition: {
+      minCoreStats: { intelligence: 20, charismaInfluence: 18 },
+      minPersonality: { economicFocus: 22, preparation: 18 },
+      minGoldAtDeath: 300,
+    },
+    bonuses: {
+      energyBonus: 15,
+      startGold: 50,
+      purpleCraftBonusPct: 0.06,
+      recipeDiscountPct: 0.06,
+    },
+    hint: "Every chest might hold fortune. Know where to look.",
+    unlocksPath: [],
+  },
+
+  raid_leader: {
+    id: "raid_leader",
+    name: "Raid Leader",
+    tier: 3,
+    description: "The apex commander who led armies against gods and won.",
+    lore: "They led armies against gods and won. The greatest heroes answer to their call.",
+    prerequisites: ["raid_legend", "dungeon_master"],
+    unlockCondition: {
+      mustDefeatRaids: ["eternal_throne"],
+      minCoreStats: { strength: 30, intelligence: 26 },
+      minPersonality: { combatStyle: 24, preparation: 22, ambition: 28 },
+    },
+    bonuses: {
+      energyBonus: 25,
+      combatBonus: 0.25,
+      bossKnowledgeBonus: 0.15,
+      knowledgeTransferMultiplier: 3,
+      purpleCraftBonusPct: 0.1,
+      raidProvisionerUnlocked: true,
+    },
+    hint: "Command the impossible. Conquer the unconquerable. Lead legends.",
     unlocksPath: [],
   },
 };

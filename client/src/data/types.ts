@@ -28,7 +28,7 @@ export interface PersonalityAxes {
 }
 
 export type FactionId = "adventurers_guild" | "scholomance_order";
-export type BossId = "molten_fury";
+export type BossId = "molten_fury" | "eternal_throne";
 export type BossKnowledgeChannel = "intel" | "drills" | "execution";
 
 export interface BossKnowledgeProgress {
@@ -251,7 +251,19 @@ export interface RecipeDefinition {
 
 // ─── Evolution ───────────────────────────────────────────────────────────────
 
-export type EvolutionId = "berserker" | "merchant" | "scholar" | "raid_legend";
+export type EvolutionId =
+  | "berserker"
+  | "merchant"
+  | "scholar"
+  | "raid_legend"
+  | "guardian"
+  | "theorycrafter"
+  | "socialite"
+  | "warlord"
+  | "dungeon_master"
+  | "guildmaster"
+  | "treasure_hunter"
+  | "raid_leader";
 export type EvolutionTier = 1 | 2 | 3;
 
 export interface EvolutionUnlockCondition {

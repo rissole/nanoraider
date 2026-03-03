@@ -20,7 +20,7 @@ const BASE_PERSONALITY: PersonalityAxes = {
   ambition: 0,
 };
 
-const TRACKED_BOSSES: BossId[] = ["molten_fury"];
+const TRACKED_BOSSES: BossId[] = ["molten_fury", "eternal_throne"];
 const TRACKED_DUNGEONS: DungeonActivityId[] = [
   "dungeon_irondeep",
   "dungeon_whispering_crypts",
@@ -36,7 +36,7 @@ export function createHero(name: string, meta: MetaProgression): Hero {
     const base = normalizedBank[bossId];
     acc[bossId] = applyFlatStartingKnowledgeBonus(base, bossKnowledgeStart);
     return acc;
-  }, { molten_fury: { intel: 0, drills: 0, execution: 0 } });
+  }, {} as Record<BossId, Hero["secondary"]["bossKnowledge"][BossId]>);
   const inheritedDungeonFamiliarity = TRACKED_DUNGEONS.reduce<Record<DungeonActivityId, number>>((acc, dungeonId) => {
     acc[dungeonId] = Math.max(0, Math.floor(meta.dungeonFamiliarityBank[dungeonId] ?? 0));
     return acc;

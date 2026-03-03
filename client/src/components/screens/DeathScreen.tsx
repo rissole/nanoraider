@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { EVOLUTIONS } from "../../data/evolutions";
+import { EVOLUTION_LIST, EVOLUTION_TIER_LABELS, EVOLUTIONS } from "../../data/evolutions";
 import { ACTIVITIES } from "../../data/activities";
 import { useGameStore } from "../../store/gameStore";
 import { getBossReadinessFromProgress } from "../../game/bossKnowledge";
@@ -101,7 +101,7 @@ export function DeathScreen() {
               <div className="text-center space-y-1">
                 <div className="text-xs text-yellow-400 uppercase tracking-widest font-bold">Legacy Path Unlocked!</div>
                 <div className="text-3xl font-bold text-white">{evolutionDef.name}</div>
-                <div className="text-yellow-400 text-sm">Tier {evolutionDef.tier}</div>
+                <div className="text-yellow-400 text-sm">{EVOLUTION_TIER_LABELS[evolutionDef.tier]}</div>
               </div>
               <p className="text-gray-300 text-sm text-center italic">{evolutionDef.lore}</p>
               {summary.whyUnlocked !== null && (
@@ -140,12 +140,12 @@ export function DeathScreen() {
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Legacy Path Collection</span>
-              <span className="text-purple-400 font-bold">{meta.unlockedEvolutions.length} / 4</span>
+              <span className="text-purple-400 font-bold">{meta.unlockedEvolutions.length} / {EVOLUTION_LIST.length}</span>
             </div>
             <div className="mt-2 h-2 bg-gray-800 rounded overflow-hidden">
               <div
                 className="h-full bg-purple-500"
-                style={{ width: `${(meta.unlockedEvolutions.length / 4) * 100}%` }}
+                style={{ width: `${(meta.unlockedEvolutions.length / EVOLUTION_LIST.length) * 100}%` }}
               />
             </div>
           </div>
@@ -246,22 +246,59 @@ function PersonalityBar({ stat, value }: { stat: string; value: number }) {
   );
 }
 
-function formatBonuses(evo: { bonuses: { energyBonus: number; startGold?: number; combatBonus?: number; bossKnowledgeBonus?: number; knowledgeTransferMultiplier?: number } }): string {
+function formatBonuses(evo: {
+  bonuses: {
+    energyBonus: number;
+    startGold?: number;
+    combatBonus?: number;
+    bossKnowledgeBonus?: number;
+    knowledgeTransferMultiplier?: number;
+    vendorDiscountPct?: number;
+    recipeDiscountPct?: number;
+    purpleCraftBonusPct?: number;
+    brokerTierStart?: number;
+    raidProvisionerUnlocked?: boolean;
+  };
+}): string {
   const parts: string[] = [];
-  if (evo.bonuses.energyBonus > 0) {
-    parts.push(`+${evo.bonuses.energyBonus} max energy`);
+  const b = evo.bonuses;
+  if (b.energyBonus > 0) {
+    parts.push(`+${b.energyBonus} max energy`);
   }
-  if ((evo.bonuses.startGold ?? 0) > 0 && evo.bonuses.startGold !== undefined) {
-    parts.push(`+${evo.bonuses.startGold}g start gold`);
+  const startGold = b.startGold ?? 0;
+  if (startGold > 0) {
+    parts.push(`+${startGold}g start gold`);
   }
-  if ((evo.bonuses.combatBonus ?? 0) > 0) {
-    parts.push(`+${Math.round((evo.bonuses.combatBonus ?? 0) * 100)}% combat`);
+  const combatBonus = b.combatBonus ?? 0;
+  if (combatBonus > 0) {
+    parts.push(`+${Math.round(combatBonus * 100)}% combat`);
   }
-  if ((evo.bonuses.bossKnowledgeBonus ?? 0) > 0) {
-    parts.push(`+${Math.round((evo.bonuses.bossKnowledgeBonus ?? 0) * 100)}% boss knowledge`);
+  const bossKnowledgeBonus = b.bossKnowledgeBonus ?? 0;
+  if (bossKnowledgeBonus > 0) {
+    parts.push(`+${Math.round(bossKnowledgeBonus * 100)}% boss knowledge`);
   }
-  if ((evo.bonuses.knowledgeTransferMultiplier ?? 1) > 1 && evo.bonuses.knowledgeTransferMultiplier !== undefined) {
-    parts.push(`${evo.bonuses.knowledgeTransferMultiplier}x study gains`);
+  const knowledgeTransferMultiplier = b.knowledgeTransferMultiplier ?? 1;
+  if (knowledgeTransferMultiplier > 1) {
+    parts.push(`${knowledgeTransferMultiplier}x study gains`);
+  }
+  const vendorDiscountPct = b.vendorDiscountPct ?? 0;
+  if (vendorDiscountPct > 0) {
+    parts.push(`${Math.round(vendorDiscountPct * 100)}% vendor discount`);
+  }
+  const recipeDiscountPct = b.recipeDiscountPct ?? 0;
+  if (recipeDiscountPct > 0) {
+    parts.push(`${Math.round(recipeDiscountPct * 100)}% recipe discount`);
+  }
+  const purpleCraftBonusPct = b.purpleCraftBonusPct ?? 0;
+  if (purpleCraftBonusPct > 0) {
+    parts.push(`${Math.round(purpleCraftBonusPct * 100)}% purple craft`);
+  }
+  const brokerTierStart = b.brokerTierStart ?? 1;
+  if (brokerTierStart > 1) {
+    parts.push(`broker tier ${brokerTierStart}`);
+  }
+  if (b.raidProvisionerUnlocked === true) {
+    parts.push("raid provisioner");
   }
   return parts.join(", ");
 }

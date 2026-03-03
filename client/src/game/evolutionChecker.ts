@@ -100,6 +100,22 @@ function buildWhyString(id: EvolutionId, hero: Hero, defeatedRaids: BossId[]): s
       return `You invested deeply in preparation and study (Preparation: ${p.preparation}, Intelligence: ${hero.coreStats.intelligence}, Molten Fury readiness: ${Math.round(getBossReadiness(hero, "molten_fury"))}%).`;
     case "raid_legend":
       return `You combined high combat and preparation with a raid victory${defeatedRaids.includes("molten_fury") ? " over Molten Fury" : ""}.`;
+    case "guardian":
+      return `You stood firm when others fled (Stamina: ${hero.coreStats.stamina}, Preparation: ${p.preparation}).`;
+    case "theorycrafter":
+      return `You calculated every variable before stepping inside (Preparation: ${p.preparation}, Molten Fury readiness: ${Math.round(getBossReadiness(hero, "molten_fury"))}%).`;
+    case "socialite":
+      return `You knew everyone worth knowing (Social Style: ${p.socialStyle}, Charisma: ${hero.coreStats.charismaInfluence}).`;
+    case "warlord":
+      return `You led from the front, blade in hand (Strength: ${hero.coreStats.strength}, Combat Style: ${p.combatStyle}).`;
+    case "dungeon_master":
+      return `You cleared a thousand dungeons and knew every trash pack (Strength: ${hero.coreStats.strength}, Preparation: ${p.preparation}).`;
+    case "guildmaster":
+      return `You built an empire of loyal allies (Social Style: ${p.socialStyle}, Charisma: ${hero.coreStats.charismaInfluence}, Gold: ${hero.gold}g).`;
+    case "treasure_hunter":
+      return `You found riches others missed (Economic Focus: ${p.economicFocus}, Intelligence: ${hero.coreStats.intelligence}, Gold: ${hero.gold}g).`;
+    case "raid_leader":
+      return `You led armies against gods and won${defeatedRaids.includes("eternal_throne") ? " over the Eternal Throne" : ""}.`;
   }
   return "Your hero's combined choices forged a new legacy.";
 }

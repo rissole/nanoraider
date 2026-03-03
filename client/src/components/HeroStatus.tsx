@@ -110,7 +110,10 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename }: HeroS
           {Object.keys(hero.materials).length === 0
             ? "No crafting materials"
             : (Object.keys(hero.materials) as MaterialId[])
-              .map((id) => `${String(MATERIAL_LABELS[id] ?? id)}: ${String(hero.materials[id] ?? 0)}`)
+              .map((id) => {
+                const amt = hero.materials[id];
+                return `${MATERIAL_LABELS[id]}: ${String(typeof amt === "number" ? amt : 0)}`;
+              })
               .join(" · ")}
         </div>
       </div>

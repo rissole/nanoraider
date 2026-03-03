@@ -1,19 +1,86 @@
-import { EVOLUTION_LIST, EVOLUTIONS } from "../../data/evolutions";
-import type { EvolutionId } from "../../data/types";
+import { useEffect, useState } from "react";
+import { EVOLUTION_LIST, EVOLUTION_TIER_LABELS, EVOLUTIONS } from "../../data/evolutions";
+import type { EvolutionBonuses, EvolutionId } from "../../data/types";
 import { AP_UPGRADES } from "../../data/evolutions";
 import { getBossReadinessFromProgress } from "../../game/bossKnowledge";
 import { useGameStore } from "../../store/gameStore";
 
+const META_EXPANDED_STORAGE_KEY = "nanoraider-collection-meta-expanded";
+
+const EVOLUTION_ICONS: Record<EvolutionId, string> = {
+  berserker: "⚔",
+  merchant: "💰",
+  scholar: "📚",
+  raid_legend: "🏆",
+  guardian: "🛡",
+  theorycrafter: "📜",
+  socialite: "💬",
+  warlord: "⚔👑",
+  dungeon_master: "🚪",
+  guildmaster: "🏴",
+  treasure_hunter: "📦",
+  raid_leader: "👑",
+};
+
+const EVOLUTION_LOCKED_LORE: Record<EvolutionId, string> = {
+  berserker: "Legends speak of warriors who lived only for the thrill of battle...",
+  merchant: "Whispers tell of those who understood that gold is power...",
+  scholar: "Stories recount souls who believed preparation was everything...",
+  raid_legend: "They came so close to ultimate victory. Their near-triumph echoes...",
+  guardian: "Legends tell of one who never fell, who stood firm when all others fled...",
+  theorycrafter: "Some say they calculated every variable before stepping inside...",
+  socialite: "They knew everyone worth knowing. Friends in every tavern...",
+  warlord: "Strength alone isn't enough. Command it. Lead from the front...",
+  dungeon_master: "They cleared a thousand dungeons. Every trash pack, every pull...",
+  guildmaster: "They built an empire of loyal allies. The guild endures...",
+  treasure_hunter: "Every chest might hold fortune. They found what others missed...",
+  raid_leader: "Only one has ever commanded armies against gods and won...",
+};
+
+function formatBonusTeaser(bonuses: EvolutionBonuses): string {
+  const parts: string[] = [];
+  parts.push("+?? energy");
+  if ((bonuses.startGold ?? 0) > 0) {
+    parts.push("+??g start gold");
+  }
+  if ((bonuses.combatBonus ?? 0) > 0) {
+    parts.push("+??% combat");
+  }
+  if ((bonuses.knowledgeTransferMultiplier ?? 1) > 1) {
+    parts.push("??x study gains");
+  }
+  if ((bonuses.bossKnowledgeBonus ?? 0) > 0) {
+    parts.push("+??% boss knowledge");
+  }
+  if ((bonuses.vendorDiscountPct ?? 0) > 0) {
+    parts.push("vendor discount");
+  }
+  if ((bonuses.recipeDiscountPct ?? 0) > 0) {
+    parts.push("recipe discount");
+  }
+  if ((bonuses.purpleCraftBonusPct ?? 0) > 0) {
+    parts.push("purple craft bonus");
+  }
+  if ((bonuses.brokerTierStart ?? 0) > 1) {
+    parts.push("broker access");
+  }
+  if (bonuses.raidProvisionerUnlocked === true) {
+    parts.push("raid provisioner");
+  }
+  const teaser = parts.length > 1 ? `Grants: ${parts.join(", ")}...` : `Grants: ${parts[0] ?? ""} and more...`;
+  return teaser;
+}
+
 const TIER_COLORS: Record<number, string> = {
-  1: "border-green-700 bg-green-950",
-  2: "border-blue-700 bg-blue-950",
-  3: "border-purple-700 bg-purple-950",
+  1: "border-green-500 bg-green-900/80",
+  2: "border-blue-500 bg-blue-900/80",
+  3: "border-purple-500 bg-purple-900/80",
 };
 
 const TIER_BADGE: Record<number, string> = {
-  1: "bg-green-800 text-green-200",
-  2: "bg-blue-800 text-blue-200",
-  3: "bg-purple-800 text-purple-200",
+  1: "bg-green-600 text-green-100",
+  2: "bg-blue-600 text-blue-100",
+  3: "bg-purple-600 text-purple-100",
 };
 
 interface EvolutionCardProps {
@@ -30,23 +97,24 @@ function EvolutionCard({ evolutionId, unlocked, collectionUnlocked }: EvolutionC
 
   if (!unlocked) {
     return (
-      <div className={`border rounded-lg p-4 space-y-2 ${tierBorder} opacity-60`}>
+      <div className={`border-2 rounded-lg p-4 space-y-2 ${tierBorder} opacity-75`}>
         <div className="flex items-center justify-between">
-          <span className={`text-xs px-2 py-0.5 rounded font-bold ${tierBadge}`}>Tier {evo.tier}</span>
-          <span className="text-gray-600 text-xs">LOCKED</span>
+          <span className={`text-xs px-2 py-0.5 rounded font-bold ${tierBadge}`}>{EVOLUTION_TIER_LABELS[evo.tier as 1 | 2 | 3]}</span>
+          <span className="text-gray-400 text-xs font-medium">LOCKED</span>
         </div>
         <div className="text-center py-2">
-          <div className="text-4xl text-gray-700">?</div>
-          <div className="text-gray-500 font-bold mt-1">???</div>
+          <div className="text-4xl text-gray-400">{EVOLUTION_ICONS[evolutionId]}</div>
+          <div className="text-gray-300 font-bold mt-1">???</div>
         </div>
-        <p className="text-gray-600 text-xs">{evo.hint}</p>
+        <p className="text-gray-300 text-sm italic">{EVOLUTION_LOCKED_LORE[evolutionId]}</p>
+        <p className="text-amber-400 text-sm">{formatBonusTeaser(evo.bonuses)}</p>
         {evo.prerequisites.length > 0 && (
-          <div className="text-xs">
-            <span className={prereqsMet ? "text-green-500" : "text-red-500"}>
-              {prereqsMet ? "✓" : "✗"} Requires:{" "}
+          <div className="text-sm">
+            <span className={prereqsMet ? "text-green-400" : "text-amber-400"}>
+              {prereqsMet ? "✓" : "?"} Requires:{" "}
             </span>
-            <span className="text-gray-500">
-              {evo.prerequisites.map((p) => EVOLUTIONS[p].name).join(" + ")}
+            <span className="text-gray-300">
+              {evo.prerequisites.map((p) => (collectionUnlocked.includes(p) ? EVOLUTIONS[p].name : "???")).join(" + ")}
             </span>
           </div>
         )}
@@ -57,35 +125,60 @@ function EvolutionCard({ evolutionId, unlocked, collectionUnlocked }: EvolutionC
   return (
     <div className={`border-2 rounded-lg p-4 space-y-2 ${tierBorder}`}>
       <div className="flex items-center justify-between">
-        <span className={`text-xs px-2 py-0.5 rounded font-bold ${tierBadge}`}>Tier {evo.tier}</span>
-        <span className="text-green-400 text-xs font-bold">✓ UNLOCKED</span>
+        <span className={`text-xs px-2 py-0.5 rounded font-bold ${tierBadge}`}>{EVOLUTION_TIER_LABELS[evo.tier as 1 | 2 | 3]}</span>
+        <span className="text-green-300 text-xs font-bold">✓ UNLOCKED</span>
       </div>
       <div>
         <h3 className="text-white font-bold text-lg">{evo.name}</h3>
-        <p className="text-gray-300 text-sm">{evo.description}</p>
+        <p className="text-gray-200 text-sm">{evo.description}</p>
       </div>
-      <p className="text-gray-400 text-xs italic border-t border-gray-700 pt-2">{evo.lore}</p>
-      <div className="space-y-1 text-xs">
-        <div className="text-gray-500 uppercase tracking-widest font-bold">Bonuses</div>
-        <div className="text-green-400">+{evo.bonuses.energyBonus} max energy</div>
-        {(evo.bonuses.startGold ?? 0) > 0 && <div className="text-yellow-400">+{evo.bonuses.startGold}g start gold</div>}
-        {(evo.bonuses.combatBonus ?? 0) > 0 && <div className="text-red-400">+{Math.round((evo.bonuses.combatBonus ?? 0) * 100)}% combat</div>}
-        {(evo.bonuses.knowledgeTransferMultiplier ?? 1) > 1 && <div className="text-cyan-400">{evo.bonuses.knowledgeTransferMultiplier}x study gains</div>}
-        {(evo.bonuses.bossKnowledgeBonus ?? 0) > 0 && <div className="text-blue-400">+{Math.round((evo.bonuses.bossKnowledgeBonus ?? 0) * 100)}% boss knowledge</div>}
+      <p className="text-gray-300 text-sm italic border-t border-gray-600 pt-2">{evo.lore}</p>
+      <div className="space-y-1 text-sm">
+        <div className="text-gray-400 uppercase tracking-widest font-bold">Bonuses</div>
+        <div className="text-green-300">+{evo.bonuses.energyBonus} max energy</div>
+        {(evo.bonuses.startGold ?? 0) > 0 && <div className="text-yellow-300">+{evo.bonuses.startGold}g start gold</div>}
+        {(evo.bonuses.combatBonus ?? 0) > 0 && <div className="text-red-300">+{Math.round((evo.bonuses.combatBonus ?? 0) * 100)}% combat</div>}
+        {(evo.bonuses.knowledgeTransferMultiplier ?? 1) > 1 && <div className="text-cyan-300">{evo.bonuses.knowledgeTransferMultiplier}x study gains</div>}
+        {(evo.bonuses.bossKnowledgeBonus ?? 0) > 0 && <div className="text-blue-300">+{Math.round((evo.bonuses.bossKnowledgeBonus ?? 0) * 100)}% boss knowledge</div>}
+        {(evo.bonuses.vendorDiscountPct ?? 0) > 0 && <div className="text-amber-300">+{Math.round((evo.bonuses.vendorDiscountPct ?? 0) * 100)}% vendor discount</div>}
+        {(evo.bonuses.recipeDiscountPct ?? 0) > 0 && <div className="text-orange-300">+{Math.round((evo.bonuses.recipeDiscountPct ?? 0) * 100)}% recipe discount</div>}
+        {(evo.bonuses.purpleCraftBonusPct ?? 0) > 0 && <div className="text-purple-300">+{Math.round((evo.bonuses.purpleCraftBonusPct ?? 0) * 100)}% purple craft</div>}
+        {(evo.bonuses.brokerTierStart ?? 1) > 1 && <div className="text-sky-300">Broker tier {evo.bonuses.brokerTierStart} start</div>}
+        {evo.bonuses.raidProvisionerUnlocked === true ? <div className="text-violet-300">Raid Provisioner unlocked</div> : null}
       </div>
       {evo.unlocksPath.length > 0 && (
-        <div className="text-xs text-gray-500 border-t border-gray-700 pt-2">
-          <span className="font-bold text-gray-400">Unlocks path to:</span>{" "}
-          {evo.unlocksPath.map((id) => EVOLUTIONS[id].name).join(", ")}
+        <div className="text-sm text-gray-300 border-t border-gray-600 pt-2">
+          <span className="font-bold text-gray-200">Unlocks path to:</span>
+          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+            {evo.unlocksPath.map((id) => (
+              <span className="text-cyan-300" key={id}>
+                → {EVOLUTIONS[id].name}
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
 }
 
+function getStoredMetaExpanded(): boolean {
+  const stored = localStorage.getItem(META_EXPANDED_STORAGE_KEY);
+  return stored === null ? true : stored === "true";
+}
+
 export function CollectionScreen() {
   const { meta, hero, goTo } = useGameStore();
+  const [metaExpanded, setMetaExpanded] = useState(getStoredMetaExpanded);
   const unlockedSet = new Set(meta.unlockedEvolutions);
+
+  useEffect(() => {
+    localStorage.setItem(META_EXPANDED_STORAGE_KEY, String(metaExpanded));
+  }, [metaExpanded]);
+
+  const toggleMeta = () => {
+    setMetaExpanded((prev) => !prev);
+  };
   const unlockedCount = meta.unlockedEvolutions.length;
   const totalCount = EVOLUTION_LIST.length;
   const apUpgradeCounts = AP_UPGRADES.map((upgrade) => ({
@@ -98,17 +191,18 @@ export function CollectionScreen() {
 
   const tier1 = EVOLUTION_LIST.filter((e) => e.tier === 1);
   const tier2 = EVOLUTION_LIST.filter((e) => e.tier === 2);
+  const tier3 = EVOLUTION_LIST.filter((e) => e.tier === 3);
 
   return (
     <div className="min-h-screen p-4 max-w-2xl mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-yellow-400 font-bold text-xl">Legacy Paths</h2>
-          <p className="text-gray-400 text-sm">Discover your hero&apos;s legacy</p>
+          <h2 className="text-yellow-300 font-bold text-xl">Legacy Paths</h2>
+          <p className="text-gray-300 text-sm">Discover your hero&apos;s legacy</p>
         </div>
         <button
-          className="text-gray-400 hover:text-gray-200 text-sm"
+          className="text-gray-300 hover:text-white text-sm transition-colors"
           onClick={() => { goTo(hero !== null ? "planning" : "main_menu"); }}
         >
           ← Back
@@ -116,71 +210,81 @@ export function CollectionScreen() {
       </div>
 
       {/* Progress */}
-      <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-2">
+      <div className="bg-gray-800/80 border border-gray-600 rounded-lg p-4 space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-300 font-bold">Collection Progress</span>
-          <span className="text-purple-400 font-bold">{unlockedCount} / {totalCount} Paths</span>
+          <span className="text-gray-200 font-bold">Collection Progress</span>
+          <span className="text-purple-300 font-bold">{unlockedCount} / {totalCount} Paths</span>
         </div>
-        <div className="h-3 bg-gray-800 rounded overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-purple-600 to-yellow-500" style={{ width: `${(unlockedCount / totalCount) * 100}%` }} />
+        <div className="h-3 bg-gray-700 rounded overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-purple-500 to-yellow-400" style={{ width: `${(unlockedCount / totalCount) * 100}%` }} />
         </div>
-        <div className="flex gap-4 text-xs text-gray-500">
-          <span className="text-green-400">{EVOLUTION_LIST.filter((e) => e.tier === 1 && unlockedSet.has(e.id)).length}/{tier1.length} Tier 1</span>
-          <span className="text-blue-400">{EVOLUTION_LIST.filter((e) => e.tier === 2 && unlockedSet.has(e.id)).length}/{tier2.length} Tier 2</span>
+        <div className="flex gap-4 text-sm text-gray-300">
+          <span className="text-green-300">{EVOLUTION_LIST.filter((e) => e.tier === 1 && unlockedSet.has(e.id)).length}/{tier1.length} Foundation</span>
+          <span className="text-blue-300">{EVOLUTION_LIST.filter((e) => e.tier === 2 && unlockedSet.has(e.id)).length}/{tier2.length} Specialist</span>
+          <span className="text-purple-300">{EVOLUTION_LIST.filter((e) => e.tier === 3 && unlockedSet.has(e.id)).length}/{tier3.length} Mastery</span>
         </div>
       </div>
 
       {/* Meta progression */}
-      <div className="bg-gray-900 border border-cyan-800 rounded-lg p-4 space-y-4">
-        <h3 className="text-cyan-300 text-xs font-bold uppercase tracking-widest">Meta Progression</h3>
+      <div className="bg-gray-800/80 border border-cyan-600 rounded-lg overflow-hidden">
+        <button
+          className="flex w-full items-center justify-between p-4 text-left hover:bg-gray-700/50 transition-colors"
+          onClick={toggleMeta}
+          type="button"
+        >
+          <h3 className="text-cyan-200 text-sm font-bold uppercase tracking-widest">Meta Progression</h3>
+          <span className="text-cyan-300 text-lg">{metaExpanded ? "−" : "+"}</span>
+        </button>
+        {metaExpanded ? (
+        <div className="px-4 pb-4 space-y-4 border-t border-cyan-700/50 pt-4">
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="bg-gray-950 border border-gray-800 rounded p-2">
-            <div className="text-gray-500 text-xs">Total Runs</div>
-            <div className="text-blue-300 font-bold">{meta.totalRuns}</div>
+          <div className="bg-gray-800 border border-gray-600 rounded p-2">
+            <div className="text-gray-400 text-xs">Total Runs</div>
+            <div className="text-blue-200 font-bold">{meta.totalRuns}</div>
           </div>
-          <div className="bg-gray-950 border border-gray-800 rounded p-2">
-            <div className="text-gray-500 text-xs">Achievement Points</div>
-            <div className="text-yellow-300 font-bold">{meta.achievementPoints}</div>
+          <div className="bg-gray-800 border border-gray-600 rounded p-2">
+            <div className="text-gray-400 text-xs">Achievement Points</div>
+            <div className="text-yellow-200 font-bold">{meta.achievementPoints}</div>
           </div>
-          <div className="bg-gray-950 border border-gray-800 rounded p-2">
-            <div className="text-gray-500 text-xs">Max Energy</div>
-            <div className="text-emerald-300 font-bold">{meta.maxEnergy}</div>
+          <div className="bg-gray-800 border border-gray-600 rounded p-2">
+            <div className="text-gray-400 text-xs">Max Energy</div>
+            <div className="text-emerald-200 font-bold">{meta.maxEnergy}</div>
           </div>
-          <div className="bg-gray-950 border border-gray-800 rounded p-2">
-            <div className="text-gray-500 text-xs">Unlocked Evolutions</div>
-            <div className="text-purple-300 font-bold">{meta.unlockedEvolutions.length}</div>
+          <div className="bg-gray-800 border border-gray-600 rounded p-2">
+            <div className="text-gray-400 text-xs">Unlocked Evolutions</div>
+            <div className="text-purple-200 font-bold">{meta.unlockedEvolutions.length}</div>
           </div>
         </div>
 
-        <div className="space-y-1 text-xs border-t border-gray-800 pt-3">
-          <div className="text-gray-500 uppercase tracking-widest font-bold">Stacked Legacy Bonuses</div>
-          <div className="text-green-300">Energy Bonus: +{meta.evolutionBonuses.energyBonus}</div>
-          <div className="text-yellow-300">Start Gold: +{meta.evolutionBonuses.startGold ?? 0}g</div>
-          <div className="text-red-300">Combat Bonus: +{Math.round((meta.evolutionBonuses.combatBonus ?? 0) * 100)}%</div>
-          <div className="text-cyan-300">Knowledge Transfer: {meta.evolutionBonuses.knowledgeTransferMultiplier ?? 1}x</div>
-          <div className="text-blue-300">Boss Knowledge Bonus: +{Math.round((meta.evolutionBonuses.bossKnowledgeBonus ?? 0) * 100)}%</div>
+        <div className="space-y-1 text-sm border-t border-gray-600 pt-3">
+          <div className="text-gray-400 uppercase tracking-widest font-bold">Stacked Legacy Bonuses</div>
+          <div className="text-green-200">Energy Bonus: +{meta.evolutionBonuses.energyBonus}</div>
+          <div className="text-yellow-200">Start Gold: +{meta.evolutionBonuses.startGold ?? 0}g</div>
+          <div className="text-red-200">Combat Bonus: +{Math.round((meta.evolutionBonuses.combatBonus ?? 0) * 100)}%</div>
+          <div className="text-cyan-200">Knowledge Transfer: {meta.evolutionBonuses.knowledgeTransferMultiplier ?? 1}x</div>
+          <div className="text-blue-200">Boss Knowledge Bonus: +{Math.round((meta.evolutionBonuses.bossKnowledgeBonus ?? 0) * 100)}%</div>
         </div>
 
-        <div className="space-y-1 text-xs border-t border-gray-800 pt-3">
-          <div className="text-gray-500 uppercase tracking-widest font-bold">AP Upgrades</div>
+        <div className="space-y-1 text-sm border-t border-gray-600 pt-3">
+          <div className="text-gray-400 uppercase tracking-widest font-bold">AP Upgrades</div>
           {apUpgradeCounts.map((upgrade) => (
             <div className="flex justify-between" key={upgrade.name}>
-              <span className="text-gray-400">{upgrade.name}</span>
-              <span className="text-blue-300">{upgrade.purchased}/{upgrade.maxPurchases}</span>
+              <span className="text-gray-300">{upgrade.name}</span>
+              <span className="text-blue-200">{upgrade.purchased}/{upgrade.maxPurchases}</span>
             </div>
           ))}
         </div>
 
-        <div className="space-y-1 text-xs border-t border-gray-800 pt-3">
-          <div className="text-gray-500 uppercase tracking-widest font-bold">Boss Knowledge Bank</div>
-          {bossKnowledgeRows.length === 0 && <div className="text-gray-500">No stored boss knowledge yet.</div>}
+        <div className="space-y-1 text-sm border-t border-gray-600 pt-3">
+          <div className="text-gray-400 uppercase tracking-widest font-bold">Boss Knowledge Bank</div>
+          {bossKnowledgeRows.length === 0 && <div className="text-gray-400">No stored boss knowledge yet.</div>}
           {bossKnowledgeRows.map(([bossId, progress]) => (
-            <div className="bg-gray-950 border border-gray-800 rounded p-2 space-y-1" key={bossId}>
+            <div className="bg-gray-800 border border-gray-600 rounded p-2 space-y-1" key={bossId}>
               <div className="flex justify-between">
-                <span className="text-gray-300 capitalize">{bossId.replace(/_/g, " ")}</span>
-                <span className="text-cyan-300">Readiness {Math.round(getBossReadinessFromProgress(progress))}</span>
+                <span className="text-gray-200 capitalize">{bossId.replace(/_/g, " ")}</span>
+                <span className="text-cyan-200">Readiness {Math.round(getBossReadinessFromProgress(progress))}</span>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-[11px] text-gray-400">
+              <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
                 <span>Intel {Math.round(progress.intel)}</span>
                 <span>Drills {Math.round(progress.drills)}</span>
                 <span>Execution {Math.round(progress.execution)}</span>
@@ -189,21 +293,24 @@ export function CollectionScreen() {
           ))}
         </div>
 
-        <div className="space-y-1 text-xs border-t border-gray-800 pt-3">
-          <div className="text-gray-500 uppercase tracking-widest font-bold">Dungeon Familiarity Bank</div>
-          {dungeonFamiliarityRows.length === 0 && <div className="text-gray-500">No stored dungeon familiarity yet.</div>}
+        <div className="space-y-1 text-sm border-t border-gray-600 pt-3">
+          <div className="text-gray-400 uppercase tracking-widest font-bold">Dungeon Familiarity Bank</div>
+          {dungeonFamiliarityRows.length === 0 ? <div className="text-gray-400">No stored dungeon familiarity yet.</div> : null}
           {dungeonFamiliarityRows.map(([dungeonId, clears]) => (
-            <div className="flex justify-between bg-gray-950 border border-gray-800 rounded p-2" key={dungeonId}>
-              <span className="text-gray-300 capitalize">{dungeonId.replace("dungeon_", "").replace(/_/g, " ")}</span>
+            <div className="flex justify-between bg-gray-800 border border-gray-600 rounded p-2" key={dungeonId}>
+              <span className="text-gray-200 capitalize">{dungeonId.replace("dungeon_", "").replace(/_/g, " ")}</span>
               <span className="text-emerald-300">Survived clears {clears}</span>
             </div>
           ))}
         </div>
+        </div>
+        ) : null}
       </div>
 
-      {/* Tier 1 */}
+      {/* Foundation */}
       <div className="space-y-3">
-        <h3 className="text-green-400 text-xs font-bold uppercase tracking-widest">Tier 1 — Foundation Paths</h3>
+        <h3 className="text-green-300 text-sm font-bold uppercase tracking-widest">Foundation Paths</h3>
+        <p className="text-gray-300 text-sm">Where every legend begins</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {tier1.map((evo) => (
             <EvolutionCard
@@ -216,11 +323,40 @@ export function CollectionScreen() {
         </div>
       </div>
 
-      {/* Tier 2 */}
+      <div className="flex items-center justify-center gap-2 text-gray-400">
+        <div className="flex-1 border-t border-dashed border-gray-500" />
+        <span className="text-sm">paths combine into</span>
+        <div className="flex-1 border-t border-dashed border-gray-500" />
+      </div>
+
+      {/* Specialist */}
       <div className="space-y-3">
-        <h3 className="text-blue-400 text-xs font-bold uppercase tracking-widest">Tier 2 — Specialist Paths</h3>
+        <h3 className="text-blue-300 text-sm font-bold uppercase tracking-widest">Specialist Paths</h3>
+        <p className="text-gray-300 text-sm">Forge your identity</p>
         <div className="grid grid-cols-1 gap-3">
           {tier2.map((evo) => (
+            <EvolutionCard
+              collectionUnlocked={meta.unlockedEvolutions}
+              evolutionId={evo.id}
+              key={evo.id}
+              unlocked={unlockedSet.has(evo.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center gap-2 text-gray-400">
+        <div className="flex-1 border-t border-dashed border-gray-500" />
+        <span className="text-sm">paths combine into</span>
+        <div className="flex-1 border-t border-dashed border-gray-500" />
+      </div>
+
+      {/* Mastery */}
+      <div className="space-y-3">
+        <h3 className="text-purple-300 text-sm font-bold uppercase tracking-widest">Mastery Paths</h3>
+        <p className="text-gray-300 text-sm">Become the legend</p>
+        <div className="grid grid-cols-1 gap-3">
+          {tier3.map((evo) => (
             <EvolutionCard
               collectionUnlocked={meta.unlockedEvolutions}
               evolutionId={evo.id}
