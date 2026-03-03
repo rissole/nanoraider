@@ -95,6 +95,9 @@ function EvolutionCard({ evolutionId, unlocked, collectionUnlocked }: EvolutionC
   const prereqsMet = evo.prerequisites.every((p) => collectionUnlocked.includes(p));
 
   if (!unlocked) {
+    const isTier1 = evo.tier === 1;
+    const displayName = isTier1 ? evo.name : "???";
+    const displayHint = isTier1 ? evo.hint : EVOLUTION_LOCKED_LORE[evolutionId];
     return (
       <div className={`border-2 rounded-lg p-4 space-y-2 ${tierBorder} opacity-75`}>
         <div className="flex items-center justify-between">
@@ -103,9 +106,9 @@ function EvolutionCard({ evolutionId, unlocked, collectionUnlocked }: EvolutionC
         </div>
         <div className="text-center py-2">
           <div className="text-4xl text-gray-400">{EVOLUTION_ICONS[evolutionId]}</div>
-          <div className="text-gray-300 font-bold mt-1">???</div>
+          <div className="text-gray-300 font-bold mt-1">{displayName}</div>
         </div>
-        <p className="text-gray-300 text-sm italic">{EVOLUTION_LOCKED_LORE[evolutionId]}</p>
+        <p className="text-gray-300 text-sm italic">{displayHint}</p>
         <div className="text-amber-400 text-sm">
           <div className="text-amber-300/80 text-xs font-bold uppercase tracking-widest mb-1">Grants</div>
           <ul className="list-disc list-inside space-y-0.5">

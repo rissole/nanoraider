@@ -1,9 +1,11 @@
 import { ACTIVITIES, ACTIVITY_LIST } from "../../data/activities";
 import { MATERIAL_LABELS, RECIPE_DEFINITIONS } from "../../data/crafting";
+import { EVOLUTIONS, EVOLUTION_TIER_LABELS } from "../../data/evolutions";
 import { RARITY_LABELS } from "../../data/rarity";
 import type { ActivityDefinition, ActivityId, GearSlot, MaterialId, RecipeId, RiskBand, VendorId } from "../../data/types";
 import { useGameStore } from "../../store/gameStore";
 import { computeActivityRisk, isActivityUnlocked } from "../../game/activityResolver";
+import { getTopEvolutionRecommendations } from "../../game/evolutionChecker";
 import { HeroStatus } from "../HeroStatus";
 import { useMemo, useState } from "react";
 
@@ -273,6 +275,10 @@ export function PlanningScreen() {
   const [forgeTier, setForgeTier] = useState<ForgeTier>("green");
   const [selectedForgeSlot, setSelectedForgeSlot] = useState<GearSlot>("head");
   const availableActivities = useMemo(() => hero !== null ? ACTIVITY_LIST.filter((def) => isActivityUnlocked(hero, def)) : null, [hero]);
+  const evolutionRecommendations = useMemo(
+    () => (hero !== null ? getTopEvolutionRecommendations(hero, meta, [], 3) : []),
+    [hero, meta],
+  );
 
   if (availableActivities === null || hero === null) {
     return null;
@@ -310,15 +316,48 @@ export function PlanningScreen() {
 
   return (
     <div className="min-h-screen p-4 space-y-4 max-w-2xl mx-auto">
+      {/* Evolution recommendations - top of page */}
+      {evolutionRecommendations.length > 0 && (
+        <div className="bg-gray-800/80 border border-cyan-600 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-cyan-200 text-xs font-bold uppercase tracking-widest">Legacy Targets</h3>
+            <button
+              className="text-gray-400 hover:text-gray-200 text-sm"
+              onClick={() => { goTo("collection"); }}
+            >
+              ◈ Collection
+            </button>
+          </div>
+          <p className="text-gray-400 text-xs mb-3">Paths to pursue this run</p>
+          <div className="flex gap-3 flex-wrap">
+            {evolutionRecommendations.map((rec) => {
+              const evo = EVOLUTIONS[rec.evolutionId];
+              return (
+                <div className="bg-gray-900 border border-gray-600 rounded p-3 text-sm flex-1 min-w-[180px] min-h-[80px]" key={rec.evolutionId}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-cyan-300 font-bold">{evo.name}</span>
+                    <span className="text-gray-500 text-xs">({EVOLUTION_TIER_LABELS[evo.tier as 1 | 2 | 3]})</span>
+                  </div>
+                  <p className="text-gray-300 text-xs mt-2 leading-relaxed">{rec.gapSummary}</p>
+                  <p className="text-amber-400/90 text-xs mt-1 italic leading-relaxed">{rec.hint}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-yellow-400 font-bold text-lg">Day {hero.inGameDay} Planning</h2>
-        <button
-          className="text-gray-400 hover:text-gray-200 text-sm"
-          onClick={() => { goTo("collection"); }}
-        >
-          ◈ Collection
-        </button>
+        {evolutionRecommendations.length === 0 && (
+          <button
+            className="text-gray-400 hover:text-gray-200 text-sm"
+            onClick={() => { goTo("collection"); }}
+          >
+            ◈ Collection
+          </button>
+        )}
       </div>
 
       {/* Hero status */}

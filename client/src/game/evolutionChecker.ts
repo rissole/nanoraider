@@ -176,6 +176,107 @@ function buildAlmostReason(
   return parts.length > 0 ? parts.join(", ") + "." : "Almost there!";
 }
 
+export interface EvolutionRecommendation {
+  evolutionId: EvolutionId;
+  gapSummary: string;
+  hint: string;
+}
+
+/** Returns top 1–3 evolution recommendations for Planning screen. Priority: 1) path match, 2) unlocks breadth, 3) lowest tier. */
+export function getTopEvolutionRecommendations(
+  hero: Hero,
+  meta: MetaProgression,
+  defeatedRaids: BossId[] = [],
+  maxCount = 3,
+): EvolutionRecommendation[] {
+  const alreadyUnlocked = new Set(meta.unlockedEvolutions);
+  const locked = Object.values(EVOLUTIONS).filter((e) => !alreadyUnlocked.has(e.id));
+  if (locked.length === 0) {
+    return [];
+  }
+
+  type Scored = {
+    evo: (typeof EVOLUTIONS)[EvolutionId];
+    checkScore: number;
+    prereqPathScore: number;
+    unlocksBreadth: number;
+    gapSummary: string;
+  };
+
+  const scored: Scored[] = locked.map((evo) => {
+    const prereqsMet = evo.prerequisites.every((p) => alreadyUnlocked.has(p));
+    const prereqPathScore =
+      evo.prerequisites.length === 0
+        ? 1
+        : evo.prerequisites.filter((p) => alreadyUnlocked.has(p)).length / evo.prerequisites.length;
+
+    const cond = evo.unlockCondition;
+    const checks = evaluateChecks(hero, cond, defeatedRaids);
+    const passedCount = Object.values(checks).filter(Boolean).length;
+    const totalChecks = Math.max(1, Object.keys(checks).length);
+    const checkScore = passedCount / totalChecks;
+
+    const gapSummary = buildAlmostReason(evo.id, checks, prereqsMet, cond, hero, defeatedRaids);
+
+    return {
+      evo,
+      checkScore,
+      prereqPathScore,
+      unlocksBreadth: evo.unlocksPath.length,
+      gapSummary,
+    };
+  });
+
+  const picked: EvolutionId[] = [];
+  const pickedSet = new Set<EvolutionId>();
+
+  // Priority 1: best path match (checkScore first, prereqPathScore tiebreaker)
+  const byPathMatch = [...scored].sort((a, b) => {
+    if (b.checkScore !== a.checkScore) {
+      return b.checkScore - a.checkScore;
+    }
+    return b.prereqPathScore - a.prereqPathScore;
+  });
+  const bestPath = byPathMatch[0];
+  if (bestPath && !pickedSet.has(bestPath.evo.id)) {
+    picked.push(bestPath.evo.id);
+    pickedSet.add(bestPath.evo.id);
+  }
+
+  // Priority 2: best unlocks breadth among remaining
+  const remainingForBreadth = scored.filter((s) => !pickedSet.has(s.evo.id));
+  const byBreadth = [...remainingForBreadth].sort((a, b) => b.unlocksBreadth - a.unlocksBreadth);
+  const bestBreadth = byBreadth[0];
+  if (bestBreadth && !pickedSet.has(bestBreadth.evo.id)) {
+    picked.push(bestBreadth.evo.id);
+    pickedSet.add(bestBreadth.evo.id);
+  }
+
+  // Priority 3: lowest tier among remaining
+  const remainingForTier = scored.filter((s) => !pickedSet.has(s.evo.id));
+  const byTier = [...remainingForTier].sort((a, b) => {
+    if (a.evo.tier !== b.evo.tier) {
+      return a.evo.tier - b.evo.tier;
+    }
+    return b.checkScore - a.checkScore;
+  });
+  const bestTier = byTier[0];
+  if (bestTier && !pickedSet.has(bestTier.evo.id)) {
+    picked.push(bestTier.evo.id);
+    pickedSet.add(bestTier.evo.id);
+  }
+
+  const pickedScored = picked
+    .slice(0, maxCount)
+    .map((id) => scored.find((x) => x.evo.id === id))
+    .filter((s): s is NonNullable<typeof s> => s !== undefined);
+  return pickedScored.map((s) => ({
+    evolutionId: s.evo.id,
+    gapSummary: s.gapSummary,
+    hint: EVOLUTIONS[s.evo.id].hint,
+  }));
+}
+
 export function stackEvolutionBonuses(unlockedIds: EvolutionId[]) {
   let energyBonus = 0;
   let startGold = 0;
