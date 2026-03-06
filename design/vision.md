@@ -14,11 +14,7 @@ When a hero dies, their legacy path unlocks become tools and knowledge for futur
 
 - **Pokédex-style legacy path collection** - 30+ unique hero types to discover, each with distinct abilities and playstyles
 - **Your playstyle = your path** - Farm dungeons → combat specialist, flip items → merchant, craft gear → artisan (not predetermined classes)
-- **Legacy path unlocks are progression** - Each new path grants tools/knowledge/bonuses for future heroes
 - **Path prerequisites create depth** - Ultimate paths require specific prior discoveries (e.g., Ultimate Raider needs Master Crafter blueprints)
-- **Can't pay to win** - You need actual legacy path unlocks through play; no shortcut to discovering new types
-- **Energy supports discovery** - Veterans with more max energy can experiment faster, but everyone discovers at their own pace
-- **Every run teaches** - Death grants +5 max energy + Achievement Points, making next run longer AND revealing new legacy paths
 - **Roguelike meta-progression** - Each hero benefits from previous heroes' discoveries, creating compounding strategies
 
 ## Design Pillars
@@ -29,7 +25,7 @@ The core loop is discovering new legacy paths, not min-maxing one build. "What h
 **Anti-pattern:** Generic idle game where optimization is the only goal, or games where content is gated behind timers rather than discovery
 
 ### 2. Personality Emerges From Playstyle
-Heroes aren't preset classes—they become what you make them. Your decisions (dungeon spam, gold farming, social activities, crafting focus) organically shape their legacy path. The game reads your playstyle and reflects it in your hero's legend, creating emergent narratives.
+Heroes become what you make them. Your decisions (dungeon spam, gold farming, social activities, crafting focus) organically shape their legacy path. The game reads your playstyle and reflects it in your hero's legend, creating emergent narratives.
 
 **Anti-pattern:** Rigid class systems where choices don't matter, or games where "personality" is just flavor text
 
@@ -38,17 +34,7 @@ Each legacy path you unlock becomes a tool for future heroes. Discovered the Mas
 
 **Anti-pattern:** Runs that feel isolated with no meaningful meta-progression, or abstract upgrades with no thematic connection
 
-### 4. Prerequisites Create Strategic Depth
-Ultimate legacy paths require specific prior discoveries, creating long-term goals. You can't stumble into the legendary paths—you need to deliberately pursue prerequisite paths. This creates "Aha!" moments when players realize path combos unlock new possibilities.
-
-**Anti-pattern:** All content accessible immediately, or arbitrary gates that don't reward exploration
-
-### 5. Energy Supports Discovery (But Isn't The Point)
-Energy still matters—veterans with higher max energy can experiment with legacy paths faster. BUT energy is the support system, not the core progression. You progress by discovering paths (requires play), not by accumulating abstract resources (can be monetized unfairly).
-
-**Anti-pattern:** Pure energy-gated progression that can be pay-to-win, or systems where energy feels punishing rather than enabling
-
-### 6. Cozy Collection with Hardcore Stakes
+### 4. Cozy Collection with Hardcore Stakes
 Accessible Pokédex-style collection mechanics (filling out your legacy codex is satisfying and visual) mask roguelike depth. Permadeath creates tension, but discovering new paths creates excitement. The game celebrates both collectors and strategic optimizers.
 
 **Anti-pattern:** Either too casual (no meaningful choices) or too punishing (progression feels impossible)
@@ -58,11 +44,9 @@ Accessible Pokédex-style collection mechanics (filling out your legacy codex is
 | Game | What We Take |
 |------|--------------|
 | **Melvor Idle** | Session structure, planning UI, cozy aesthetic, accessible depth |
-| **World of Warcraft** | Pre-BiS farming mindset, meaningful gear progression, raid lockouts |
+| **World of Warcraft** | Flavor/themes, meaningful gear progression, raid lockouts |
 | **Slay the Spire** | Roguelike meta-progression, build variety, "one more run" appeal |
 | **Stardew Valley** | Time management as core tension, daily planning mechanics |
-| **Reigns** | Simple binary choices with long-term consequences |
-| **Dark Souls** | Knowledge as permanent progression, learning through death |
 | **Tamagotchi / Digimon** | Nurture mechanics shape character development |
 
 ## Target Audience
@@ -77,7 +61,7 @@ Accessible Pokédex-style collection mechanics (filling out your legacy codex is
 - **Retention:** Flexible based on energy capacity - casual players check-in 1-2x daily, veterans may marathon
 - **Engagement:** 3+ completed character runs before churn
 - **Energy Growth:** Players progress from 50 → 100+ max energy over first 10 runs
-- **Monetization:** Cosmetics, new hero classes, optional energy refills (convenience, never required), meta-progression boosters (non-P2W)
+- **Monetization:** Cosmetics, new hero classes, optional energy refills (convenience, never required)
 
 ## Tone & Aesthetic
 
@@ -85,12 +69,6 @@ Accessible Pokédex-style collection mechanics (filling out your legacy codex is
 
 **Narrative:** Light fantasy MMO parody. Self-aware humor ("LFG for Molten Core PST") mixed with genuine character attachment.
 
-**Emotional Arc:**
-- Early: Curiosity and discovery
-- Mid: Strategic satisfaction and optimization
-- Late: Tension and risk management
-- End: Bittersweet triumph or noble failure
-
 ## One-Sentence Pitch
 
-**"A roguelike legacy-path collector where your MMO playstyle shapes what hero type you become—discover 30+ unique paths, Pokédex-style."**
+**"A roguelike hardcore MMO character simulator playstyle shapes what hero type you become—discover all 30+ unique heroes."**
