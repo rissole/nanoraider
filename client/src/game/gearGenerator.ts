@@ -9,7 +9,7 @@ import type {
   HeroClass,
   WeaponSlot,
 } from "../data/types";
-import { STARTING_GEAR_SPEC } from "./characterCreation";
+import { STARTING_GEAR_SPEC } from "./character";
 
 const CLASS_ARMOR_WEIGHT: Record<HeroClass, ArmorWeight> = {
   warrior: "plate",

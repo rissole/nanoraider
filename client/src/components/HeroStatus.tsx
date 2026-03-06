@@ -4,6 +4,7 @@ import { EnergyBar } from "./EnergyBar";
 import { MATERIAL_LABELS } from "../data/crafting";
 import { RARITY_LABELS } from "../data/rarity";
 import { formatGearStats, getGearPower } from "../game/gearGenerator";
+import { getAgePhase } from "../game/character";
 
 const HERO_CLASSES: HeroClass[] = ["warrior", "rogue", "mage", "guardian", "bard"];
 
@@ -80,11 +81,14 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename, onChang
   const gearPower = getGearPower(hero);
 
   const agePhase = (() => {
-    if (hero.inGameDay <= 3) {return { label: "Young", color: "text-green-400" };}
-    if (hero.inGameDay <= 6) {return { label: "Prime", color: "text-blue-400" };}
-    if (hero.inGameDay <= 9) {return { label: "Experienced", color: "text-yellow-400" };}
-    if (hero.inGameDay <= 12) {return { label: "Aging", color: "text-orange-400" };}
-    return { label: "Elderly", color: "text-red-400" };
+    switch (getAgePhase(hero.inGameDay)) {
+      case "healthy":
+        return { label: "Healthy", color: "text-green-400" };
+      case "aging":
+        return { label: "Aging", color: "text-orange-400" };
+      case "elderly":
+        return { label: "Elderly", color: "text-red-400" };
+    }
   })();
 
   return (
@@ -173,32 +177,32 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename, onChang
         <span className="text-gray-400 text-xs w-24 text-right">{hero.renown}</span>
       </div>
 
-      {/* Core axis bars */}
+      {/* Build Triangle (War / Wealth / Wit — sums to 100%) */}
       <div className="space-y-6">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-red-400 font-bold">War</span>
+        <div className="space-y-1">
+          <div className="h-6 bg-gray-800 rounded border border-gray-700 overflow-hidden flex">
+            <div
+              className="h-full bg-red-500 transition-all shrink-0 flex items-center justify-center"
+              style={{ width: `${hero.triangle.war}%`, }}
+              title={`War ${hero.triangle.war}%`}
+            >
+              War {hero.triangle.war}%
             </div>
-            <div className="h-2 bg-gray-800 rounded border border-gray-700 overflow-hidden">
-              <div className="h-full bg-red-500 transition-all" style={{ width: `${hero.triangle.war}%` }} />
+            <div
+              className="h-full bg-blue-500 transition-all shrink-0 flex items-center justify-center"
+              style={{ width: `${hero.triangle.wit}%` }}
+              title={`Wit ${hero.triangle.wit}%`}
+            >
+              Wit {hero.triangle.wit}%
             </div>
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-yellow-300 font-bold">Wealth</span>
+            <div
+              className="h-full bg-yellow-400 text-black transition-all shrink-0 flex items-center justify-center"
+              style={{ width: `${hero.triangle.wealth}%` }}
+              title={`Wealth ${hero.triangle.wealth}%`}
+            >
+              Wealth {hero.triangle.wealth}%
             </div>
-            <div className="h-2 bg-gray-800 rounded border border-gray-700 overflow-hidden">
-              <div className="h-full bg-yellow-400 transition-all" style={{ width: `${hero.triangle.wealth}%` }} />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-blue-400 font-bold">Wit</span>
-            </div>
-            <div className="h-2 bg-gray-800 rounded border border-gray-700 overflow-hidden">
-              <div className="h-full bg-blue-500 transition-all" style={{ width: `${hero.triangle.wit}%` }} />
-            </div>
+            
           </div>
         </div>
         <div className="text-gray-500 text-xs flex flex-wrap items-center gap-x-2 gap-y-1">

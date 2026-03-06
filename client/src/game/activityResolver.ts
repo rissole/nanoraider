@@ -20,6 +20,8 @@ import type {
 import { applyReadinessGain, getBossReadiness } from "./bossReadiness";
 import { generateGear, getExpectedFreshHeroGearPower, getGearPower, randomGearSlot, sumGearStats } from "./gearGenerator";
 import { bossForRaidActivity, isLethalActivity } from "./activityMeta";
+import { assertExhausted } from "../utils/assert";
+import { getAgePhase } from "./character";
 
 function roll(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -341,10 +343,19 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
   const levelAdjustment = computeLevelRiskAdjustment(hero, def);
 
   let agePenalty = 0;
-  if (hero.inGameDay >= 8 && hero.inGameDay <= 9) {
-    agePenalty = (hero.inGameDay - 7) * 0.02;
-  } else if (hero.inGameDay >= 10) {
-    agePenalty = 0.06 + (hero.inGameDay - 10) * 0.05;
+  const agePhase = getAgePhase(hero.inGameDay);
+  switch (agePhase) {
+    case "healthy":
+      agePenalty = 0;
+      break;
+    case "aging":
+      agePenalty = 0.02;
+      break;
+    case "elderly":
+      agePenalty = 0.05;
+      break;
+    default:
+      assertExhausted(agePhase);
   }
 
   const unclampedWithoutAge = def.deathRisk

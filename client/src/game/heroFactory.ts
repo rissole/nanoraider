@@ -1,6 +1,6 @@
 import type { BossId, Hero, MetaProgression } from "../data/types";
 import { defaultKnownRecipes } from "../data/crafting";
-import { STARTING_GEAR_SPEC } from "./characterCreation";
+import { STARTING_GEAR_SPEC } from "./character";
 import { applyFlatStartingReadinessBonus, normalizeBossReadinessBank } from "./bossReadiness";
 import { generateGear, randomHeroClass } from "./gearGenerator";
 
