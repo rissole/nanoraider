@@ -1,6 +1,5 @@
 import { EVOLUTIONS } from "../data/evolutions";
-import type { BossId, EvolutionId, EvolutionUnlockCondition, Hero, MetaProgression } from "../data/types";
-import { getEffectiveCoreStats } from "./gearGenerator";
+import type { BossId, EvolutionId, EvolutionUnlockCondition, Hero, MetaProgression, TriangleKey } from "../data/types";
 import { getBossReadiness } from "./bossKnowledge";
 
 export interface EvolutionCheckResult {
@@ -59,22 +58,30 @@ export function checkEvolutionOnDeath(hero: Hero, meta: MetaProgression, defeate
 
 function evaluateChecks(hero: Hero, cond: EvolutionUnlockCondition, defeatedRaids: BossId[]): Record<string, boolean> {
   const checks: Record<string, boolean> = {};
-  const effectiveStats = getEffectiveCoreStats(hero);
 
-  if (cond.minCoreStats !== undefined) {
-    for (const [key, value] of Object.entries(cond.minCoreStats)) {
-      checks[`core_${key}`] = effectiveStats[key as keyof typeof effectiveStats] >= value;
+  if (cond.minTriangle !== undefined) {
+    for (const [key, value] of Object.entries(cond.minTriangle)) {
+      checks[`tri_min_${key}`] = hero.triangle[key as TriangleKey] >= value;
     }
   }
-  if (cond.minPersonality !== undefined) {
-    for (const [key, value] of Object.entries(cond.minPersonality)) {
-      checks[`axis_${key}`] = hero.personality[key as keyof Hero["personality"]] >= value;
+  if (cond.maxTriangle !== undefined) {
+    for (const [key, value] of Object.entries(cond.maxTriangle)) {
+      checks[`tri_max_${key}`] = hero.triangle[key as TriangleKey] <= value;
     }
   }
-  if (cond.minBossKnowledge !== undefined) {
-    for (const [key, value] of Object.entries(cond.minBossKnowledge)) {
-      checks[`knowledge_${key}`] = getBossReadiness(hero, key as BossId) >= value;
+  if (cond.minBossReadiness !== undefined) {
+    for (const [key, value] of Object.entries(cond.minBossReadiness)) {
+      checks[`readiness_${key}`] = getBossReadiness(hero, key as BossId) >= value;
     }
+  }
+  if (cond.minRenown !== undefined) {
+    checks.renown = hero.renown >= cond.minRenown;
+  }
+  if (cond.minDaring !== undefined) {
+    checks.minDaring = hero.daring >= cond.minDaring;
+  }
+  if (cond.maxDaring !== undefined) {
+    checks.maxDaring = hero.daring <= cond.maxDaring;
   }
   if (cond.minGoldAtDeath !== undefined) {
     checks.gold = hero.gold >= cond.minGoldAtDeath;
@@ -92,31 +99,30 @@ function evaluateChecks(hero: Hero, cond: EvolutionUnlockCondition, defeatedRaid
 }
 
 function buildWhyString(id: EvolutionId, hero: Hero, defeatedRaids: BossId[]): string {
-  const p = hero.personality;
-  const eff = getEffectiveCoreStats(hero);
+  const t = hero.triangle;
   switch (id) {
     case "berserker":
-      return `You lived for dangerous combat (Combat Style: ${p.combatStyle}, Ambition: ${p.ambition}, Strength: ${eff.strength}).`;
+      return `You became a war-focused hero (War ${t.war} / Wit ${t.wit} / Wealth ${t.wealth}) with daring ${hero.daring}.`;
     case "merchant":
-      return `You prioritized wealth and influence (Economic Focus: ${p.economicFocus}, Charisma: ${eff.charismaInfluence}, Gold: ${hero.gold}g).`;
+      return `You prioritized economic growth (Wealth ${t.wealth}) and accumulated ${hero.gold}g.`;
     case "scholar":
-      return `You invested deeply in preparation and study (Preparation: ${p.preparation}, Intelligence: ${eff.intelligence}, Molten Fury readiness: ${Math.round(getBossReadiness(hero, "molten_fury"))}%).`;
+      return `You invested heavily in wit and preparation (Wit ${t.wit}, Molten Fury readiness ${Math.round(getBossReadiness(hero, "molten_fury"))}%).`;
     case "raid_legend":
-      return `You combined high combat and preparation with a raid victory${defeatedRaids.includes("molten_fury") ? " over Molten Fury" : ""}.`;
+      return `You blended War + Wit with raid execution${defeatedRaids.includes("molten_fury") ? " over Molten Fury" : ""}.`;
     case "guardian":
-      return `You stood firm when others fled (Stamina: ${eff.stamina}, Preparation: ${p.preparation}).`;
+      return `You survived through discipline (War ${t.war}, Daring ${hero.daring}).`;
     case "theorycrafter":
-      return `You calculated every variable before stepping inside (Preparation: ${p.preparation}, Molten Fury readiness: ${Math.round(getBossReadiness(hero, "molten_fury"))}%).`;
+      return `You solved encounters through preparation and readiness (${Math.round(getBossReadiness(hero, "molten_fury"))}% readiness).`;
     case "socialite":
-      return `You knew everyone worth knowing (Social Style: ${p.socialStyle}, Charisma: ${eff.charismaInfluence}).`;
+      return `You invested deeply in social standing (Renown ${hero.renown}).`;
     case "warlord":
-      return `You led from the front, blade in hand (Strength: ${eff.strength}, Combat Style: ${p.combatStyle}).`;
+      return `You led from the front with overwhelming war focus (War ${t.war}) and high daring (${hero.daring}).`;
     case "dungeon_master":
-      return `You cleared a thousand dungeons and knew every trash pack (Strength: ${eff.strength}, Preparation: ${p.preparation}).`;
+      return `You mastered dungeon pacing through balanced war and wit (War ${t.war}, Wit ${t.wit}).`;
     case "guildmaster":
-      return `You built an empire of loyal allies (Social Style: ${p.socialStyle}, Charisma: ${eff.charismaInfluence}, Gold: ${hero.gold}g).`;
+      return `You built an empire of allies and wealth (Renown ${hero.renown}, Wealth ${t.wealth}, Gold ${hero.gold}g).`;
     case "treasure_hunter":
-      return `You found riches others missed (Economic Focus: ${p.economicFocus}, Intelligence: ${eff.intelligence}, Gold: ${hero.gold}g).`;
+      return `You found riches others missed (Wealth ${t.wealth}, Daring ${hero.daring}, Gold ${hero.gold}g).`;
     case "raid_leader":
       return `You led armies against gods and won${defeatedRaids.includes("eternal_throne") ? " over the Eternal Throne" : ""}.`;
   }
@@ -139,34 +145,42 @@ function buildAlmostReason(
   }
   const parts: string[] = [];
 
-  if (cond.minCoreStats !== undefined) {
-    const effectiveStats = getEffectiveCoreStats(hero);
-    for (const [key, value] of Object.entries(cond.minCoreStats)) {
+  if (cond.minTriangle !== undefined) {
+    for (const [key, value] of Object.entries(cond.minTriangle)) {
       const need = value;
-      const current = effectiveStats[key as keyof typeof effectiveStats];
+      const current = hero.triangle[key as TriangleKey];
       if (current < need) {
         parts.push(`${need - current} more ${key} needed`);
       }
     }
   }
-  if (cond.minPersonality !== undefined) {
-    for (const [key, value] of Object.entries(cond.minPersonality)) {
+  if (cond.maxTriangle !== undefined) {
+    for (const [key, value] of Object.entries(cond.maxTriangle)) {
       const need = value;
-      const current = hero.personality[key as keyof Hero["personality"]];
-      if (current < need) {
-        parts.push(`${need - current} more ${key} needed`);
+      const current = hero.triangle[key as TriangleKey];
+      if (current > need) {
+        parts.push(`${current - need} less ${key} needed`);
       }
     }
+  }
+  if (cond.minRenown !== undefined && hero.renown < cond.minRenown) {
+    parts.push(`${cond.minRenown - hero.renown} more renown needed`);
+  }
+  if (cond.minDaring !== undefined && hero.daring < cond.minDaring) {
+    parts.push(`${cond.minDaring - hero.daring} more daring needed`);
+  }
+  if (cond.maxDaring !== undefined && hero.daring > cond.maxDaring) {
+    parts.push(`${hero.daring - cond.maxDaring} less daring needed`);
   }
   if (checks.gold === false && cond.minGoldAtDeath !== undefined) {
     parts.push(`${cond.minGoldAtDeath - hero.gold}g more gold needed`);
   }
-  if (cond.minBossKnowledge !== undefined) {
-    for (const [key, value] of Object.entries(cond.minBossKnowledge)) {
+  if (cond.minBossReadiness !== undefined) {
+    for (const [key, value] of Object.entries(cond.minBossReadiness)) {
       const need = value;
       const current = getBossReadiness(hero, key as BossId);
       if (current < need) {
-        parts.push(`${need - Math.round(current)}% more ${key} knowledge needed`);
+        parts.push(`${need - Math.round(current)}% more ${key} readiness needed`);
       }
     }
   }
@@ -291,7 +305,7 @@ export function stackEvolutionBonuses(unlockedIds: EvolutionId[]) {
   let energyBonus = 0;
   let startGold = 0;
   let combatBonus = 0;
-  let bossKnowledgeBonus = 0;
+  let bossReadinessBonus = 0;
   let knowledgeTransferMultiplier = 1;
   let vendorDiscountPct = 0;
   let recipeDiscountPct = 0;
@@ -304,7 +318,7 @@ export function stackEvolutionBonuses(unlockedIds: EvolutionId[]) {
     energyBonus += evo.bonuses.energyBonus;
     startGold += evo.bonuses.startGold ?? 0;
     combatBonus += evo.bonuses.combatBonus ?? 0;
-    bossKnowledgeBonus += evo.bonuses.bossKnowledgeBonus ?? 0;
+    bossReadinessBonus += evo.bonuses.bossReadinessBonus ?? 0;
     vendorDiscountPct += evo.bonuses.vendorDiscountPct ?? 0;
     recipeDiscountPct += evo.bonuses.recipeDiscountPct ?? 0;
     purpleCraftStatBonusPct += evo.bonuses.purpleCraftStatBonusPct ?? 0;
@@ -321,7 +335,7 @@ export function stackEvolutionBonuses(unlockedIds: EvolutionId[]) {
     energyBonus,
     startGold,
     combatBonus,
-    bossKnowledgeBonus,
+    bossReadinessBonus,
     knowledgeTransferMultiplier,
     vendorDiscountPct,
     recipeDiscountPct,

@@ -10,9 +10,8 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     progressionTier: "none",
     category: "general",
     effects: {
-      coreStats: { stamina: 1 },
-      personality: { preparation: 2, exploration: 1 },
-      reputation: { adventurers_guild: 2 },
+      triangle: { war: 1, wit: 1, wealth: 1 },
+      renown: 1,
     },
     unlockConditions: { minLevel: 1 },
     deathRisk: 0.02,
@@ -36,9 +35,8 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     levelRange: { min: 4, max: 8 },
     category: "combat",
     effects: {
-      coreStats: { strength: 1, stamina: 1 },
-      personality: { combatStyle: 3, preparation: 1 },
-      reputation: { adventurers_guild: 2 },
+      triangle: { war: 5, wit: -1, wealth: -1 },
+      daring: 2,
     },
     unlockConditions: { minLevel: 4 },
     gearReadiness: {
@@ -50,7 +48,6 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     },
     deathRisk: 0.18,
     riskProfile: {
-      coreStats: { strength: 0.3, stamina: 0.35, agility: 0.15, intelligence: 0.15, charismaInfluence: 0.05 },
       gearFactor: 0.1,
       prepFactor: 0.0016,
       minRisk: 0.05,
@@ -79,9 +76,8 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     levelRange: { min: 5, max: 10 },
     category: "combat",
     effects: {
-      coreStats: { intelligence: 2, stamina: 1 },
-      personality: { combatStyle: 2, preparation: 3 },
-      reputation: { scholomance_order: 2 },
+      triangle: { war: 3, wit: 1, wealth: -1 },
+      daring: 1,
     },
     unlockConditions: { minLevel: 5 },
     gearReadiness: {
@@ -93,7 +89,6 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     },
     deathRisk: 0.2,
     riskProfile: {
-      coreStats: { strength: 0.2, stamina: 0.32, intelligence: 0.28, agility: 0.15, charismaInfluence: 0.05 },
       gearFactor: 0.11,
       prepFactor: 0.0018,
       minRisk: 0.05,
@@ -123,9 +118,8 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     levelRange: { min: 10, max: 16 },
     category: "combat",
     effects: {
-      coreStats: { strength: 2, stamina: 1, intelligence: 1 },
-      personality: { combatStyle: 5, ambition: 3 },
-      reputation: { scholomance_order: 2 },
+      triangle: { war: 4, wit: 1, wealth: -1 },
+      daring: 3,
     },
     unlockConditions: { minLevel: 10 },
     gearReadiness: {
@@ -138,7 +132,6 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     },
     deathRisk: 0.15,
     riskProfile: {
-      coreStats: { strength: 0.25, stamina: 0.35, intelligence: 0.2, agility: 0.15, charismaInfluence: 0.05 },
       gearFactor: 0.12,
       prepFactor: 0.0018,
       minRisk: 0.03,
@@ -168,9 +161,8 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     levelRange: { min: 12, max: 18 },
     category: "combat",
     effects: {
-      coreStats: { strength: 3, agility: 1, stamina: 2 },
-      personality: { combatStyle: 8, ambition: 4, preparation: -2 },
-      reputation: { adventurers_guild: 1 },
+      triangle: { war: 6, wit: -2, wealth: -1 },
+      daring: 5,
     },
     unlockConditions: { minLevel: 12 },
     gearReadiness: {
@@ -183,7 +175,6 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     },
     deathRisk: 0.25,
     riskProfile: {
-      coreStats: { strength: 0.32, stamina: 0.34, agility: 0.2, intelligence: 0.08, charismaInfluence: 0.06 },
       gearFactor: 0.16,
       prepFactor: 0.0013,
       minRisk: 0.06,
@@ -211,9 +202,7 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     progressionTier: "none",
     category: "economic",
     effects: {
-      coreStats: { stamina: 1, charismaInfluence: 1 },
-      personality: { economicFocus: 8, preparation: 3 },
-      reputation: { adventurers_guild: -1 },
+      triangle: { wealth: 6, wit: 1, war: -2 },
     },
     unlockConditions: { minLevel: 1 },
     deathRisk: 0,
@@ -234,11 +223,9 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     progressionTier: "none",
     category: "knowledge",
     effects: {
-      coreStats: { intelligence: 3 },
-      personality: { preparation: 9, combatStyle: -2 },
-      bossKnowledgeIntel: { molten_fury: 6 },
-      bossKnowledgeDrills: { molten_fury: 1 },
-      reputation: { scholomance_order: 3 },
+      triangle: { wit: 6, war: -2, wealth: -1 },
+      bossReadiness: { molten_fury: 7 },
+      daring: -1,
     },
     unlockConditions: { minLevel: 12, requiresRaidDeath: true },
     deathRisk: 0,
@@ -259,10 +246,8 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     progressionTier: "none",
     category: "knowledge",
     effects: {
-      coreStats: { intelligence: 2 },
-      personality: { preparation: 6, combatStyle: -1 },
-      bossKnowledgeIntel: { molten_fury: 8 },
-      reputation: { scholomance_order: 2 },
+      triangle: { wit: 5, war: -1 },
+      bossReadiness: { molten_fury: 8 },
     },
     unlockConditions: { minLevel: 4, requiresRaidDeath: true },
     deathRisk: 0,
@@ -283,9 +268,8 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     progressionTier: "none",
     category: "knowledge",
     effects: {
-      coreStats: { stamina: 1, intelligence: 1 },
-      personality: { preparation: 5, combatStyle: 1 },
-      bossKnowledgeDrills: { molten_fury: 8 },
+      triangle: { wit: 4, war: 1 },
+      bossReadiness: { molten_fury: 8 },
     },
     unlockConditions: { minLevel: 5, requiresRaidDeath: true },
     deathRisk: 0,
@@ -307,16 +291,14 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     progressionTier: "entry_raid",
     category: "knowledge",
     effects: {
-      coreStats: { stamina: 1, intelligence: 2 },
-      personality: { preparation: 5, socialStyle: 2, ambition: 1 },
-      bossKnowledgeDrills: { molten_fury: 4 },
-      bossKnowledgeExecution: { molten_fury: 2 },
-      reputation: { adventurers_guild: 1 },
+      triangle: { wit: 4, war: 1 },
+      bossReadiness: { molten_fury: 6 },
+      renown: 2,
+      daring: 1,
     },
-    unlockConditions: { minLevel: 10, minBossKnowledge: { molten_fury: 15 }, requiresRaidDeath: true },
+    unlockConditions: { minLevel: 10, minBossReadiness: { molten_fury: 15 }, requiresRaidDeath: true },
     deathRisk: 0.04,
     riskProfile: {
-      coreStats: { strength: 0.15, stamina: 0.2, agility: 0.2, intelligence: 0.35, charismaInfluence: 0.1 },
       gearFactor: 0.07,
       prepFactor: 0.0018,
       knowledgeFactor: 0.02,
@@ -344,9 +326,9 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     levelRange: { min: 12, max: 20 },
     category: "combat",
     effects: {
-      coreStats: { strength: 4, agility: 2, stamina: 2 },
-      personality: { combatStyle: 9, ambition: 10, preparation: -1 },
-      reputation: { adventurers_guild: 4 },
+      triangle: { war: 9, wit: -2, wealth: -1 },
+      daring: 12,
+      renown: 3,
     },
     unlockConditions: {
       minLevel: 12,
@@ -361,7 +343,6 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     },
     deathRisk: 0.4,
     riskProfile: {
-      coreStats: { strength: 0.3, stamina: 0.35, agility: 0.2, intelligence: 0.1, charismaInfluence: 0.05 },
       gearFactor: 0.2,
       prepFactor: 0.0022,
       knowledgeFactor: 0.04,
@@ -391,13 +372,13 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     levelRange: { min: 18, max: 30 },
     category: "combat",
     effects: {
-      coreStats: { strength: 5, agility: 3, stamina: 3, intelligence: 2 },
-      personality: { combatStyle: 12, ambition: 14, preparation: -2 },
-      reputation: { adventurers_guild: 8 },
+      triangle: { war: 10, wit: -2, wealth: -1 },
+      daring: 15,
+      renown: 5,
     },
     unlockConditions: {
       minLevel: 18,
-      minBossKnowledge: { molten_fury: 35 },
+      minBossReadiness: { molten_fury: 35 },
     },
     gearReadiness: {
       metric: "purpleSlots",
@@ -409,7 +390,6 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     },
     deathRisk: 0.7,
     riskProfile: {
-      coreStats: { strength: 0.32, stamina: 0.35, agility: 0.2, intelligence: 0.08, charismaInfluence: 0.05 },
       gearFactor: 0.24,
       prepFactor: 0.0024,
       knowledgeFactor: 0.05,
@@ -436,14 +416,12 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     progressionTier: "none",
     category: "social",
     effects: {
-      coreStats: { charismaInfluence: 3, intelligence: 1 },
-      personality: { socialStyle: 8, preparation: 2, ambition: 2 },
-      reputation: { adventurers_guild: 6 },
+      triangle: { wit: 2, wealth: 1 },
+      renown: 8,
     },
     unlockConditions: {
       minLevel: 4,
-      minCoreStats: { charismaInfluence: 8 },
-      minPersonality: { socialStyle: 8 },
+      minRenown: 8,
     },
     deathRisk: 0,
     outcomes: {
@@ -464,17 +442,16 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     progressionTier: "none",
     category: "economic",
     effects: {
-      coreStats: { charismaInfluence: 2, agility: 1 },
-      personality: { economicFocus: 9, combatStyle: 4, preparation: -3 },
-      reputation: { adventurers_guild: -4 },
+      triangle: { wealth: 8, war: 2, wit: -2 },
+      daring: 5,
     },
     unlockConditions: {
       minLevel: 6,
-      minPersonality: { economicFocus: 12, combatStyle: 10 },
+      minTriangle: { wealth: 20 },
+      minDaring: 10,
     },
     deathRisk: 0.08,
     riskProfile: {
-      coreStats: { strength: 0.1, stamina: 0.15, agility: 0.25, intelligence: 0.2, charismaInfluence: 0.3 },
       gearFactor: 0.06,
       prepFactor: 0.0018,
       minRisk: 0.02,
@@ -498,11 +475,8 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     progressionTier: "none",
     category: "knowledge",
     effects: {
-      coreStats: { stamina: 1, intelligence: 1 },
-      personality: { preparation: 6, economicFocus: 2, combatStyle: -1 },
-      bossKnowledgeIntel: { molten_fury: 3 },
-      bossKnowledgeDrills: { molten_fury: 3 },
-      reputation: { adventurers_guild: 1 },
+      triangle: { wit: 3, wealth: 1, war: -1 },
+      bossReadiness: { molten_fury: 6 },
     },
     unlockConditions: { minLevel: 8, requiresRaidDeath: true },
     deathRisk: 0,
@@ -524,9 +498,8 @@ export const ACTIVITIES: Record<ActivityId, ActivityDefinition> = {
     progressionTier: "mid_dungeon",
     category: "economic",
     effects: {
-      coreStats: { intelligence: 2, charismaInfluence: 1 },
-      personality: { economicFocus: 5, preparation: 3 },
-      reputation: { scholomance_order: 1 },
+      triangle: { wealth: 4, wit: 2 },
+      renown: 1,
     },
     unlockConditions: { minLevel: 10 },
     deathRisk: 0,

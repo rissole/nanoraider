@@ -3,9 +3,7 @@ import { persist } from "zustand/middleware";
 import type {
   ActivityId,
   BossId,
-  CoreStatKey,
   DayResult,
-  DungeonActivityId,
   EconomyTransaction,
   EvolutionId,
   GameScreen,
@@ -30,36 +28,15 @@ import { ACTIVITIES } from "../data/activities";
 import { RECIPE_DEFINITIONS, baseVendorTierUnlocks, defaultKnownRecipes, listVendorOffers } from "../data/crafting";
 import { GEAR_ITEMS } from "../data/gear";
 import { randomHeroName } from "../data/nurture";
-import { applyKnowledgeGain, normalizeBossKnowledgeBank } from "../game/bossKnowledge";
+import { applyReadinessGain, normalizeBossReadinessBank } from "../game/bossReadiness";
 import { generateGear, sumGearStats } from "../game/gearGenerator";
+import { bossForRaidActivity, isLethalActivity } from "../game/activityMeta";
 
 const BASE_ENERGY = 50;
 const AP_PER_RUN = 25;
 const OLD_AGE_START_DAY = 10;
 const OLD_AGE_DEATH_CHANCE_PER_DAY = 0.12;
 const TRACKED_BOSSES: BossId[] = ["molten_fury", "eternal_throne"];
-const TRACKED_DUNGEONS: DungeonActivityId[] = [
-  "dungeon_irondeep",
-  "dungeon_whispering_crypts",
-  "dungeon_scholomance",
-  "dungeon_blackrock",
-];
-
-function normalizeDungeonFamiliarityBank(
-  source: MetaProgression["dungeonFamiliarityBank"],
-  tracked: DungeonActivityId[],
-): Record<DungeonActivityId, number> {
-  return tracked.reduce<Record<DungeonActivityId, number>>((acc, dungeonId) => {
-    const raw = source[dungeonId];
-    acc[dungeonId] = typeof raw === "number" && Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : 0;
-    return acc;
-  }, {
-    dungeon_irondeep: 0,
-    dungeon_whispering_crypts: 0,
-    dungeon_scholomance: 0,
-    dungeon_blackrock: 0,
-  });
-}
 
 function addMaterials(
   source: Partial<Record<MaterialId, number>>,
@@ -116,9 +93,10 @@ export interface DeathSummary {
   almostReason: string | null;
   energyBonusGranted: number;
   apGranted: number;
-  personalitySnapshot: Hero["personality"];
-  coreStatsSnapshot: Hero["coreStats"];
-  bossKnowledgeSnapshot: Hero["secondary"]["bossKnowledge"];
+  triangleSnapshot: Hero["triangle"];
+  renownSnapshot: number;
+  daringSnapshot: number;
+  bossReadinessSnapshot: Hero["bossReadiness"];
   defeatedRaids: BossId[];
   fatalActivityId: ActivityId | null;
   fatalActivityRisk: number | null;
@@ -184,7 +162,7 @@ function buildInitialMeta(): MetaProgression {
       energyBonus: 0,
       startGold: 0,
       combatBonus: 0,
-      bossKnowledgeBonus: 0,
+      bossReadinessBonus: 0,
       knowledgeTransferMultiplier: 1,
       vendorDiscountPct: 0,
       recipeDiscountPct: 0,
@@ -192,8 +170,7 @@ function buildInitialMeta(): MetaProgression {
       brokerTierStart: 1,
       raidProvisionerUnlocked: false,
     },
-    bossKnowledgeBank: {},
-    dungeonFamiliarityBank: {},
+    bossReadinessBank: {},
     vendorTiersUnlocked: baseVendorTierUnlocks(),
     knownRecipes: defaultKnownRecipes(),
     craftingEfficiency: 0,
@@ -205,49 +182,25 @@ function buildInitialMeta(): MetaProgression {
 function applyEventEffects(hero: Hero, effects: NonNullable<ResolvedDailyEvent["appliedEffects"]>): Hero {
   const updated: Hero = {
     ...hero,
-    coreStats: { ...hero.coreStats },
-    personality: { ...hero.personality },
-    secondary: {
-      reputation: { ...hero.secondary.reputation },
-      bossKnowledge: { ...hero.secondary.bossKnowledge },
-      dungeonFamiliarity: { ...hero.secondary.dungeonFamiliarity },
-    },
+    triangle: { ...hero.triangle },
+    bossReadiness: { ...hero.bossReadiness },
   };
 
-  if (effects.coreStats !== undefined) {
-    for (const [key, value] of Object.entries(effects.coreStats)) {
-      updated.coreStats[key as keyof Hero["coreStats"]] += value;
+  if (effects.triangle !== undefined) {
+    for (const [key, value] of Object.entries(effects.triangle)) {
+      updated.triangle[key as keyof Hero["triangle"]] += value;
     }
   }
-  if (effects.personality !== undefined) {
-    for (const [key, value] of Object.entries(effects.personality)) {
-      updated.personality[key as keyof Hero["personality"]] += value;
-    }
+  if (effects.renown !== undefined) {
+    updated.renown = Math.max(0, Math.min(100, updated.renown + effects.renown));
   }
-  if (effects.reputation !== undefined) {
-    for (const [key, value] of Object.entries(effects.reputation)) {
-      updated.secondary.reputation[key as keyof Hero["secondary"]["reputation"]] += value;
-    }
+  if (effects.daring !== undefined) {
+    updated.daring = Math.max(0, Math.min(100, updated.daring + effects.daring));
   }
-  if (effects.bossKnowledgeIntel !== undefined) {
-    for (const [key, value] of Object.entries(effects.bossKnowledgeIntel)) {
+  if (effects.bossReadiness !== undefined) {
+    for (const [key, value] of Object.entries(effects.bossReadiness)) {
       const boss = key as BossId;
-      const current = updated.secondary.bossKnowledge[boss];
-      updated.secondary.bossKnowledge[boss] = applyKnowledgeGain(current, "intel", value);
-    }
-  }
-  if (effects.bossKnowledgeDrills !== undefined) {
-    for (const [key, value] of Object.entries(effects.bossKnowledgeDrills)) {
-      const boss = key as BossId;
-      const current = updated.secondary.bossKnowledge[boss];
-      updated.secondary.bossKnowledge[boss] = applyKnowledgeGain(current, "drills", value);
-    }
-  }
-  if (effects.bossKnowledgeExecution !== undefined) {
-    for (const [key, value] of Object.entries(effects.bossKnowledgeExecution)) {
-      const boss = key as BossId;
-      const current = updated.secondary.bossKnowledge[boss];
-      updated.secondary.bossKnowledge[boss] = applyKnowledgeGain(current, "execution", value);
+      updated.bossReadiness[boss] = applyReadinessGain(updated.bossReadiness[boss], value);
     }
   }
 
@@ -276,7 +229,7 @@ function rollDailyEvent(day: number): PendingDailyEvent | null {
   return { eventId: candidates[0].id };
 }
 
-const GAMESTORE_VERSION = 3;
+const GAMESTORE_VERSION = 4;
 
 export const useGameStore = create<GameState>()(
   persist(
@@ -489,11 +442,9 @@ export const useGameStore = create<GameState>()(
           const leveledHero = applyXp(updatedHero, resolved.xpGained);
           resolvedActivities.push(resolved);
           nextRunXp += resolved.xpGained;
-          if (activityId === "raid_molten_fury" && !resolved.died && !nextDefeatedRaids.includes("molten_fury")) {
-            nextDefeatedRaids = [...nextDefeatedRaids, "molten_fury"];
-          }
-          if (activityId === "raid_eternal_throne" && !resolved.died && !nextDefeatedRaids.includes("eternal_throne")) {
-            nextDefeatedRaids = [...nextDefeatedRaids, "eternal_throne"];
+          const defeatedBoss = !resolved.died ? bossForRaidActivity(activityId) : null;
+          if (defeatedBoss !== null && !nextDefeatedRaids.includes(defeatedBoss)) {
+            nextDefeatedRaids = [...nextDefeatedRaids, defeatedBoss];
           }
 
           if (resolved.died) {
@@ -507,8 +458,8 @@ export const useGameStore = create<GameState>()(
               lootObtained: resolvedActivities.flatMap((item) => item.lootDropped),
               heroSurvived: false,
               deathCause: "combat",
-              personalitySnapshot: leveledHero.personality,
-              coreStatsSnapshot: leveledHero.coreStats,
+              triangleSnapshot: leveledHero.triangle,
+              renownSnapshot: leveledHero.renown,
               transactions: todayTransactions,
             };
             finalizeDeath("combat", leveledHero, nextRunXp, nextDefeatedRaids, dayResult, set, get, resolved);
@@ -539,8 +490,8 @@ export const useGameStore = create<GameState>()(
           lootObtained: resolvedActivities.flatMap((item) => item.lootDropped),
           heroSurvived: deathCause === null,
           ...(deathCause !== null ? { deathCause } : {}),
-          personalitySnapshot: currentHero.personality,
-          coreStatsSnapshot: currentHero.coreStats,
+          triangleSnapshot: currentHero.triangle,
+          renownSnapshot: currentHero.renown,
           transactions: todayTransactions,
         };
 
@@ -720,13 +671,7 @@ export const useGameStore = create<GameState>()(
         const bonusPct = meta.evolutionBonuses.purpleCraftStatBonusPct ?? 0;
         let upgradedItem = generated;
         if (recipe.rarity === "purple" && bonusPct > 0) {
-          const boostedStats: Partial<Record<CoreStatKey, number>> = {};
-          for (const [k, v] of Object.entries(generated.stats)) {
-            if (typeof v === "number") {
-              boostedStats[k as CoreStatKey] = Math.round(v * (1 + bonusPct));
-            }
-          }
-          upgradedItem = { ...generated, stats: boostedStats };
+          upgradedItem = { ...generated, power: Math.round(generated.power * (1 + bonusPct)) };
         }
         const shouldEquip = currentInSlot === null || sumGearStats(upgradedItem) > sumGearStats(currentInSlot);
         set({
@@ -813,15 +758,13 @@ export const useGameStore = create<GameState>()(
         if (state.meta === undefined) {
           return state;
         }
-        const normalizedBank = normalizeBossKnowledgeBank(state.meta.bossKnowledgeBank, TRACKED_BOSSES);
-        const normalizedDungeonBank = normalizeDungeonFamiliarityBank(state.meta.dungeonFamiliarityBank, TRACKED_DUNGEONS);
+        const normalizedBank = normalizeBossReadinessBank(state.meta.bossReadinessBank, TRACKED_BOSSES);
         return {
           ...state,
           meta: {
             ...buildInitialMeta(),
             ...state.meta,
-            bossKnowledgeBank: normalizedBank,
-            dungeonFamiliarityBank: normalizedDungeonBank,
+            bossReadinessBank: normalizedBank,
             vendorTiersUnlocked: {
               ...baseVendorTierUnlocks(),
               ...state.meta.vendorTiersUnlocked,
@@ -855,23 +798,12 @@ function finalizeDeath(
   const apEnergyBonus = meta.apUpgrades.filter((id) => id === "energy_10").length * 10;
   const newMaxEnergy = BASE_ENERGY + stackedBonuses.energyBonus + apEnergyBonus;
 
-  const normalizedKnowledgeBank = normalizeBossKnowledgeBank(meta.bossKnowledgeBank, TRACKED_BOSSES);
-  const updatedKnowledgeBank: MetaProgression["bossKnowledgeBank"] = { ...normalizedKnowledgeBank };
-  for (const [boss, value] of Object.entries(hero.secondary.bossKnowledge)) {
+  const normalizedReadinessBank = normalizeBossReadinessBank(meta.bossReadinessBank, TRACKED_BOSSES);
+  const updatedReadinessBank: MetaProgression["bossReadinessBank"] = { ...normalizedReadinessBank };
+  for (const [boss, value] of Object.entries(hero.bossReadiness)) {
     const bossId = boss as BossId;
-    const previous = updatedKnowledgeBank[bossId] ?? { intel: 0, drills: 0, execution: 0 };
-    updatedKnowledgeBank[bossId] = {
-      intel: Math.max(previous.intel, value.intel),
-      drills: Math.max(previous.drills, value.drills),
-      execution: Math.max(previous.execution, value.execution),
-    };
-  }
-  const normalizedDungeonBank = normalizeDungeonFamiliarityBank(meta.dungeonFamiliarityBank, TRACKED_DUNGEONS);
-  const updatedDungeonBank: MetaProgression["dungeonFamiliarityBank"] = { ...normalizedDungeonBank };
-  for (const [dungeon, survivedRuns] of Object.entries(hero.secondary.dungeonFamiliarity)) {
-    const dungeonId = dungeon as DungeonActivityId;
-    const previous = updatedDungeonBank[dungeonId] ?? 0;
-    updatedDungeonBank[dungeonId] = Math.max(previous, Math.max(0, Math.floor(survivedRuns)));
+    const previous = updatedReadinessBank[bossId] ?? 0;
+    updatedReadinessBank[bossId] = Math.max(previous, value);
   }
 
   const newMeta: MetaProgression = {
@@ -879,7 +811,7 @@ function finalizeDeath(
     totalRuns: meta.totalRuns + 1,
     raidDeaths:
       meta.raidDeaths
-      + (cause === "combat" && fatalActivity?.activityId.startsWith("raid_") === true ? 1 : 0),
+      + (cause === "combat" && fatalActivity !== undefined && isLethalActivity(fatalActivity.activityId) ? 1 : 0),
     maxEnergy: newMaxEnergy,
     achievementPoints: meta.achievementPoints + apGained,
     unlockedEvolutions: newUnlocked,
@@ -887,7 +819,7 @@ function finalizeDeath(
       energyBonus: stackedBonuses.energyBonus,
       startGold: stackedBonuses.startGold,
       combatBonus: stackedBonuses.combatBonus,
-      bossKnowledgeBonus: stackedBonuses.bossKnowledgeBonus,
+      bossReadinessBonus: stackedBonuses.bossReadinessBonus,
       knowledgeTransferMultiplier: stackedBonuses.knowledgeTransferMultiplier,
       vendorDiscountPct: stackedBonuses.vendorDiscountPct,
       recipeDiscountPct: stackedBonuses.recipeDiscountPct,
@@ -895,8 +827,7 @@ function finalizeDeath(
       brokerTierStart: stackedBonuses.brokerTierStart,
       raidProvisionerUnlocked: stackedBonuses.raidProvisionerUnlocked,
     },
-    bossKnowledgeBank: updatedKnowledgeBank,
-    dungeonFamiliarityBank: updatedDungeonBank,
+    bossReadinessBank: updatedReadinessBank,
     knownRecipes: Array.from(new Set([...meta.knownRecipes, ...hero.knownRecipes])),
     vendorTiersUnlocked: {
       ...meta.vendorTiersUnlocked,
@@ -922,9 +853,10 @@ function finalizeDeath(
     almostReason,
     energyBonusGranted: 0,
     apGranted: apGained,
-    personalitySnapshot: hero.personality,
-    coreStatsSnapshot: hero.coreStats,
-    bossKnowledgeSnapshot: hero.secondary.bossKnowledge,
+    triangleSnapshot: hero.triangle,
+    renownSnapshot: hero.renown,
+    daringSnapshot: hero.daring,
+    bossReadinessSnapshot: hero.bossReadiness,
     defeatedRaids,
     fatalActivityId: cause === "combat" ? (fatalActivity?.activityId ?? null) : null,
     fatalActivityRisk: cause === "combat" ? (fatalActivity?.effectiveDeathRisk ?? null) : null,

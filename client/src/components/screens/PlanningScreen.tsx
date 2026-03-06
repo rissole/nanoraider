@@ -6,6 +6,7 @@ import type { ActivityDefinition, ActivityId, GearSlot, MaterialId, RecipeId, Ri
 import { useGameStore } from "../../store/gameStore";
 import { buildRiskHints, computeActivityRisk, isActivityUnlocked } from "../../game/activityResolver";
 import { getTopEvolutionRecommendations } from "../../game/evolutionChecker";
+import { isLethalActivity } from "../../game/activityMeta";
 import { HeroStatus } from "../HeroStatus";
 import { useMemo, useState } from "react";
 
@@ -23,13 +24,6 @@ const CATEGORY_BADGE: Record<ActivityDefinition["category"], string> = {
   knowledge: "bg-blue-800 text-blue-200",
   social: "bg-indigo-800 text-indigo-200",
   general: "bg-gray-700 text-gray-300",
-};
-
-const RISK_LABELS: Record<RiskBand, string> = {
-  safe: "Safe",
-  manageable: "Manageable",
-  dangerous: "Dangerous",
-  lethal: "Lethal",
 };
 
 const RISK_STYLES: Record<RiskBand, string> = {
@@ -110,8 +104,8 @@ function prioritizeActivities(hero: ReturnType<typeof useGameStore.getState>["he
   const seeds = [...mandatory, ...(dungeon ? [dungeon] : []), ...(economy ? [economy] : []), ...(knowledge ? [knowledge] : [])];
   const used = new Set(seeds.map((def) => def.id));
 
-  const trajectory = hero.personality.combatStyle >= hero.personality.economicFocus
-    ? (hero.personality.preparation > hero.personality.combatStyle ? "knowledge" : "combat")
+  const trajectory = hero.triangle.war >= hero.triangle.wealth
+    ? (hero.triangle.wit > hero.triangle.war ? "knowledge" : "combat")
     : "economic";
 
   const scored = allUnlocked
@@ -137,38 +131,23 @@ function prioritizeActivities(hero: ReturnType<typeof useGameStore.getState>["he
 
 function formatDetailTooltip(def: ActivityDefinition, includeCoreStats: boolean): string | null {
   const detailLines: string[] = [];
-  if (includeCoreStats && def.effects.coreStats !== undefined) {
-    for (const [k, v] of Object.entries(def.effects.coreStats)) {
+  if (includeCoreStats && def.effects.triangle !== undefined) {
+    for (const [k, v] of Object.entries(def.effects.triangle)) {
       if (v !== 0) {
         detailLines.push(`${v > 0 ? "+" : ""}${v} ${k}`);
       }
     }
   }
-  if (def.effects.personality !== undefined) {
-    for (const [k, v] of Object.entries(def.effects.personality)) {
-      if (v !== 0) {
-        detailLines.push(`${k} ${v > 0 ? "+" : ""}${String(v)}`);
-      }
-    }
+  if (def.effects.renown !== undefined && def.effects.renown !== 0) {
+    detailLines.push(`renown ${def.effects.renown > 0 ? "+" : ""}${def.effects.renown}`);
   }
-  if (def.effects.bossKnowledgeIntel !== undefined) {
-    for (const [k, v] of Object.entries(def.effects.bossKnowledgeIntel)) {
-      if (v !== 0) {
-        detailLines.push(`${k} intel ${v > 0 ? "+" : ""}${String(v)}%`);
-      }
-    }
+  if (def.effects.daring !== undefined && def.effects.daring !== 0) {
+    detailLines.push(`daring ${def.effects.daring > 0 ? "+" : ""}${def.effects.daring}`);
   }
-  if (def.effects.bossKnowledgeDrills !== undefined) {
-    for (const [k, v] of Object.entries(def.effects.bossKnowledgeDrills)) {
+  if (def.effects.bossReadiness !== undefined) {
+    for (const [k, v] of Object.entries(def.effects.bossReadiness)) {
       if (v !== 0) {
-        detailLines.push(`${k} drills ${v > 0 ? "+" : ""}${String(v)}%`);
-      }
-    }
-  }
-  if (def.effects.bossKnowledgeExecution !== undefined) {
-    for (const [k, v] of Object.entries(def.effects.bossKnowledgeExecution)) {
-      if (v !== 0) {
-        detailLines.push(`${k} execution ${v > 0 ? "+" : ""}${String(v)}%`);
+        detailLines.push(`${k} readiness ${v > 0 ? "+" : ""}${String(v)}%`);
       }
     }
   }
@@ -195,6 +174,7 @@ function ActivityCard({
   const colorBorder = CATEGORY_COLORS[def.category];
   const badge = CATEGORY_BADGE[def.category];
   const isDungeon = def.id.startsWith("dungeon_");
+  const isLethal = isLethalActivity(def.id);
   const detailTooltip = formatDetailTooltip(def, true);
 
   return (
@@ -202,10 +182,10 @@ function ActivityCard({
       <div className="flex items-start justify-between gap-1">
         <span className={`text-xs px-1.5 py-0.5 rounded capitalize ${badge}`}>{def.category}</span>
         {def.deathRisk > 0 ? (
-          <span className={`text-xs ${RISK_STYLES[riskBand]}`}>☠ {Math.round(effectiveDeathRisk * 100)}% · {RISK_LABELS[riskBand]}</span>
-        ) : (
-          <span className="text-green-400 text-xs">No death risk</span>
-        )}
+          <span className={`text-xs ${RISK_STYLES[riskBand]}`}>
+            {isLethal ? "☠️" : ""} {Math.round(effectiveDeathRisk * 100)}% {isLethal ? `death` : "failure"}
+          </span>
+        ) : null}
       </div>
       <div className="flex-1">
         <div className="text-white font-bold text-sm leading-tight">{def.name}</div>

@@ -36,7 +36,7 @@ export function HeroCreation() {
           </div>
 
           <div className="text-gray-500 text-xs border-t border-gray-800 pt-3">
-            Days 1–3 include extra random events. Their choices shape your core stats and personality axes.
+            Days 1–3 include extra random events. Their choices shape your War/Wit/Wealth triangle and renown.
           </div>
 
           <button

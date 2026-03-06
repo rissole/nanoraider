@@ -16,9 +16,9 @@ Energy is the primary meta-resource that gates **how many activities you can do 
 
 ### Dynamic Activity Roster
 
-The list of available activities is **not static**. As players level up specific Core Stats or lean heavily into certain Personality Axes, new niche activities will dynamically appear on their schedule.
-- **Stat-based Unlocks:** Reaching high `Charisma/Influence` might unlock "Host Guild Meeting".
-- **Personality-based Unlocks:** Leaning heavily into `Economic` and `Reckless` might unlock "Black Market Trading".
+The list of available activities is **not static**. As players shift their position in the Build Triangle or increase their Renown, new niche activities will dynamically appear on their schedule.
+- **Renown-based Unlocks:** Reaching high Renown might unlock "Host Guild Meeting".
+- **Triangle/Daring Unlocks:** Leaning into Wealth + high Daring might unlock "Black Market Trading".
 
 **Rest = End Day Button:**
 - Not an activity with a cost
@@ -128,30 +128,53 @@ The list of available activities is **not static**. As players level up specific
 - **Tier 3 legacy paths:** Designed for 150-200+ energy/day (20-30+ runs completed)
 - **This creates natural progression:** You MUST collect Tier 1 paths (which grant energy bonuses) before attempting Tier 2, and MUST collect Tier 2 before attempting Tier 3
 
-## 2. The Dimensions Framework & Legacy Path System
+## 2. The Dimensions Framework
 
-Everything in the game—from the activities you can perform to the legacy paths you unlock upon death—is governed by a bottoms-up "Dimensions Framework". 
+Everything in the game—from the activities you can perform to the legacy paths you unlock upon death—is governed by a 5-dimension system that tracks your hero's development and behavior.
 
-### Core Dimensions
+### The Build Triangle: War / Wit / Wealth
 
-1. **Core Stats**: The physical and mental attributes of your hero. Leveling up these stats is the primary trigger for unlocking new specific activities.
-   - **Strength**: Increases physical damage and allows demanding physical activities.
-   - **Agility**: Increases speed, critical strikes, and unlocks finesse-based activities.
-   - **Intelligence**: Increases magical power, and unlocks complex cognitive/magical activities.
-   - **Stamina**: Increases health, and allows high-endurance activities.
-   - **Charisma/Influence**: Determines social sway, unlocking guild leadership, social events, and mercantile opportunities.
+The core of a hero's identity is expressed through three visible poles. Every energy spend shifts the hero's position within this triangle.
 
-2. **Personality Axes**: These 6 spectrums track your behavioral patterns based on how you play. They act as secondary gates for niche activities (e.g., a "Black Market Trading" activity only unlocks if you lean heavily into *Economic* and *Reckless*).
-   - **Combat Style**: Cautious vs. Reckless
-   - **Social Style**: Solo vs. Social
-   - **Economic Focus**: Combat vs. Economic
-   - **Exploration**: Focused vs. Wanderer
-   - **Preparation**: Improviser vs. Methodical
-   - **Ambition**: Survivor vs. Glory-Seeker
+- **War (Combat)**: Focus on martial prowess, dungeon clearing, and physical challenges.
+- **Wit (Knowledge)**: Focus on study, boss research, and intellectual mastery.
+- **Wealth (Economy)**: Focus on gold accumulation, trade, and resource management.
 
-3. **Secondary Dimensions**: 
-   - **Reputation**: Standing with various zones or factions.
-   - **Boss Knowledge**: Earned through study, directly reduces death risk.
+**Mechanics:**
+- Position is expressed as (War%, Wit%, Wealth%) summing to 100%.
+- **7 Natural Zones:**
+    - **3 Corners:** One axis >= 50%, others < 30% (e.g., Pure Warrior).
+    - **3 Edges:** Two axes >= 30%, third < 30% (e.g., Battle-Scholar).
+    - **1 Center:** All axes between 25-40% (The Generalist).
+
+### Renown (Visible, 0-100)
+
+Renown represents your social investment and fame. It is orthogonal to the Build Triangle but competes for the same energy budget.
+
+- High Renown unlocks social activities, guild leadership, and prestigious legacy paths.
+- It effectively doubles the 7 triangle zones into ~14 visible archetypes (e.g., "Famous Warrior" vs. "Hedge Knight").
+
+### Daring (Hidden, 0-100)
+
+Daring is a hidden dimension revealed only at death. It tracks your risk-taking patterns across the hero's life.
+
+- **High Daring:** Early raid attempts, low-readiness tries, aggressive time bets.
+- **Low Daring:** Methodical preparation, conservative scheduling, high-readiness attempts.
+- **Impact:** Daring influences the specific flavor of legacy paths unlocked (e.g., "Speed Demon" vs. "Death Defier").
+
+### Boss Readiness (Visible, 0-100% per boss)
+
+Replaces complex knowledge channels with a single progress bar per raid boss. 
+- Increased through study and scouting activities.
+- Directly impacts success chance and survival in raids.
+
+### Level (Visible, Single Scalar)
+
+A single scalar representing overall hero power. 
+- Replaces individual stats (STR/AGI/INT/STA/CHA).
+- Increased through most activities; acts as a primary gate for advanced gear and dungeons.
+
+**What's Cut:** To streamline the experience, we have removed 5 core stats, 6 personality axes, 3 boss knowledge channels, dungeon familiarity, and faction reputation.
 
 ## 3. Knowledge Transfer System
 
@@ -160,7 +183,7 @@ What persists between runs depends on which evolutions you've unlocked.
 ### Base Knowledge Transfer (No Evolutions)
 
 **Always Persists:**
-- Boss knowledge percentage (0-100% per boss)
+- Boss Readiness percentage (0-100% per boss)
 - Achievement points
 - Energy upgrades purchased
 - Gear codex (cosmetic collection)
@@ -198,8 +221,7 @@ Inspired by WoW's slot-based gear progression with clear upgrade paths.
 
 ### Gear Stats
 
-Each piece has:
-- **Primary Stat** (Strength, Agility, Intelligence, Stamina)
+Each piece contributes to the hero's overall **Level** scalar. Higher rarity gear provides more significant Level boosts, which in turn unlocks more challenging activities.
 
 ## 6. Death & Failure System
 
@@ -207,9 +229,10 @@ Permadeath is central, but failure teaches.
 
 ### Death Triggers
 
-**Combat Death:**
-- Failed dungeon run (based on gear + boss knowledge + RNG)
-- Failed raid encounter (high risk, partially mitigated by prep)
+**Combat Death (Raids Only):**
+- Only raid boss encounters can result in permanent death.
+- Failed dungeon runs are non-lethal but result in wasted energy and missed opportunities.
+- Success in raids is heavily influenced by **Boss Readiness** and **Level**.
 
 **Old Age Death:**
 - Random chance starting Day 10+
@@ -218,7 +241,7 @@ Permadeath is central, but failure teaches.
 ### Death Probability Formula
 
 ```
-Death % = Base Risk - (Bonuses) + (Penalties)
+Death % = Base Risk - (Boss Readiness) + (Daring Penalty)
 ```
 
 ## 7. Random Event System
@@ -230,8 +253,8 @@ They should only appear once every 2-3 runs, and have a chance to appear after c
 ## Design Principles Summary
 
 1. **Systems are interconnected** - No system exists in isolation. Legacy paths affect knowledge transfer, energy, and starting bonuses.
-2. **Player agency matters** - RNG exists but skill/planning >>> luck. Personality stats reward intentional playstyles.
+2. **Player agency matters** - RNG exists but skill/planning >>> luck. Triangle positioning, Renown investment, and Daring reward intentional playstyles.
 3. **Progression is multi-dimensional** - Levels, gear, knowledge, achievements, energy, AND unlocks all matter
 4. **Meaningful replayability** - 30+ legacy paths to collect.
-5. **Hidden depth, natural play** - Personality tracking is invisible during runs, encouraging authentic choices over min-maxing
+5. **Hidden depth, natural play** - Daring tracking is invisible during runs, encouraging authentic choices over min-maxing
 10. **Long-term goals** - Legacy collection is a 20-30+ run journey with Tier 3 evolutions requiring mastery of multiple playstyles

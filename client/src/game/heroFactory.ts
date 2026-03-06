@@ -1,44 +1,20 @@
-import type { BossId, DungeonActivityId, Hero, MetaProgression, PersonalityAxes } from "../data/types";
+import type { BossId, Hero, MetaProgression } from "../data/types";
 import { defaultKnownRecipes } from "../data/crafting";
-import { BASE_CORE_STATS, STARTING_GEAR_SPEC } from "./characterCreation";
-import { applyFlatStartingKnowledgeBonus, normalizeBossKnowledgeBank } from "./bossKnowledge";
+import { STARTING_GEAR_SPEC } from "./characterCreation";
+import { applyFlatStartingReadinessBonus, normalizeBossReadinessBank } from "./bossReadiness";
 import { generateGear, randomHeroClass } from "./gearGenerator";
 
-const BASE_PERSONALITY: PersonalityAxes = {
-  combatStyle: 0,
-  socialStyle: 0,
-  economicFocus: 0,
-  exploration: 0,
-  preparation: 0,
-  ambition: 0,
-};
-
 const TRACKED_BOSSES: BossId[] = ["molten_fury", "eternal_throne"];
-const TRACKED_DUNGEONS: DungeonActivityId[] = [
-  "dungeon_irondeep",
-  "dungeon_whispering_crypts",
-  "dungeon_scholomance",
-  "dungeon_blackrock",
-];
 
 export function createHero(name: string, meta: MetaProgression): Hero {
   const startGold = (meta.evolutionBonuses.startGold ?? 0) + (meta.apUpgrades.includes("start_gold_100") ? 100 : 0);
-  const bossKnowledgeStart = meta.evolutionBonuses.bossKnowledgeBonus ?? 0;
-  const normalizedBank = normalizeBossKnowledgeBank(meta.bossKnowledgeBank, TRACKED_BOSSES);
-  const inheritedKnowledge = TRACKED_BOSSES.reduce<Record<BossId, Hero["secondary"]["bossKnowledge"][BossId]>>((acc, bossId) => {
+  const bossReadinessStart = meta.evolutionBonuses.bossReadinessBonus ?? 0;
+  const normalizedBank = normalizeBossReadinessBank(meta.bossReadinessBank, TRACKED_BOSSES);
+  const inheritedReadiness = TRACKED_BOSSES.reduce<Record<BossId, number>>((acc, bossId) => {
     const base = normalizedBank[bossId];
-    acc[bossId] = applyFlatStartingKnowledgeBonus(base, bossKnowledgeStart);
+    acc[bossId] = applyFlatStartingReadinessBonus(base, bossReadinessStart);
     return acc;
-  }, {} as Record<BossId, Hero["secondary"]["bossKnowledge"][BossId]>);
-  const inheritedDungeonFamiliarity = TRACKED_DUNGEONS.reduce<Record<DungeonActivityId, number>>((acc, dungeonId) => {
-    acc[dungeonId] = Math.max(0, Math.floor(meta.dungeonFamiliarityBank[dungeonId] ?? 0));
-    return acc;
-  }, {
-    dungeon_irondeep: 0,
-    dungeon_whispering_crypts: 0,
-    dungeon_scholomance: 0,
-    dungeon_blackrock: 0,
-  });
+  }, {} as Record<BossId, number>);
 
   const heroClass = randomHeroClass();
   const emptyGear = {
@@ -69,16 +45,10 @@ export function createHero(name: string, meta: MetaProgression): Hero {
     inGameDay: 1,
     gold: startGold,
     gear: startingGear,
-    coreStats: { ...BASE_CORE_STATS },
-    personality: { ...BASE_PERSONALITY },
-    secondary: {
-      reputation: {
-        adventurers_guild: 0,
-        scholomance_order: 0,
-      },
-      bossKnowledge: inheritedKnowledge,
-      dungeonFamiliarity: inheritedDungeonFamiliarity,
-    },
+    triangle: { war: 33, wit: 33, wealth: 34 },
+    renown: 0,
+    daring: 0,
+    bossReadiness: inheritedReadiness,
     materials: {},
     knownRecipes: [...new Set([...defaultKnownRecipes(), ...meta.knownRecipes])],
     completedActivitiesToday: [],

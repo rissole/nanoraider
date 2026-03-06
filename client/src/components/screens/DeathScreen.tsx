@@ -2,7 +2,6 @@ import { useState } from "react";
 import { EVOLUTION_LIST, EVOLUTION_TIER_LABELS, EVOLUTIONS } from "../../data/evolutions";
 import { ACTIVITIES } from "../../data/activities";
 import { useGameStore } from "../../store/gameStore";
-import { getBossReadinessFromProgress } from "../../game/bossKnowledge";
 
 const CAUSE_LABELS = {
   combat: { label: "Fell in Battle", icon: "⚔", color: "text-red-400" },
@@ -21,7 +20,7 @@ export function DeathScreen() {
   const summary = deathSummary;
   const causeInfo = CAUSE_LABELS[summary.cause];
   const fatalActivityName = summary.fatalActivityId !== null ? ACTIVITIES[summary.fatalActivityId].name : null;
-  const moltenReadiness = getBossReadinessFromProgress(summary.bossKnowledgeSnapshot["molten_fury"]);
+  const moltenReadiness = summary.bossReadinessSnapshot["molten_fury"];
 
   const evolutionDef = summary.evolutionUnlocked !== null ? EVOLUTIONS[summary.evolutionUnlocked] : null;
   const almostDef = summary.almostUnlocked !== null ? EVOLUTIONS[summary.almostUnlocked] : null;
@@ -80,15 +79,14 @@ export function DeathScreen() {
             </div>
           )}
 
-          {/* Personality reveal */}
+          {/* Daring reveal */}
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-3">
-            <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest">Personality Revealed</h3>
-            <p className="text-gray-400 text-xs">Hidden during your run — this is who your hero became.</p>
-            {(Object.entries(summary.personalitySnapshot) as [string, number][])
-              .sort(([, a], [, b]) => b - a)
-              .map(([stat, value]) => (
-                <PersonalityBar key={stat} stat={stat} value={value} />
-              ))}
+            <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest">Daring Revealed</h3>
+            <p className="text-gray-400 text-xs">Hidden during your run — your risk tendency is now revealed.</p>
+            <PersonalityBar stat="daring" value={summary.daringSnapshot} />
+            <div className="text-xs text-gray-300">
+              Triangle at death: War {summary.triangleSnapshot.war}% · Wit {summary.triangleSnapshot.wit}% · Wealth {summary.triangleSnapshot.wealth}% · Renown {summary.renownSnapshot}
+            </div>
           </div>
         </div>
       )}
@@ -228,12 +226,7 @@ function PersonalityBar({ stat, value }: { stat: string; value: number }) {
   const MAX = 80;
   const pct = Math.min(1, value / MAX);
   const colors: Record<string, string> = {
-    combatStyle: "bg-red-500",
-    socialStyle: "bg-cyan-500",
-    economicFocus: "bg-yellow-500",
-    exploration: "bg-green-500",
-    preparation: "bg-blue-500",
-    ambition: "bg-purple-500",
+    daring: "bg-purple-500",
   };
   const barColor = colors[stat] ?? "bg-gray-500";
 

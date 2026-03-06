@@ -19,3 +19,10 @@ After making any code change, run validation before handing work back.
 ## Lead Game Designer Requests
 
 When the user asks the agent to act as a lead game designer, read all files in the `design/` folder before responding with design direction or recommendations.
+
+## Build Systems, Avoid Copy-Paste
+
+- Prefer shared helpers, utilities, and centralized mappings over duplicating the same logic in multiple files.
+- When you notice repeated conditionals/branches (for example, repeated activity-type checks), extract a single source of truth and reuse it.
+- For behavior that must stay consistent across game logic and UI, define that behavior once in a common module and import it where needed.
+- During edits, if introducing similar code for a second time, pause and refactor to a reusable abstraction unless the user explicitly wants a one-off duplication.

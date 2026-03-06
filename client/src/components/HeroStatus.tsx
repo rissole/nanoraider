@@ -3,7 +3,7 @@ import type { GearSlot, Hero, HeroClass, MaterialId } from "../data/types";
 import { EnergyBar } from "./EnergyBar";
 import { MATERIAL_LABELS } from "../data/crafting";
 import { RARITY_LABELS } from "../data/rarity";
-import { formatGearStats, getEffectiveCoreStats } from "../game/gearGenerator";
+import { formatGearStats, getGearPower } from "../game/gearGenerator";
 
 const HERO_CLASSES: HeroClass[] = ["warrior", "rogue", "mage", "guardian", "bard"];
 
@@ -77,7 +77,7 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename, onChang
 
   const energyRemaining = maxEnergy - energyUsedToday;
   const selectedItem = selectedSlot !== undefined ? hero.gear[selectedSlot] : null;
-  const effectiveStats = getEffectiveCoreStats(hero);
+  const gearPower = getGearPower(hero);
 
   const agePhase = (() => {
     if (hero.inGameDay <= 3) {return { label: "Young", color: "text-green-400" };}
@@ -161,31 +161,68 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename, onChang
         <span className="text-gray-400 text-xs w-24 text-right">{hero.xp} / {hero.xpToNextLevel}</span>
       </div>
 
-      {/* Stats row (includes gear bonuses) */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <span className="text-yellow-400 text-sm">◈</span>
-          <span className="text-white font-bold text-sm">{hero.gold}g</span>
-          <span className="text-gray-500">|</span>
-          <span className="text-amber-400 font-bold text-sm">STR {effectiveStats.strength}</span>
-          <span className="text-emerald-400 font-bold text-sm">AGI {effectiveStats.agility}</span>
-          <span className="text-blue-400 font-bold text-sm">INT {effectiveStats.intelligence}</span>
-          <span className="text-violet-400 font-bold text-sm">STA {effectiveStats.stamina}</span>
-          <span className="text-pink-400 font-bold text-sm">CHR {effectiveStats.charismaInfluence}</span>
+      {/* Renown Bar */}
+      <div className="flex items-center gap-3">
+        <span className="text-green-400 font-bold text-sm tracking-widest">✦ Renown</span>
+        <div className="flex-1 h-2 bg-gray-800 rounded border border-gray-700 overflow-hidden">
+          <div
+            className="h-full bg-green-500 transition-all"
+            style={{ width: `${Math.min(100, hero.renown)}%` }}
+          />
         </div>
-        <div className="text-gray-500 text-xs">
-          {Object.keys(hero.materials).length === 0
-            ? "No crafting materials"
-            : (Object.keys(hero.materials) as MaterialId[])
-              .map((id) => {
-                const amt = hero.materials[id];
-                return `${MATERIAL_LABELS[id]}: ${String(typeof amt === "number" ? amt : 0)}`;
-              })
-              .join(" · ")}
+        <span className="text-gray-400 text-xs w-24 text-right">{hero.renown}</span>
+      </div>
+
+      {/* Core axis bars */}
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-red-400 font-bold">War</span>
+            </div>
+            <div className="h-2 bg-gray-800 rounded border border-gray-700 overflow-hidden">
+              <div className="h-full bg-red-500 transition-all" style={{ width: `${hero.triangle.war}%` }} />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-yellow-300 font-bold">Wealth</span>
+            </div>
+            <div className="h-2 bg-gray-800 rounded border border-gray-700 overflow-hidden">
+              <div className="h-full bg-yellow-400 transition-all" style={{ width: `${hero.triangle.wealth}%` }} />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-blue-400 font-bold">Wit</span>
+            </div>
+            <div className="h-2 bg-gray-800 rounded border border-gray-700 overflow-hidden">
+              <div className="h-full bg-blue-500 transition-all" style={{ width: `${hero.triangle.wit}%` }} />
+            </div>
+          </div>
+        </div>
+        <div className="text-gray-500 text-xs flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-yellow-400">◈</span>
+          <span className="text-white font-bold">{hero.gold}g</span>
+          <span className="text-gray-600">|</span>
+          <span>
+            {Object.keys(hero.materials).length === 0
+              ? "No crafting materials"
+              : (Object.keys(hero.materials) as MaterialId[])
+                .map((id) => {
+                  const amt = hero.materials[id];
+                  return `${MATERIAL_LABELS[id]}: ${String(typeof amt === "number" ? amt : 0)}`;
+                })
+                .join(" · ")}
+          </span>
         </div>
       </div>
 
       {/* Gear slots */}
+      <div className="flex items-center justify-between">
+        <span className="text-gray-400 text-xs font-bold uppercase tracking-widest">Equipped Items</span>
+        <span className="text-purple-300 font-bold text-sm">Gear Score {gearPower}</span>
+      </div>
       <div className="grid grid-cols-5 gap-1">
         {(Object.entries(SLOT_LABELS) as [GearSlot, string][]).map(([slot, label]) => {
           const item = hero.gear[slot];
@@ -197,7 +234,7 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename, onChang
               }`}
               key={slot}
               onClick={() => toggleSelectedSlot(slot)}
-              title={item !== null ? `${item.name} (${RARITY_LABELS[item.rarity]}) · ${formatGearStats(item.stats) || "—"}` : "Empty"}
+              title={item !== null ? `${item.name} (${RARITY_LABELS[item.rarity]}) · ${formatGearStats(item.power) || "—"}` : "Empty"}
               type="button"
             >
               <div className="text-gray-500 text-xs">{label}</div>
@@ -221,7 +258,7 @@ export function HeroStatus({ hero, maxEnergy, energyUsedToday, onRename, onChang
             </div>
             <div className="text-gray-300 text-xs">
               {RARITY_LABELS[selectedItem.rarity]}
-              {formatGearStats(selectedItem.stats) ? ` · ${formatGearStats(selectedItem.stats)}` : ""}
+              {formatGearStats(selectedItem.power) ? ` · ${formatGearStats(selectedItem.power)}` : ""}
             </div>
           </div>
         ) : (

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { EVOLUTION_LIST, EVOLUTION_TIER_LABELS, EVOLUTIONS } from "../../data/evolutions";
 import type { EvolutionBonuses, EvolutionId } from "../../data/types";
 import { AP_UPGRADES } from "../../data/evolutions";
-import { getBossReadinessFromProgress } from "../../game/bossKnowledge";
 import { useGameStore } from "../../store/gameStore";
 
 const META_EXPANDED_STORAGE_KEY = "nanoraider-collection-meta-expanded";
@@ -49,8 +48,8 @@ function formatBonusTeaser(bonuses: EvolutionBonuses): string[] {
   if ((bonuses.knowledgeTransferMultiplier ?? 1) > 1) {
     parts.push("Study multiplier");
   }
-  if ((bonuses.bossKnowledgeBonus ?? 0) > 0) {
-    parts.push("Boss knowledge bonus");
+  if ((bonuses.bossReadinessBonus ?? 0) > 0) {
+    parts.push("Boss readiness bonus");
   }
   if ((bonuses.vendorDiscountPct ?? 0) > 0) {
     parts.push("Vendor discount");
@@ -148,7 +147,7 @@ function EvolutionCard({ evolutionId, unlocked, collectionUnlocked }: EvolutionC
         {(evo.bonuses.startGold ?? 0) > 0 && <div className="text-yellow-300">+{evo.bonuses.startGold}g start gold</div>}
         {(evo.bonuses.combatBonus ?? 0) > 0 && <div className="text-red-300">+{Math.round((evo.bonuses.combatBonus ?? 0) * 100)}% combat</div>}
         {(evo.bonuses.knowledgeTransferMultiplier ?? 1) > 1 && <div className="text-cyan-300">{evo.bonuses.knowledgeTransferMultiplier}x study gains</div>}
-        {(evo.bonuses.bossKnowledgeBonus ?? 0) > 0 && <div className="text-blue-300">+{Math.round((evo.bonuses.bossKnowledgeBonus ?? 0) * 100)}% boss knowledge</div>}
+        {(evo.bonuses.bossReadinessBonus ?? 0) > 0 && <div className="text-blue-300">+{Math.round((evo.bonuses.bossReadinessBonus ?? 0) * 100)}% boss readiness</div>}
         {(evo.bonuses.vendorDiscountPct ?? 0) > 0 && <div className="text-amber-300">+{Math.round((evo.bonuses.vendorDiscountPct ?? 0) * 100)}% vendor discount</div>}
         {(evo.bonuses.recipeDiscountPct ?? 0) > 0 && <div className="text-orange-300">+{Math.round((evo.bonuses.recipeDiscountPct ?? 0) * 100)}% recipe discount</div>}
         {(evo.bonuses.purpleCraftStatBonusPct ?? 0) > 0 && <div className="text-purple-300">+{Math.round((evo.bonuses.purpleCraftStatBonusPct ?? 0) * 100)}% purple craft</div>}
@@ -195,8 +194,7 @@ export function CollectionScreen() {
     purchased: meta.apUpgrades.filter((id) => id === upgrade.id).length,
     maxPurchases: upgrade.maxPurchases,
   }));
-  const bossKnowledgeRows = Object.entries(meta.bossKnowledgeBank);
-  const dungeonFamiliarityRows = Object.entries(meta.dungeonFamiliarityBank);
+  const bossReadinessRows = Object.entries(meta.bossReadinessBank);
 
   const tier1 = EVOLUTION_LIST.filter((e) => e.tier === 1);
   const tier2 = EVOLUTION_LIST.filter((e) => e.tier === 2);
@@ -271,7 +269,7 @@ export function CollectionScreen() {
           <div className="text-yellow-200">Start Gold: +{meta.evolutionBonuses.startGold ?? 0}g</div>
           <div className="text-red-200">Combat Bonus: +{Math.round((meta.evolutionBonuses.combatBonus ?? 0) * 100)}%</div>
           <div className="text-cyan-200">Knowledge Transfer: {meta.evolutionBonuses.knowledgeTransferMultiplier ?? 1}x</div>
-          <div className="text-blue-200">Boss Knowledge Bonus: +{Math.round((meta.evolutionBonuses.bossKnowledgeBonus ?? 0) * 100)}%</div>
+          <div className="text-blue-200">Boss Readiness Bonus: +{Math.round((meta.evolutionBonuses.bossReadinessBonus ?? 0) * 100)}%</div>
         </div>
 
         <div className="space-y-1 text-sm border-t border-gray-600 pt-3">
@@ -285,30 +283,14 @@ export function CollectionScreen() {
         </div>
 
         <div className="space-y-1 text-sm border-t border-gray-600 pt-3">
-          <div className="text-gray-400 uppercase tracking-widest font-bold">Boss Knowledge Bank</div>
-          {bossKnowledgeRows.length === 0 && <div className="text-gray-400">No stored boss knowledge yet.</div>}
-          {bossKnowledgeRows.map(([bossId, progress]) => (
-            <div className="bg-gray-800 border border-gray-600 rounded p-2 space-y-1" key={bossId}>
+          <div className="text-gray-400 uppercase tracking-widest font-bold">Boss Readiness Bank</div>
+          {bossReadinessRows.length === 0 && <div className="text-gray-400">No stored boss readiness yet.</div>}
+          {bossReadinessRows.map(([bossId, readiness]) => (
+            <div className="bg-gray-800 border border-gray-600 rounded p-2" key={bossId}>
               <div className="flex justify-between">
                 <span className="text-gray-200 capitalize">{bossId.replace(/_/g, " ")}</span>
-                <span className="text-cyan-200">Readiness {Math.round(getBossReadinessFromProgress(progress))}</span>
+                <span className="text-cyan-200">Readiness {Math.round(readiness)}</span>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
-                <span>Intel {Math.round(progress.intel)}</span>
-                <span>Drills {Math.round(progress.drills)}</span>
-                <span>Execution {Math.round(progress.execution)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-1 text-sm border-t border-gray-600 pt-3">
-          <div className="text-gray-400 uppercase tracking-widest font-bold">Dungeon Familiarity Bank</div>
-          {dungeonFamiliarityRows.length === 0 ? <div className="text-gray-400">No stored dungeon familiarity yet.</div> : null}
-          {dungeonFamiliarityRows.map(([dungeonId, clears]) => (
-            <div className="flex justify-between bg-gray-800 border border-gray-600 rounded p-2" key={dungeonId}>
-              <span className="text-gray-200 capitalize">{dungeonId.replace("dungeon_", "").replace(/_/g, " ")}</span>
-              <span className="text-emerald-300">Survived clears {clears}</span>
             </div>
           ))}
         </div>

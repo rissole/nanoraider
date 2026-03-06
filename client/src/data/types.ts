@@ -1,55 +1,19 @@
 // ─── Dimensions ────────────────────────────────────────────────────────────────
 
-export type CoreStatKey = "strength" | "agility" | "intelligence" | "stamina" | "charismaInfluence";
-
-export interface CoreStats {
-  strength: number;
-  agility: number;
-  intelligence: number;
-  stamina: number;
-  charismaInfluence: number;
-}
-
-export type PersonalityAxisKey =
-  | "combatStyle"
-  | "socialStyle"
-  | "economicFocus"
-  | "exploration"
-  | "preparation"
-  | "ambition";
-
-export interface PersonalityAxes {
-  combatStyle: number; // cautious(-) ↔ reckless(+)
-  socialStyle: number; // solo(-) ↔ social(+)
-  economicFocus: number; // combat(-) ↔ economic(+)
-  exploration: number; // focused(-) ↔ wanderer(+)
-  preparation: number; // improviser(-) ↔ methodical(+)
-  ambition: number; // survivor(-) ↔ glory-seeker(+)
-}
-
-export type FactionId = "adventurers_guild" | "scholomance_order";
+export type TriangleKey = "war" | "wit" | "wealth";
 export type BossId = "molten_fury" | "eternal_throne";
-export type BossKnowledgeChannel = "intel" | "drills" | "execution";
 
-export interface BossKnowledgeProgress {
-  intel: number;
-  drills: number;
-  execution: number;
-}
-
-export interface SecondaryDimensions {
-  reputation: Record<FactionId, number>;
-  bossKnowledge: Record<BossId, BossKnowledgeProgress>; // each channel 0-100
-  dungeonFamiliarity: Record<DungeonActivityId, number>; // survived clears per dungeon
+export interface BuildTriangle {
+  war: number;
+  wit: number;
+  wealth: number;
 }
 
 export interface DimensionDeltas {
-  coreStats?: Partial<Record<CoreStatKey, number>>;
-  personality?: Partial<Record<PersonalityAxisKey, number>>;
-  reputation?: Partial<Record<FactionId, number>>;
-  bossKnowledgeIntel?: Partial<Record<BossId, number>>;
-  bossKnowledgeDrills?: Partial<Record<BossId, number>>;
-  bossKnowledgeExecution?: Partial<Record<BossId, number>>;
+  triangle?: Partial<Record<TriangleKey, number>>;
+  renown?: number;
+  daring?: number;
+  bossReadiness?: Partial<Record<BossId, number>>;
 }
 
 // ─── Activity ────────────────────────────────────────────────────────────────
@@ -81,10 +45,12 @@ export type DungeonActivityId =
 
 export interface UnlockConditions {
   minLevel?: number;
-  minCoreStats?: Partial<Record<CoreStatKey, number>>;
-  minPersonality?: Partial<Record<PersonalityAxisKey, number>>;
-  minReputation?: Partial<Record<FactionId, number>>;
-  minBossKnowledge?: Partial<Record<BossId, number>>;
+  minTriangle?: Partial<Record<TriangleKey, number>>;
+  maxTriangle?: Partial<Record<TriangleKey, number>>;
+  minRenown?: number;
+  minDaring?: number;
+  maxDaring?: number;
+  minBossReadiness?: Partial<Record<BossId, number>>;
   minGreenPlusSlots?: number;
   minBluePlusSlots?: number;
   minPurpleSlots?: number;
@@ -126,7 +92,6 @@ export interface ActivityDefinition {
   gearReadiness?: GearReadinessRule;
   deathRisk: number; // 0–1
   riskProfile?: {
-    coreStats?: Partial<Record<CoreStatKey, number>>;
     gearFactor?: number;
     prepFactor?: number;
     knowledgeFactor?: number;
@@ -195,7 +160,7 @@ export interface GearItem {
   name: string;
   slot: GearSlot;
   rarity: GearRarity;
-  stats: Partial<Record<CoreStatKey, number>>;
+  power: number;
 }
 
 export type MaterialId = "iron_shards" | "arcane_essence" | "ember_core" | "vault_relic";
@@ -265,10 +230,13 @@ export type EvolutionId =
 export type EvolutionTier = 1 | 2 | 3;
 
 export interface EvolutionUnlockCondition {
-  minCoreStats?: Partial<Record<CoreStatKey, number>>;
-  minPersonality?: Partial<Record<PersonalityAxisKey, number>>;
+  minTriangle?: Partial<Record<TriangleKey, number>>;
+  maxTriangle?: Partial<Record<TriangleKey, number>>;
+  minRenown?: number;
+  minDaring?: number;
+  maxDaring?: number;
   minGoldAtDeath?: number;
-  minBossKnowledge?: Partial<Record<BossId, number>>;
+  minBossReadiness?: Partial<Record<BossId, number>>;
   mustDefeatRaids?: BossId[];
 }
 
@@ -289,7 +257,7 @@ export interface EvolutionBonuses {
   energyBonus: number; // permanent max energy increase
   startGold?: number; // gold on new run start
   combatBonus?: number; // % damage increase (0.1 = 10%)
-  bossKnowledgeBonus?: number; // % boss knowledge on new hero (0.05 = 5%)
+  bossReadinessBonus?: number; // % boss readiness on new hero (0.05 = 5%)
   knowledgeTransferMultiplier?: number; // multiplier on study gains
   vendorDiscountPct?: number; // additive vendor discount
   recipeDiscountPct?: number; // additive recipe crafting discount
@@ -317,9 +285,10 @@ export interface Hero {
   inGameDay: number; // 1–18+
   gold: number;
   gear: GearSlots;
-  coreStats: CoreStats;
-  personality: PersonalityAxes;
-  secondary: SecondaryDimensions;
+  triangle: BuildTriangle;
+  renown: number; // visible 0-100
+  daring: number; // hidden, revealed at death
+  bossReadiness: Record<BossId, number>;
   materials: Partial<Record<MaterialId, number>>;
   knownRecipes: RecipeId[];
   completedActivitiesToday: ActivityId[];
@@ -348,8 +317,8 @@ export interface DayResult {
   lootObtained: GearItem[];
   heroSurvived: boolean;
   deathCause?: "combat" | "old_age";
-  personalitySnapshot: PersonalityAxes;
-  coreStatsSnapshot: CoreStats;
+  triangleSnapshot: BuildTriangle;
+  renownSnapshot: number;
   transactions: EconomyTransaction[];
 }
 
@@ -360,6 +329,7 @@ export interface ResolvedActivity {
   goldSpent: number;
   lootDropped: GearItem[];
   died: boolean;
+  failed: boolean;
   appliedEffects: DimensionDeltas;
   effectiveDeathRisk: number;
   riskBand: RiskBand;
@@ -372,15 +342,14 @@ export type RiskBand = "safe" | "manageable" | "dangerous" | "lethal";
 
 export interface ActivityRiskBreakdown {
   baseRisk: number;
-  coreStatMitigation: number;
+  levelMitigation: number;
+  gearMitigation: number;
+  readinessMitigation: number;
   prepMitigation: number;
   knowledgeMitigation: number;
   metaMitigation: number;
-  dungeonFamiliarityMitigation: number;
   levelPenalty: number;
-  levelMitigation: number;
   agePenalty: number;
-  recklessPressure: number;
   readinessFloor: number;
   readinessLabel: string | null;
   finalRisk: number;
@@ -412,8 +381,7 @@ export interface MetaProgression {
   achievementPoints: number;
   unlockedEvolutions: EvolutionId[]; // Pokédex collection
   evolutionBonuses: EvolutionBonuses; // stacked from all unlocked evolutions
-  bossKnowledgeBank: Partial<Record<BossId, BossKnowledgeProgress>>; // persists across runs
-  dungeonFamiliarityBank: Partial<Record<DungeonActivityId, number>>; // persists across runs
+  bossReadinessBank: Partial<Record<BossId, number>>; // persists across runs
   vendorTiersUnlocked: Partial<Record<VendorId, VendorTier>>;
   knownRecipes: RecipeId[];
   craftingEfficiency: number;

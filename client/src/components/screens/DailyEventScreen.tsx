@@ -3,45 +3,23 @@ import { useGameStore } from "../../store/gameStore";
 
 function formatEffects(choiceEffects: NonNullable<(typeof DAILY_EVENTS)[keyof typeof DAILY_EVENTS]["choices"][number]["effects"]>): string[] {
   const parts: string[] = [];
-  if (choiceEffects.coreStats !== undefined) {
-    for (const [k, v] of Object.entries(choiceEffects.coreStats)) {
+  if (choiceEffects.triangle !== undefined) {
+    for (const [k, v] of Object.entries(choiceEffects.triangle)) {
       if (v !== 0) {
         parts.push(`${v > 0 ? "+" : ""}${v} ${k}`);
       }
     }
   }
-  if (choiceEffects.personality !== undefined) {
-    for (const [k, v] of Object.entries(choiceEffects.personality)) {
-      if (v !== 0) {
-        parts.push(`${k} ${v > 0 ? "+" : ""}${v}`);
-      }
-    }
+  if (choiceEffects.renown !== undefined && choiceEffects.renown !== 0) {
+    parts.push(`renown ${choiceEffects.renown > 0 ? "+" : ""}${choiceEffects.renown}`);
   }
-  if (choiceEffects.bossKnowledgeIntel !== undefined) {
-    for (const [k, v] of Object.entries(choiceEffects.bossKnowledgeIntel)) {
-      if (v !== 0) {
-        parts.push(`${k} intel ${v > 0 ? "+" : ""}${v}%`);
-      }
-    }
+  if (choiceEffects.daring !== undefined && choiceEffects.daring !== 0) {
+    parts.push(`daring ${choiceEffects.daring > 0 ? "+" : ""}${choiceEffects.daring}`);
   }
-  if (choiceEffects.bossKnowledgeDrills !== undefined) {
-    for (const [k, v] of Object.entries(choiceEffects.bossKnowledgeDrills)) {
+  if (choiceEffects.bossReadiness !== undefined) {
+    for (const [k, v] of Object.entries(choiceEffects.bossReadiness)) {
       if (v !== 0) {
-        parts.push(`${k} drills ${v > 0 ? "+" : ""}${v}%`);
-      }
-    }
-  }
-  if (choiceEffects.bossKnowledgeExecution !== undefined) {
-    for (const [k, v] of Object.entries(choiceEffects.bossKnowledgeExecution)) {
-      if (v !== 0) {
-        parts.push(`${k} execution ${v > 0 ? "+" : ""}${v}%`);
-      }
-    }
-  }
-  if (choiceEffects.reputation !== undefined) {
-    for (const [k, v] of Object.entries(choiceEffects.reputation)) {
-      if (v !== 0) {
-        parts.push(`${k} rep ${v > 0 ? "+" : ""}${v}`);
+        parts.push(`${k} readiness ${v > 0 ? "+" : ""}${v}%`);
       }
     }
   }

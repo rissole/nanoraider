@@ -28,13 +28,13 @@ Legacy path naming and unlock logic should be readable in 2 seconds by ex-MMO pl
 Use this as the tone/structure baseline for future path rewrites:
 
 1. **Tier 1: Theorycrafter**
-   - Behavior signal: Drill-heavy run ratio (practice/sim/review massively outweighs other actions).
+   - Behavior signal: Wit corner (Wit >= 55%).
    - Reward shape: Better training efficiency, clearer prep feedback, stronger rehearsal outcomes.
 2. **Tier 2: Dungeon Leader**
-   - Behavior signal: Many dungeon clears + high readiness + meaningful social coordination.
+   - Behavior signal: Wit-War edge (Wit >= 25%, War >= 25%) + Boss Readiness >= 50% on 3+ bosses.
    - Reward shape: Better dungeon pacing and group orchestration tools.
 3. **Tier 3: Raid Leader**
-   - Behavior signal: Repeated raid leadership + near-max readiness + successful endgame command identity.
+   - Behavior signal: War-Wit mastery (War >= 20%, Wit >= 20%) + Boss Readiness >= 80% on all 5.
    - Reward shape: Endgame leadership power (raid planning/readiness and execution support).
 
 ---
@@ -47,9 +47,8 @@ These basic evolutions define your first playstyle specializations. Unlock at le
 **Theme:** Pure combat rush - prioritize dungeons and boss kills over everything else
 
 **Requirements:**
-- Defeat at least 3 dungeon bosses before In-Game Day 5
-- Spend 75%+ of actions on combat activities (dungeons, raids, grinding)
-- Die with at least 4/8 gear slots filled with dungeon drops
+- War >= 55% (War corner)
+- Level >= 15
 
 **Unlocks:**
 - +10% combat stats (damage, defense, HP) for all future runs
@@ -64,9 +63,8 @@ These basic evolutions define your first playstyle specializations. Unlock at le
 **Theme:** Economic mastery - accumulate wealth through trading and gold farming
 
 **Requirements:**
-- Accumulate 2,500+ gold before death/retirement
-- Complete at least 5 Trading/Auction House activities
-- Purchase mount before In-Game Day 6
+- Wealth >= 55% (Wealth corner)
+- Level >= 10
 
 **Unlocks:**
 - Start with 500g on all future runs
@@ -81,12 +79,11 @@ These basic evolutions define your first playstyle specializations. Unlock at le
 **Theme:** Knowledge seeker - study bosses and maximize preparation
 
 **Requirements:**
-- Reach 100% knowledge on at least 1 raid boss
-- Spend 30+ hours studying bosses across the run
-- Die with 60%+ average boss knowledge across all raid bosses
+- Wit >= 55% (Wit corner)
+- Boss Readiness >= 50% on 1+ boss
 
 **Unlocks:**
-- Boss knowledge transfers at **2x rate** (studying gives +4-10% instead of +2-5%)
+- Boss Readiness transfers at **2x rate** (studying gives +4-10% instead of +2-5%)
 - **Library Access** - Study activities cost 50% less time
 - +10 max energy capacity
 
@@ -98,9 +95,9 @@ These basic evolutions define your first playstyle specializations. Unlock at le
 **Theme:** World discovery - visit all zones and uncover the map
 
 **Requirements:**
-- Visit all 6 zones before In-Game Day 8
-- Complete at least 1 quest in each zone
-- Travel at least 50 total hours during the run
+- No axis > 45% (Center/generalist)
+- Level >= 10
+- Daring >= 40
 
 **Unlocks:**
 - **Instant zone travel** - All travel between zones costs 0 hours (instant fast travel)
@@ -115,9 +112,8 @@ These basic evolutions define your first playstyle specializations. Unlock at le
 **Theme:** Profession dedication - master a crafting profession
 
 **Requirements:**
-- Reach profession level 30+ in any profession
-- Craft at least 10 items during the run
-- Die with at least 2 crafted items equipped
+- Wit >= 25%, Wealth >= 25% (Wit-Wealth edge)
+- Level >= 15
 
 **Unlocks:**
 - Start with profession level 10 on future runs (skip early grind)
@@ -132,9 +128,7 @@ These basic evolutions define your first playstyle specializations. Unlock at le
 **Theme:** Community builder - maximize guild and social activities
 
 **Requirements:**
-- Attend 8+ guild events during the run
-- Complete 5+ group activities (parties, raids, social events)
-- Maintain guild membership for 10+ in-game days
+- Renown >= 50
 
 **Unlocks:**
 - **Guild Hall Access** - Special guild-exclusive quests and rewards
@@ -157,9 +151,9 @@ Advanced evolutions that combine foundation playstyles. Require 2+ Tier 1 evolut
 - **Scholar Evolution** (knowledge preparation)
 
 **Requirements:**
-- Defeat exactly 4 out of 5 raid bosses
-- Reach In-Game Day 10+ (survive into Late phase)
-- Die with average 70%+ boss knowledge across all raid bosses
+- War >= 25%, Wit >= 25%
+- Boss Readiness >= 70% on 4+ bosses
+- Level >= 25
 
 **Unlocks:**
 - **Attunement Tokens** - Skip dungeon prerequisites, access raids immediately
@@ -178,9 +172,8 @@ Advanced evolutions that combine foundation playstyles. Require 2+ Tier 1 evolut
 - **Scholar Evolution** (knowledge dedication)
 
 **Requirements:**
-- Reach profession level 40+ in any profession
-- Craft at least 3 blue (Pre-BiS) quality items
-- Accumulate 1,500+ gold during the run
+- Wit >= 30%, Wealth >= 30%
+- Level >= 25
 
 **Unlocks:**
 - **EPIC BLUEPRINTS** - Access to unique purple (BiS) crafting recipes
@@ -199,9 +192,8 @@ Advanced evolutions that combine foundation playstyles. Require 2+ Tier 1 evolut
 - **Explorer Evolution** (zone discovery)
 
 **Requirements:**
-- Obtain at least 8 blue (Pre-BiS) items during the run
-- Clear at least 6 different dungeons
-- Die carrying 3+ unequipped blue items (greed)
+- Wealth >= 25%, War >= 25%
+- Daring >= 60
 
 **Unlocks:**
 - **+10% loot luck** - Increased drop rates on all dungeon/raid loot
@@ -220,9 +212,9 @@ Advanced evolutions that combine foundation playstyles. Require 2+ Tier 1 evolut
 - **Berserker Evolution** (combat focus)
 
 **Requirements:**
-- Defeat at least 1 raid boss before In-Game Day 7
-- Reach level 30 before In-Game Day 5
-- Take high-risk combat choices (50%+ death risk) at least 5 times
+- War >= 35%
+- Daring >= 70
+- Boss Readiness >= 50% on 1+ boss
 
 **Unlocks:**
 - **-10% time cost** on all activities (flat reduction)
@@ -241,9 +233,9 @@ Advanced evolutions that combine foundation playstyles. Require 2+ Tier 1 evolut
 - **Craftsman Evolution** (self-sufficiency)
 
 **Requirements:**
-- Reach In-Game Day 12+ (survive entire Late phase)
-- Never fall below 30% HP during any combat activity
-- Use consumables at least 10 times during the run
+- Wit >= 25%
+- Daring <= 30
+- Survived to Day 12+
 
 **Unlocks:**
 - **+2 in-game days max lifespan** - Late phase extends from 10-12 to 10-14
@@ -262,9 +254,8 @@ Advanced evolutions that combine foundation playstyles. Require 2+ Tier 1 evolut
 - **Merchant King Evolution** (purchasing power)
 
 **Requirements:**
-- Use at least 15 consumables during the run
-- Craft at least 5 consumables via Alchemy profession
-- Defeat at least 1 raid boss while under 3+ consumable buffs
+- Wit >= 25%, Wealth >= 25%
+- Boss Readiness >= 50% on 1+ boss
 
 **Unlocks:**
 - **Alchemist's Laboratory** - Consumables cost 50% less gold
@@ -289,12 +280,12 @@ Ultimate achievements requiring extensive prerequisites and near-perfect executi
 - **Treasure Hunter Evolution** (loot optimization)
 
 **Requirements:**
-- Defeat all 5 raid bosses in a single run
-- Reach In-Game Day 10+ (survive to attempt all bosses)
-- Die with average 80%+ boss knowledge across all raid bosses
+- War >= 20%, Wit >= 20%
+- Boss Readiness >= 80% on all 5 bosses
+- Level >= 30
 
 **Unlocks:**
-- **Raid Mastery** - Start with 20% boss knowledge on all raid bosses
+- **Raid Mastery** - Start with 20% Boss Readiness on all raid bosses
 - **Champion's Cache** - Guaranteed blue item on first dungeon clear
 - +50 max energy capacity
 
@@ -312,10 +303,10 @@ Ultimate achievements requiring extensive prerequisites and near-perfect executi
 - **Speed Demon Evolution** (efficiency)
 
 **Requirements:**
-- Defeat all 5 raid bosses
-- Accumulate 5,000+ gold
-- Reach In-Game Day 12+
-- Complete at least 10 guild events
+- All axes (War/Wit/Wealth) >= 15%
+- Renown >= 60
+- Boss Readiness >= 80% on all 5 bosses
+- Level >= 30
 
 **Unlocks:**
 - **Start at Level 20** - Skip early/mid game entirely
@@ -354,9 +345,9 @@ Ultimate achievements requiring extensive prerequisites and near-perfect executi
 - **Death Defier Evolution** (survival mastery)
 
 **Requirements:**
-- Defeat all 5 raid bosses without dying once during the run
-- This must be your FIRST time achieving Ultimate Raider (virgin kill)
-- Reach In-Game Day 12+
+- Boss Readiness >= 80% on all 5 bosses
+- Daring >= 80
+- Level >= 30
 
 **Unlocks:**
 - **Ironman Mode** - Optional permadeath challenge mode (high prestige)
@@ -387,9 +378,9 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
    - Craft custom BiS (purple) items
    - Fill gear gaps without dungeon RNG
 
-3. **2x knowledge transfer** (from Scholar prerequisite)
+3. **2x Boss Readiness transfer** (from Scholar prerequisite)
    - Study bosses twice as fast
-   - Reach 80%+ knowledge in fewer hours
+   - Reach 80%+ Boss Readiness in fewer hours
 
 4. **+10% loot luck** (from Treasure Hunter prerequisite)
    - Higher chance for Pre-BiS drops
@@ -422,7 +413,7 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 
 3. **+2 in-game days max lifespan** (from Death Defier prerequisite)
    - Extends endgame window from 12 to 14 days
-   - More time to defeat all 5 bosses AND accumulate 5,000g
+   - More time to reach Boss Readiness thresholds AND accumulate Renown
 
 4. **Start with 500g** (from Merchant King prerequisite)
    - Immediate mount purchase
@@ -439,16 +430,16 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 ### Example 3: Scholar → All Higher Tiers
 
 **Scholar Foundation:**
-- 2x boss knowledge transfer rate
+- 2x Boss Readiness transfer rate
 - Library Access (50% faster study activities)
 
 **Synergizes with:**
-- **Raid Legend** (70%+ knowledge required) - Reach threshold 2x faster
-- **Ultimate Raider** (80%+ knowledge required) - Essential for mastery
-- **Master Crafter** (knowledge dedication mindset) - Pairs well with thorough preparation
-- **Death Defier** (careful planning) - Knowledge prevents deadly mistakes
+- **Raid Legend** (70%+ Boss Readiness required) - Reach threshold 2x faster
+- **Ultimate Raider** (80%+ Boss Readiness required) - Essential for mastery
+- **Master Crafter** (Wit-Wealth focus) - Pairs well with thorough preparation
+- **Death Defier** (Low Daring) - Knowledge prevents deadly mistakes
 
-**Result:** Scholar is the most valuable foundation evolution because boss knowledge is REQUIRED for all raid content. Unlocking it early accelerates every future run's endgame progression.
+**Result:** Scholar is the most valuable foundation evolution because Boss Readiness is REQUIRED for all raid content. Unlocking it early accelerates every future run's endgame progression.
 
 ---
 
@@ -457,12 +448,12 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 ### How Evolutions Are Awarded
 
 **At Death/Retirement:**
-1. Game analyzes your run statistics (combat%, gold earned, knowledge gained, etc.)
+1. Game analyzes your run statistics (triangle position, Renown, Daring, Boss Readiness, Level)
 2. Checks prerequisites for all evolutions (Tier 1 → Tier 2 → Tier 3)
 3. Awards highest tier evolution you qualify for
 4. If multiple evolutions match, awards based on weighted priority:
-   - Weighted toward your PRIMARY focus (70% of actions)
-   - Secondary focuses can qualify if extreme (example: 90% combat = Berserker even if you had some gold)
+   - Weighted toward your PRIMARY corner or edge in the Build Triangle
+   - Secondary dimensions (Renown, Daring) can qualify if extreme (example: Renown >= 80)
 
 **Evolution UI Feedback:**
 - After death, screen shows: "EVOLUTION DISCOVERED"
@@ -474,7 +465,7 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 **Hidden Evolution Discovery:**
 - Hidden evolutions don't show requirements until unlocked
 - Discovery creates "wow" moment
-- Encourages experimentation and playstyle diversity
+- Encourages experimentation and dimension exploration
 
 ---
 
@@ -485,25 +476,25 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 **Goal:** Discover at least 3-4 Tier 1 evolutions to build foundation
 
 **Recommended Order:**
-1. **Run 1:** Berserker (easiest - just fight everything)
+1. **Run 1:** Berserker (easiest - push into War corner)
    - Learn combat systems
    - Die fast, but gain +5 base energy + 10 evolution energy = 65 total energy
 
-2. **Run 2:** Scholar (focus knowledge)
-   - Unlock 2x knowledge transfer
+2. **Run 2:** Scholar (push into Wit corner)
+   - Unlock 2x Boss Readiness transfer
    - Critical for all future raid attempts
    - Now at 80 total energy
 
-3. **Run 3:** Merchant King (economic focus)
+3. **Run 3:** Merchant King (push into Wealth corner)
    - Unlock 500g starting gold
    - Makes future runs easier (mount access)
    - Now at 95 total energy
 
-4. **Run 4:** Explorer (zone discovery)
+4. **Run 4:** Explorer (stay in the center, take risks)
    - Unlock instant travel (massive time saver)
    - Now at 110 total energy
 
-5. **Run 5:** Craftsman or Socialite (player preference)
+5. **Run 5:** Craftsman or Socialite (Wit-Wealth edge or Renown focus)
    - Unlock profession system or guild benefits
    - Now at 125 total energy
 
@@ -517,27 +508,27 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 
 ### Mid-Game Player (Runs 6-15): Unlock Tier 2 Specialists
 
-**Goal:** Combine foundations to discover specialist evolutions
+**Goal:** Combine dimensions to discover specialist evolutions
 
 **Recommended Order:**
 1. **Runs 6-8:** Focus on Raid Legend
    - Requires: Berserker + Scholar (already have both)
-   - Requirements: Defeat 4/5 bosses, survive to Day 10+
+   - Requirements: War-Wit edge, Boss Readiness >= 70% on 4+ bosses
    - Multiple attempts likely needed to learn raid mechanics
 
 2. **Runs 9-11:** Focus on Master Crafter
    - Requires: Merchant King + Scholar (already have both)
-   - Requirements: Profession 40+, craft 3 blue items
+   - Requirements: Deep Wit-Wealth edge
    - Unlocks EPIC BLUEPRINTS for future runs
 
 3. **Runs 12-13:** Focus on Treasure Hunter
    - Requires: Merchant King + Explorer (already have both)
-   - Requirements: 8 blue items, 6 dungeons cleared
+   - Requirements: War-Wealth edge, high Daring
    - Unlocks +10% loot luck
 
 4. **Runs 14-15:** Focus on Speed Demon or Death Defier
-   - Speed Demon: Explorer + Berserker (optimize time)
-   - Death Defier: Scholar + Craftsman (maximize survival)
+   - Speed Demon: War focus + extreme Daring
+   - Death Defier: Wit focus + extreme caution (low Daring)
 
 **Result After 15 Runs:**
 - 200+ max energy capacity (marathon sessions possible)
@@ -559,7 +550,7 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 
 2. **Runs 26-30:** Focus on Perfect Run
    - Requires: Ultimate Raider + 3 other Tier 2 evolutions
-   - Near-impossible achievement (all bosses + 5000g + Day 12+)
+   - Near-impossible achievement (all dimensions balanced + high Renown)
    - Unlocks Start at Level 20 (skips entire early game)
 
 3. **Runs 20+:** Discover Shapeshifter (hidden)
@@ -567,7 +558,7 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
    - Unlocks Evolution Lab (see all evolution trees)
 
 4. **Runs 30+:** Attempt Immortal Legend (hidden)
-   - Ultimate challenge: Ultimate Raider without dying
+   - Ultimate challenge: Ultimate Raider with extreme Daring
    - Prestige evolution for skilled players
 
 **Result After 30+ Runs:**
@@ -596,8 +587,8 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
   - Evolution story flavor text
 
 **Current Run Hints:**
-- During gameplay, sidebar shows: "Progressing toward: Scholar Evolution (60% knowledge)"
-- Real-time tracking of current run's evolution trajectory
+- During gameplay, sidebar shows: "Progressing toward: Scholar Evolution (60% Wit)"
+- Real-time tracking of current run's dimension trajectory
 - Multiple evolution hints if you're close to several
 
 **Evolution Bonuses Summary:**
@@ -606,7 +597,7 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 - Example:
   - +10% combat stats (Berserker)
   - Start with 500g (Merchant King)
-  - 2x knowledge transfer (Scholar)
+  - 2x Boss Readiness transfer (Scholar)
   - Instant travel (Explorer)
   - +10% loot luck (Treasure Hunter)
   - -10% time cost (Speed Demon)
@@ -629,7 +620,7 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 - Example: "You unlocked EPIC BLUEPRINTS" >> "You earned 250 AP"
 
 ### Build Diversity Incentives
-- Tier 2/3 evolutions require mixing playstyles
+- Tier 2/3 evolutions require mixing dimensions
 - Can't just repeat "Berserker" 30 times
 - Must explore Merchant King, Scholar, Explorer, etc. to progress
 - Shapeshifter rewards true diversity (10+ different evolutions)
@@ -645,7 +636,7 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 ## Design Principles
 
 1. **Every Run Matters** - Each death creates permanent legacy
-2. **Playstyle Definition** - Evolutions emerge from how you played, not arbitrary challenges
+2. **Dimension-Driven Definition** - Evolutions emerge from your Build Triangle position and secondary dimensions
 3. **Prerequisites Create Goals** - "I need Scholar for Raid Legend" drives focused runs
 4. **Synergies Reward Planning** - Veteran players leverage evolution combos strategically
 5. **Hidden Discoveries** - Shapeshifter and Immortal Legend create "wow" moments
@@ -655,4 +646,4 @@ Evolutions create powerful synergies through knowledge transfer. Here's how a Ma
 
 ## Key Takeaway
 
-**The evolution system transforms every character run into a permanent legacy. Whether you're a combat-focused Berserker, a knowledge-seeking Scholar, or a wealth-obsessed Merchant King, your playstyle creates tangible unlocks for future heroes. Death isn't failure—it's evolution. By run 30, you've evolved from a 50-energy novice with no bonuses into a 300+ energy legend with 10+ evolution unlocks, starting bonuses, vendor access, and mechanical advantages that compound across every run. Your past heroes live on through the evolutions they discovered. Failure is evolution.**
+**The evolution system transforms every character run into a permanent legacy. Whether you're a combat-focused Berserker, a knowledge-seeking Scholar, or a wealth-obsessed Merchant King, your playstyle creates tangible unlocks for future heroes. Death isn't failure—it's evolution. By run 30, you've evolved from a 50-energy novice with no bonuses into a 300+ energy legend with 10+ evolution unlocks, starting bonuses, vendor access, and mechanical advantages that compound across every run. Your past heroes live on through the dimensions they mastered. Failure is evolution.**

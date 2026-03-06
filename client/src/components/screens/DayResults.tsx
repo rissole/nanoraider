@@ -61,7 +61,7 @@ export function DayResults() {
           {results.lootObtained.map((item, i) => (
             <div className="flex items-center justify-between" key={`${item.id}-${i}`}>
               <span className={`font-bold text-sm ${RARITY_COLOR[item.rarity] ?? "text-gray-400"}`}>{item.name}</span>
-              <span className="text-gray-500 text-xs capitalize">{item.slot}{formatGearStats(item.stats) ? ` · ${formatGearStats(item.stats)}` : ""}</span>
+              <span className="text-gray-500 text-xs capitalize">{item.slot}{formatGearStats(item.power) ? ` · ${formatGearStats(item.power)}` : ""}</span>
             </div>
           ))}
         </div>
@@ -76,7 +76,7 @@ export function DayResults() {
             <div className="flex items-center justify-between text-sm" key={i}>
               <span className="text-gray-300">{def.name}</span>
               <div className="flex gap-3 text-xs">
-                {def.deathRisk > 0 && <span className="text-red-300">Risk {Math.round(r.effectiveDeathRisk * 100)}%</span>}
+                {r.failed ? <span className="text-orange-300">Failed (no rewards)</span> : null}
                 {r.xpGained > 0 && <span className="text-blue-400">+{r.xpGained} XP</span>}
                 {r.goldGained > 0 && <span className="text-yellow-400">+{r.goldGained}g</span>}
                 {r.goldSpent > 0 && <span className="text-red-300">-{r.goldSpent}g</span>}
@@ -112,9 +112,9 @@ export function DayResults() {
         ))}
       </div>
 
-      {/* Personality hint */}
+      {/* Trajectory hint */}
       <div className="bg-gray-900 border border-gray-600 rounded-lg p-3 text-center">
-        <PersonalityHint personality={results.personalitySnapshot} />
+        <TriangleHint renown={results.renownSnapshot} triangle={results.triangleSnapshot} />
       </div>
 
       <button
@@ -127,31 +127,22 @@ export function DayResults() {
   );
 }
 
-function PersonalityHint({
-  personality,
+function TriangleHint({
+  triangle,
+  renown,
 }: {
-  personality: {
-    combatStyle: number;
-    socialStyle: number;
-    economicFocus: number;
-    exploration: number;
-    preparation: number;
-    ambition: number;
-  };
+  triangle: { war: number; wit: number; wealth: number };
+  renown: number;
 }) {
-  const dominant = Object.entries(personality).sort(([, a], [, b]) => b - a)[0];
-  if (dominant === undefined || dominant[1] === 0) {
-    return <p className="text-gray-500 text-xs italic">Your hero is still finding their path…</p>;
+  const entries = Object.entries(triangle).sort(([, a], [, b]) => b - a);
+  const dominant = entries[0]?.[0] ?? "war";
+  if (entries[0] === undefined) {
+    return <p className="text-gray-500 text-xs italic">Your hero is still finding their path...</p>;
   }
-
   const hints: Record<string, string> = {
-    combatStyle: "Your hero leans into high-risk combat decisions…",
-    socialStyle: "Your hero is becoming increasingly social and influential…",
-    economicFocus: "Your hero has a strong instinct for profit and trade…",
-    exploration: "Your hero is drawn toward wandering and discovery…",
-    preparation: "Your hero prefers methodical preparation before action…",
-    ambition: "Your hero is chasing bigger glory and harder challenges…",
+    war: "Your hero's run tilted toward War.",
+    wit: "Your hero's run tilted toward Wit.",
+    wealth: "Your hero's run tilted toward Wealth.",
   };
-
-  return <p className="text-gray-400 text-xs italic">{hints[dominant[0]] ?? "Your hero is evolving…"}</p>;
+  return <p className="text-gray-400 text-xs italic">{hints[dominant]} Renown ended at {renown}.</p>;
 }

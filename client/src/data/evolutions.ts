@@ -15,8 +15,8 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They lived for the thrill of battle. Their legacy inspires future warriors.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { strength: 85, stamina: 65 },
-      minPersonality: { combatStyle: 30, ambition: 20 },
+      minTriangle: { war: 55 },
+      minDaring: 35,
     },
     bonuses: {
       energyBonus: 10,
@@ -34,8 +34,8 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They understood that gold is power. Their fortune funds future heroes.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { charismaInfluence: 75 },
-      minPersonality: { economicFocus: 32 },
+      minTriangle: { wealth: 55 },
+      minRenown: 20,
       minGoldAtDeath: 500,
     },
     bonuses: {
@@ -56,13 +56,12 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They believed preparation was everything. Their research guides future heroes.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { intelligence: 85 },
-      minPersonality: { preparation: 30 },
-      minBossKnowledge: { molten_fury: 30 },
+      minTriangle: { wit: 55 },
+      minBossReadiness: { molten_fury: 30 },
     },
     bonuses: {
       energyBonus: 10,
-      bossKnowledgeBonus: 0.05,
+      bossReadinessBonus: 0.05,
       knowledgeTransferMultiplier: 2,
       recipeDiscountPct: 0.1,
     },
@@ -79,13 +78,14 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     prerequisites: ["berserker", "scholar"],
     unlockCondition: {
       mustDefeatRaids: ["molten_fury"],
-      minCoreStats: { strength: 95, intelligence: 85 },
-      minPersonality: { combatStyle: 24, preparation: 20, ambition: 24 },
+      minTriangle: { war: 25, wit: 25 },
+      minBossReadiness: { molten_fury: 70 },
+      minDaring: 40,
     },
     bonuses: {
       energyBonus: 15,
       combatBonus: 0.2,
-      bossKnowledgeBonus: 0.1,
+      bossReadinessBonus: 0.1,
       purpleCraftStatBonusPct: 0.08,
       raidProvisionerUnlocked: true,
     },
@@ -101,8 +101,8 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They stood firm when all others fled. Their resilience shields future heroes.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { stamina: 85, strength: 55 },
-      minPersonality: { preparation: 22, combatStyle: 12 },
+      minTriangle: { war: 45 },
+      maxDaring: 35,
     },
     bonuses: {
       energyBonus: 10,
@@ -120,13 +120,13 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They calculated every variable. Their theorycrafting perfects future strategies.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { intelligence: 75 },
-      minPersonality: { preparation: 36 },
-      minBossKnowledge: { molten_fury: 25 },
+      minTriangle: { wit: 45 },
+      minBossReadiness: { molten_fury: 25 },
+      maxDaring: 45,
     },
     bonuses: {
       energyBonus: 10,
-      bossKnowledgeBonus: 0.06,
+      bossReadinessBonus: 0.06,
       knowledgeTransferMultiplier: 1.5,
     },
     hint: "Theory before practice. Data before action. Prepare for everything.",
@@ -141,8 +141,8 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They knew everyone worth knowing. Their connections benefit future heroes.",
     prerequisites: [],
     unlockCondition: {
-      minCoreStats: { charismaInfluence: 70 },
-      minPersonality: { socialStyle: 24, ambition: 12 },
+      minRenown: 50,
+      minTriangle: { wealth: 15 },
     },
     bonuses: {
       energyBonus: 10,
@@ -161,13 +161,14 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They led from the front, blade in hand. Their command echoes through future battles.",
     prerequisites: ["berserker", "guardian"],
     unlockCondition: {
-      minCoreStats: { strength: 100, stamina: 80 },
-      minPersonality: { combatStyle: 28, ambition: 25 },
+      minTriangle: { war: 60 },
+      minRenown: 20,
+      minDaring: 55,
     },
     bonuses: {
       energyBonus: 15,
       combatBonus: 0.15,
-      bossKnowledgeBonus: 0.03,
+      bossReadinessBonus: 0.03,
     },
     hint: "Strength alone isn't enough. Command it.",
     unlocksPath: ["raid_leader"],
@@ -181,8 +182,9 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They cleared a thousand dungeons. Their expertise guides future delvers.",
     prerequisites: ["berserker", "theorycrafter"],
     unlockCondition: {
-      minCoreStats: { strength: 85, intelligence: 70, stamina: 70 },
-      minPersonality: { combatStyle: 22, preparation: 25 },
+      minTriangle: { war: 30, wit: 25 },
+      minBossReadiness: { molten_fury: 40 },
+      minDaring: 35,
     },
     bonuses: {
       energyBonus: 15,
@@ -201,8 +203,8 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They built an empire of loyal allies. Their guild endures beyond any single hero.",
     prerequisites: ["socialite", "merchant"],
     unlockCondition: {
-      minCoreStats: { charismaInfluence: 95 },
-      minPersonality: { socialStyle: 28, economicFocus: 22 },
+      minTriangle: { wealth: 30 },
+      minRenown: 65,
       minGoldAtDeath: 350,
     },
     bonuses: {
@@ -223,8 +225,8 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     lore: "They found riches others missed. Their treasure maps guide future seekers.",
     prerequisites: ["merchant", "scholar"],
     unlockCondition: {
-      minCoreStats: { intelligence: 75, charismaInfluence: 70 },
-      minPersonality: { economicFocus: 22, preparation: 18 },
+      minTriangle: { wealth: 30, wit: 20 },
+      minDaring: 60,
       minGoldAtDeath: 300,
     },
     bonuses: {
@@ -246,13 +248,15 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDefinition> = {
     prerequisites: ["raid_legend", "dungeon_master"],
     unlockCondition: {
       mustDefeatRaids: ["eternal_throne"],
-      minCoreStats: { strength: 110, intelligence: 95 },
-      minPersonality: { combatStyle: 24, preparation: 22, ambition: 28 },
+      minTriangle: { war: 20, wit: 20, wealth: 15 },
+      minRenown: 40,
+      minDaring: 65,
+      minBossReadiness: { molten_fury: 80, eternal_throne: 80 },
     },
     bonuses: {
       energyBonus: 25,
       combatBonus: 0.25,
-      bossKnowledgeBonus: 0.15,
+      bossReadinessBonus: 0.15,
       knowledgeTransferMultiplier: 3,
       purpleCraftStatBonusPct: 0.1,
       raidProvisionerUnlocked: true,

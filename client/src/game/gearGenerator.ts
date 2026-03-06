@@ -1,8 +1,6 @@
 import type {
   ArmorSlot,
   ArmorWeight,
-  CoreStatKey,
-  CoreStats,
   GearItem,
   GearRarity,
   GearSlot,
@@ -11,7 +9,7 @@ import type {
   HeroClass,
   WeaponSlot,
 } from "../data/types";
-import { BASE_CORE_STATS, STARTING_GEAR_SPEC } from "./characterCreation";
+import { STARTING_GEAR_SPEC } from "./characterCreation";
 
 const CLASS_ARMOR_WEIGHT: Record<HeroClass, ArmorWeight> = {
   warrior: "plate",
@@ -112,48 +110,6 @@ const STAT_BUDGET_TABLE: Record<GearRarity, { base: number; perLevel: number }> 
   purple: { base: 25, perLevel: 7 },
 };
 
-// Weights per class/slot: primary stat dominant, secondary stats thematically weighted.
-// Primary: warrior=STR, rogue=AGI, mage=INT, guardian=STA, bard=CHA
-// Each slot's weights sum to 1.
-type StatWeights = Partial<Record<CoreStatKey, number>>;
-const STAT_WEIGHTS: Record<HeroClass, Record<GearSlot, StatWeights>> = {
-  warrior: {
-    head: { strength: 0.55, stamina: 0.35, agility: 0.1 },
-    chest: { strength: 0.5, stamina: 0.45, agility: 0.05 },
-    legs: { strength: 0.45, stamina: 0.45, agility: 0.1 },
-    mainhand: { strength: 0.8, stamina: 0.15, agility: 0.05 },
-    offhand: { strength: 0.35, stamina: 0.6, agility: 0.05 },
-  },
-  rogue: {
-    head: { agility: 0.55, strength: 0.25, charismaInfluence: 0.2 },
-    chest: { agility: 0.5, strength: 0.3, stamina: 0.2 },
-    legs: { agility: 0.6, strength: 0.25, stamina: 0.15 },
-    mainhand: { agility: 0.75, strength: 0.2, charismaInfluence: 0.05 },
-    offhand: { agility: 0.7, strength: 0.25, stamina: 0.05 },
-  },
-  mage: {
-    head: { intelligence: 0.6, stamina: 0.3, charismaInfluence: 0.1 },
-    chest: { intelligence: 0.55, stamina: 0.35, charismaInfluence: 0.1 },
-    legs: { intelligence: 0.5, stamina: 0.4, charismaInfluence: 0.1 },
-    mainhand: { intelligence: 0.8, stamina: 0.15, charismaInfluence: 0.05 },
-    offhand: { intelligence: 0.6, stamina: 0.35, charismaInfluence: 0.05 },
-  },
-  guardian: {
-    head: { stamina: 0.55, strength: 0.35, agility: 0.1 },
-    chest: { stamina: 0.6, strength: 0.3, agility: 0.1 },
-    legs: { stamina: 0.55, strength: 0.35, agility: 0.1 },
-    mainhand: { stamina: 0.5, strength: 0.45, agility: 0.05 },
-    offhand: { stamina: 0.75, strength: 0.2, agility: 0.05 },
-  },
-  bard: {
-    head: { charismaInfluence: 0.55, intelligence: 0.3, agility: 0.15 },
-    chest: { charismaInfluence: 0.5, intelligence: 0.3, stamina: 0.2 },
-    legs: { charismaInfluence: 0.5, agility: 0.3, stamina: 0.2 },
-    mainhand: { charismaInfluence: 0.7, intelligence: 0.2, agility: 0.1 },
-    offhand: { charismaInfluence: 0.65, intelligence: 0.25, stamina: 0.1 },
-  },
-};
-
 const GEAR_SLOTS: GearSlot[] = ["head", "chest", "legs", "mainhand", "offhand"];
 const ARMOR_SLOTS: ArmorSlot[] = ["head", "chest", "legs"];
 
@@ -172,7 +128,7 @@ function statBudgetForLevel(rarity: GearRarity, level: number): number {
 }
 
 export function sumGearStats(item: GearItem): number {
-  return Object.values(item.stats).reduce((sum, v) => sum + (typeof v === "number" ? v : 0), 0);
+  return item.power;
 }
 
 function maybeMatchExistingAdjective(heroClass: HeroClass, rarity: GearRarity, level: number, existingGear: GearSlots): string | null {
@@ -187,24 +143,6 @@ function maybeMatchExistingAdjective(heroClass: HeroClass, rarity: GearRarity, l
     return null;
   }
   return randomFrom(candidates);
-}
-
-function distributeStatsToItem(heroClass: HeroClass, slot: GearSlot, budget: number): Partial<Record<CoreStatKey, number>> {
-  const weights = STAT_WEIGHTS[heroClass][slot];
-  const stats: Partial<Record<CoreStatKey, number>> = {};
-  for (const [key, weight] of Object.entries(weights)) {
-    const value = Math.round(budget * weight);
-    if (value > 0) {
-      stats[key as CoreStatKey] = value;
-    }
-  }
-  // Ensure we use the full budget (rounding can leave 1-2 points)
-  const currentSum = Object.values(stats).reduce((a, b) => a + b, 0);
-  if (currentSum < budget && Object.keys(stats).length > 0) {
-    const primaryKey = Object.keys(weights)[0] as CoreStatKey;
-    stats[primaryKey] = (stats[primaryKey] ?? 0) + (budget - currentSum);
-  }
-  return stats;
 }
 
 function armorNameFor(heroClass: HeroClass, slot: ArmorSlot, rarity: GearRarity, level: number, existingGear: GearSlots): string {
@@ -223,45 +161,23 @@ function buildGeneratedItemId(heroClass: HeroClass, slot: GearSlot, rarity: Gear
   return `generated_${heroClass}_${slot}_${rarity}_${Date.now()}_${nonce}`;
 }
 
-export function getEffectiveCoreStats(hero: Hero): CoreStats {
-  const base: CoreStats = { ...hero.coreStats };
-  for (const item of Object.values(hero.gear)) {
-    if (item === null) {
-      continue;
-    }
-    for (const [key, value] of Object.entries(item.stats)) {
-      base[key as CoreStatKey] += typeof value === "number" ? value : 0;
-    }
-  }
-  return base;
+export function getGearPower(hero: Hero): number {
+  return Object.values(hero.gear).reduce((sum, item) => sum + (item?.power ?? 0), 0);
 }
 
-/** Expected effective core stats for a fresh hero (uses characterCreation config). */
-export function getExpectedFreshHeroEffectiveStats(heroClass: HeroClass): CoreStats {
-  const result: CoreStats = { ...BASE_CORE_STATS };
+/** Expected aggregate gear power for a fresh hero (uses characterCreation config). */
+export function getExpectedFreshHeroGearPower(_heroClass: HeroClass): number {
+  let result = 0;
   const budget = statBudgetForLevel(STARTING_GEAR_SPEC.rarity, STARTING_GEAR_SPEC.level);
   for (const slot of STARTING_GEAR_SPEC.slots) {
-    const weights = STAT_WEIGHTS[heroClass][slot];
-    for (const [key, weight] of Object.entries(weights)) {
-      result[key as CoreStatKey] += budget * weight;
-    }
+    void slot;
+    result += budget;
   }
   return result;
 }
 
-export const STAT_SHORT_LABELS: Record<CoreStatKey, string> = {
-  strength: "STR",
-  agility: "AGI",
-  intelligence: "INT",
-  stamina: "STA",
-  charismaInfluence: "CHR",
-};
-
-export function formatGearStats(stats: Partial<Record<CoreStatKey, number>>): string {
-  return Object.entries(stats)
-    .filter(([, v]) => typeof v === "number" && v > 0)
-    .map(([k, v]) => `+${v} ${STAT_SHORT_LABELS[k as CoreStatKey]}`)
-    .join(" ");
+export function formatGearStats(power: number): string {
+  return `Power ${power}`;
 }
 
 export function getArmorWeightForClass(heroClass: HeroClass): ArmorWeight {
@@ -287,14 +203,13 @@ export function generateGear(
     ? armorNameFor(heroClass, slot as ArmorSlot, rarity, level, existingGear)
     : weaponNameFor(heroClass, slot as WeaponSlot, rarity);
 
-  const budget = statBudgetForLevel(rarity, level);
-  const stats = distributeStatsToItem(heroClass, slot, budget);
+  const power = statBudgetForLevel(rarity, level);
 
   return {
     id: buildGeneratedItemId(heroClass, slot, rarity),
     name,
     slot,
     rarity,
-    stats,
+    power,
   };
 }

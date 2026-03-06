@@ -5,9 +5,7 @@ import type {
   ActivityId,
   ActivityRiskBreakdown,
   BossId,
-  CoreStatKey,
   DimensionDeltas,
-  DungeonActivityId,
   GearReadinessBand,
   GearReadinessMetric,
   GearRarity,
@@ -17,9 +15,11 @@ import type {
   MetaProgression,
   RiskBand,
   ResolvedActivity,
+  TriangleKey,
 } from "../data/types";
-import { applyKnowledgeGain, getBossReadiness } from "./bossKnowledge";
-import { generateGear, getEffectiveCoreStats, getExpectedFreshHeroEffectiveStats, randomGearSlot, sumGearStats } from "./gearGenerator";
+import { applyReadinessGain, getBossReadiness } from "./bossReadiness";
+import { generateGear, getExpectedFreshHeroGearPower, getGearPower, randomGearSlot, sumGearStats } from "./gearGenerator";
+import { bossForRaidActivity, isLethalActivity } from "./activityMeta";
 
 function roll(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -43,77 +43,59 @@ function addMaterials(
   return next;
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function normalizeTriangle(raw: Hero["triangle"]): Hero["triangle"] {
+  const war = Math.max(0, raw.war);
+  const wit = Math.max(0, raw.wit);
+  const wealth = Math.max(0, raw.wealth);
+  const total = war + wit + wealth;
+  if (total <= 0) {
+    return { war: 33, wit: 33, wealth: 34 };
+  }
+  const scaledWar = Math.round((war / total) * 100);
+  const scaledWit = Math.round((wit / total) * 100);
+  const scaledWealth = 100 - scaledWar - scaledWit;
+  return { war: scaledWar, wit: scaledWit, wealth: scaledWealth };
+}
+
 function applyDimensionDeltas(hero: Hero, deltas: DimensionDeltas): Hero {
   const next: Hero = {
     ...hero,
-    coreStats: { ...hero.coreStats },
-    personality: { ...hero.personality },
-    secondary: {
-      reputation: { ...hero.secondary.reputation },
-      bossKnowledge: { ...hero.secondary.bossKnowledge },
-      dungeonFamiliarity: { ...hero.secondary.dungeonFamiliarity },
-    },
+    triangle: { ...hero.triangle },
+    bossReadiness: { ...hero.bossReadiness },
   };
 
-  if (deltas.coreStats !== undefined) {
-    for (const [key, value] of Object.entries(deltas.coreStats)) {
-      const statKey = key as keyof Hero["coreStats"];
-      next.coreStats[statKey] += value;
+  if (deltas.triangle !== undefined) {
+    for (const [key, value] of Object.entries(deltas.triangle)) {
+      const axis = key as TriangleKey;
+      next.triangle[axis] += value;
     }
+    next.triangle = normalizeTriangle(next.triangle);
   }
 
-  if (deltas.personality !== undefined) {
-    for (const [key, value] of Object.entries(deltas.personality)) {
-      const axisKey = key as keyof Hero["personality"];
-      next.personality[axisKey] += value;
-    }
+  if (deltas.renown !== undefined) {
+    next.renown = clamp(next.renown + deltas.renown, 0, 100);
   }
 
-  if (deltas.reputation !== undefined) {
-    for (const [key, value] of Object.entries(deltas.reputation)) {
-      const repKey = key as keyof Hero["secondary"]["reputation"];
-      next.secondary.reputation[repKey] += value;
-    }
+  if (deltas.daring !== undefined) {
+    next.daring = clamp(next.daring + deltas.daring, 0, 100);
   }
 
-  if (deltas.bossKnowledgeIntel !== undefined) {
-    for (const [key, value] of Object.entries(deltas.bossKnowledgeIntel)) {
-      const bossKey = key as BossId;
-      const current = next.secondary.bossKnowledge[bossKey];
-      next.secondary.bossKnowledge[bossKey] = applyKnowledgeGain(current, "intel", value);
-    }
-  }
-
-  if (deltas.bossKnowledgeDrills !== undefined) {
-    for (const [key, value] of Object.entries(deltas.bossKnowledgeDrills)) {
-      const bossKey = key as BossId;
-      const current = next.secondary.bossKnowledge[bossKey];
-      next.secondary.bossKnowledge[bossKey] = applyKnowledgeGain(current, "drills", value);
-    }
-  }
-
-  if (deltas.bossKnowledgeExecution !== undefined) {
-    for (const [key, value] of Object.entries(deltas.bossKnowledgeExecution)) {
-      const bossKey = key as BossId;
-      const current = next.secondary.bossKnowledge[bossKey];
-      next.secondary.bossKnowledge[bossKey] = applyKnowledgeGain(current, "execution", value);
+  if (deltas.bossReadiness !== undefined) {
+    for (const [key, value] of Object.entries(deltas.bossReadiness)) {
+      const bossId = key as BossId;
+      next.bossReadiness[bossId] = applyReadinessGain(next.bossReadiness[bossId], value);
     }
   }
 
   return next;
 }
 
-const DEFAULT_STAT_WEIGHTS: Record<ActivityDefinition["category"], Record<CoreStatKey, number>> = {
-  combat: { strength: 0.35, agility: 0.2, intelligence: 0.1, stamina: 0.3, charismaInfluence: 0.05 },
-  knowledge: { strength: 0.05, agility: 0.1, intelligence: 0.55, stamina: 0.1, charismaInfluence: 0.2 },
-  economic: { strength: 0.1, agility: 0.2, intelligence: 0.25, stamina: 0.1, charismaInfluence: 0.35 },
-  social: { strength: 0.05, agility: 0.1, intelligence: 0.25, stamina: 0.05, charismaInfluence: 0.55 },
-  general: { strength: 0.2, agility: 0.2, intelligence: 0.2, stamina: 0.25, charismaInfluence: 0.15 },
-};
-
 const DEFAULT_RISK_PROFILE: Record<ActivityDefinition["category"], Required<NonNullable<ActivityDefinition["riskProfile"]>>> = {
   combat: {
-    coreStats: DEFAULT_STAT_WEIGHTS.combat,
     gearFactor: 0.14,
     prepFactor: 0.0015,
     knowledgeFactor: 0.02,
@@ -121,7 +103,6 @@ const DEFAULT_RISK_PROFILE: Record<ActivityDefinition["category"], Required<NonN
     maxRisk: 0.9,
   },
   knowledge: {
-    coreStats: DEFAULT_STAT_WEIGHTS.knowledge,
     gearFactor: 0.06,
     prepFactor: 0.0015,
     knowledgeFactor: 0.01,
@@ -129,7 +110,6 @@ const DEFAULT_RISK_PROFILE: Record<ActivityDefinition["category"], Required<NonN
     maxRisk: 0.8,
   },
   economic: {
-    coreStats: DEFAULT_STAT_WEIGHTS.economic,
     gearFactor: 0.08,
     prepFactor: 0.0012,
     knowledgeFactor: 0.01,
@@ -137,7 +117,6 @@ const DEFAULT_RISK_PROFILE: Record<ActivityDefinition["category"], Required<NonN
     maxRisk: 0.8,
   },
   social: {
-    coreStats: DEFAULT_STAT_WEIGHTS.social,
     gearFactor: 0.05,
     prepFactor: 0.0015,
     knowledgeFactor: 0.01,
@@ -145,7 +124,6 @@ const DEFAULT_RISK_PROFILE: Record<ActivityDefinition["category"], Required<NonN
     maxRisk: 0.75,
   },
   general: {
-    coreStats: DEFAULT_STAT_WEIGHTS.general,
     gearFactor: 0.08,
     prepFactor: 0.0012,
     knowledgeFactor: 0.01,
@@ -231,23 +209,6 @@ function resolveReadinessFloor(hero: Hero, def: ActivityDefinition): { floor: nu
   };
 }
 
-function isDungeonTier(tier: ActivityDefinition["progressionTier"]): boolean {
-  return tier === "early_dungeon" || tier === "mid_dungeon";
-}
-
-const DUNGEON_FAMILIARITY_PER_SURVIVAL = 0.012;
-const DUNGEON_FAMILIARITY_MAX_MITIGATION = 0.12;
-const DUNGEON_ACTIVITY_IDS: DungeonActivityId[] = [
-  "dungeon_irondeep",
-  "dungeon_whispering_crypts",
-  "dungeon_scholomance",
-  "dungeon_blackrock",
-];
-
-function isTrackedDungeonActivity(activityId: ActivityId): activityId is DungeonActivityId {
-  return DUNGEON_ACTIVITY_IDS.includes(activityId as DungeonActivityId);
-}
-
 function computeLevelRiskAdjustment(hero: Hero, def: ActivityDefinition): { levelPenalty: number; levelMitigation: number } {
   const range = def.levelRange;
   if (range === undefined) {
@@ -292,14 +253,9 @@ function riskBandFromValue(risk: number): RiskBand {
   return "lethal";
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
 function mergeRiskProfile(def: ActivityDefinition): Required<NonNullable<ActivityDefinition["riskProfile"]>> {
   const defaults = DEFAULT_RISK_PROFILE[def.category];
   return {
-    coreStats: { ...defaults.coreStats, ...(def.riskProfile?.coreStats ?? {}) },
     gearFactor: def.riskProfile?.gearFactor ?? defaults.gearFactor,
     prepFactor: def.riskProfile?.prepFactor ?? defaults.prepFactor,
     knowledgeFactor: def.riskProfile?.knowledgeFactor ?? defaults.knowledgeFactor,
@@ -321,12 +277,10 @@ export function buildRiskHints(def: ActivityDefinition, breakdown: ActivityRiskB
     { label: breakdown.readinessLabel ?? "stats too low", amount: breakdown.readinessFloor, kind: "penalty" },
     { label: "under-levelled", amount: breakdown.levelPenalty, kind: "penalty" },
     { label: "over-levelled", amount: breakdown.levelMitigation, kind: "mitigation" },
-    { label: "high stats", amount: breakdown.coreStatMitigation, kind: "mitigation" },
+    { label: "good gear", amount: breakdown.gearMitigation, kind: "mitigation" },
     { label: "well prepared", amount: breakdown.prepMitigation + breakdown.knowledgeMitigation, kind: "mitigation" },
-    { label: "familiar", amount: breakdown.dungeonFamiliarityMitigation, kind: "mitigation" },
     { label: "legacy bonus", amount: breakdown.metaMitigation, kind: "mitigation" },
     { label: "elderly", amount: breakdown.agePenalty, kind: "penalty" },
-    { label: "reckless", amount: breakdown.recklessPressure, kind: "penalty" },
   ];
 
   if (def.deathRisk <= 0) {
@@ -354,15 +308,14 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
   if (def.deathRisk <= 0) {
     return {
       baseRisk: 0,
-      coreStatMitigation: 0,
+      levelMitigation: 0,
+      gearMitigation: 0,
+      readinessMitigation: 0,
       prepMitigation: 0,
       knowledgeMitigation: 0,
       metaMitigation: 0,
-      dungeonFamiliarityMitigation: 0,
       levelPenalty: 0,
-      levelMitigation: 0,
       agePenalty: 0,
-      recklessPressure: 0,
       readinessFloor: 0,
       readinessLabel: null,
       finalRisk: 0,
@@ -371,33 +324,21 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
   }
 
   const profile = mergeRiskProfile(def);
-  const effectiveStats = getEffectiveCoreStats(hero);
-  const statWeights = profile.coreStats;
-  const weightedStats = (Object.entries(statWeights) as [CoreStatKey, number][])
-    .reduce((sum, [key, weight]) => sum + effectiveStats[key] * weight, 0);
-  const expectedFreshStats = getExpectedFreshHeroEffectiveStats(hero.heroClass);
-  const baselineStats = (Object.entries(statWeights) as [CoreStatKey, number][])
-    .reduce((sum, [key, weight]) => sum + expectedFreshStats[key] * weight, 0);
-  const coreStatMitigation = Math.max(0, (weightedStats - baselineStats) * 0.0075);
+  const currentGearPower = getGearPower(hero);
+  const baselineGearPower = getExpectedFreshHeroGearPower(hero.heroClass);
+  const gearMitigation = Math.max(0, (currentGearPower - baselineGearPower) * 0.004 * profile.gearFactor);
 
-  const prepMitigation = Math.max(0, hero.personality.preparation) * profile.prepFactor;
+  const prepMitigation = Math.max(0, hero.renown) * profile.prepFactor;
 
   let knowledgeMitigation = 0;
-  if (def.progressionTier === "entry_raid" || def.progressionTier === "capstone_raid") {
-    const knowledge = getBossReadiness(hero, "molten_fury");
-    knowledgeMitigation = (knowledge / 100) * 0.28;
-  } else if (def.category === "combat") {
-    knowledgeMitigation = (Math.max(0, hero.personality.preparation) / 100) * profile.knowledgeFactor;
+  if (def.id === "raid_molten_fury") {
+    knowledgeMitigation = (getBossReadiness(hero, "molten_fury") / 100) * 0.28;
+  } else if (def.id === "raid_eternal_throne") {
+    knowledgeMitigation = (getBossReadiness(hero, "eternal_throne") / 100) * 0.28;
   }
 
   const metaMitigation = Math.max(0, meta.evolutionBonuses.combatBonus ?? 0) * 0.25;
   const levelAdjustment = computeLevelRiskAdjustment(hero, def);
-  const dungeonFamiliarityMitigation = isDungeonTier(def.progressionTier) && isTrackedDungeonActivity(activityId)
-    ? Math.min(
-        DUNGEON_FAMILIARITY_MAX_MITIGATION,
-        hero.secondary.dungeonFamiliarity[activityId] * DUNGEON_FAMILIARITY_PER_SURVIVAL,
-      )
-    : 0;
 
   let agePenalty = 0;
   if (hero.inGameDay >= 8 && hero.inGameDay <= 9) {
@@ -406,39 +347,29 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
     agePenalty = 0.06 + (hero.inGameDay - 10) * 0.05;
   }
 
-  const recklessPressure =
-    def.category === "combat"
-      ? Math.max(0, hero.personality.ambition - 18) * 0.001 + Math.max(0, hero.personality.combatStyle - 22) * 0.0009
-      : 0;
-
   const unclampedWithoutAge = def.deathRisk
-    - coreStatMitigation
+    - gearMitigation
     - prepMitigation
     - knowledgeMitigation
     - metaMitigation
-    - dungeonFamiliarityMitigation
     - levelAdjustment.levelMitigation
-    + levelAdjustment.levelPenalty
-    + recklessPressure;
+    + levelAdjustment.levelPenalty;
   const clampedWithoutAge = clamp(unclampedWithoutAge, profile.minRisk, profile.maxRisk);
   const readiness = resolveReadinessFloor(hero, def);
-  const adjustedReadinessFloor = isDungeonTier(def.progressionTier)
-    ? Math.max(0, readiness.floor - levelAdjustment.levelMitigation)
-    : readiness.floor;
+  const adjustedReadinessFloor = readiness.floor;
   const riskBeforeAge = Math.max(clampedWithoutAge, adjustedReadinessFloor);
   const finalRisk = Math.min(profile.maxRisk, riskBeforeAge + agePenalty);
 
   return {
     baseRisk: def.deathRisk,
-    coreStatMitigation,
-    prepMitigation,
-    knowledgeMitigation,
-    metaMitigation,
-    dungeonFamiliarityMitigation,
-    levelPenalty: levelAdjustment.levelPenalty,
     levelMitigation: levelAdjustment.levelMitigation,
+    gearMitigation,
+    readinessMitigation: knowledgeMitigation,
+    prepMitigation,
+    knowledgeMitigation: 0,
+    metaMitigation,
+    levelPenalty: levelAdjustment.levelPenalty,
     agePenalty,
-    recklessPressure,
     readinessFloor: adjustedReadinessFloor,
     readinessLabel: readiness.label,
     finalRisk,
@@ -451,44 +382,35 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
   const goldSpent = def.goldCost ?? 0;
   const effectiveEffects: DimensionDeltas = {
     ...def.effects,
-    ...(def.effects.bossKnowledgeIntel !== undefined ? { bossKnowledgeIntel: { ...def.effects.bossKnowledgeIntel } } : {}),
-    ...(def.effects.bossKnowledgeDrills !== undefined ? { bossKnowledgeDrills: { ...def.effects.bossKnowledgeDrills } } : {}),
-    ...(def.effects.bossKnowledgeExecution !== undefined ? { bossKnowledgeExecution: { ...def.effects.bossKnowledgeExecution } } : {}),
+    ...(def.effects.bossReadiness !== undefined ? { bossReadiness: { ...def.effects.bossReadiness } } : {}),
   };
   if (def.category === "knowledge") {
     const multiplier = meta.evolutionBonuses.knowledgeTransferMultiplier ?? 1;
-    const scales: Array<"bossKnowledgeIntel" | "bossKnowledgeDrills" | "bossKnowledgeExecution"> = [
-      "bossKnowledgeIntel",
-      "bossKnowledgeDrills",
-      "bossKnowledgeExecution",
-    ];
-    for (const key of scales) {
-      const channelEffects = effectiveEffects[key];
-      if (channelEffects === undefined) {
-        continue;
-      }
-      for (const [bossId, baseGain] of Object.entries(channelEffects)) {
-        channelEffects[bossId as BossId] = Math.round(baseGain * multiplier);
+    if (effectiveEffects.bossReadiness !== undefined) {
+      for (const [bossId, baseGain] of Object.entries(effectiveEffects.bossReadiness)) {
+        effectiveEffects.bossReadiness[bossId as BossId] = Math.round(baseGain * multiplier);
       }
     }
   }
 
   const riskBreakdown = computeActivityRisk(hero, activityId, meta);
   const finalDeathRisk = riskBreakdown.finalRisk;
-  const died = finalDeathRisk > 0 && Math.random() < finalDeathRisk;
+  const rolledFailure = finalDeathRisk > 0 && Math.random() < finalDeathRisk;
+  const died = rolledFailure && isLethalActivity(activityId);
+  const failed = rolledFailure && !died;
   const riskHints = buildRiskHints(def, riskBreakdown);
 
   if (activityId === "raid_molten_fury") {
     const executionGain = died ? 2 : 6;
-    const existing = effectiveEffects.bossKnowledgeExecution ?? {};
-    effectiveEffects.bossKnowledgeExecution = {
+    const existing = effectiveEffects.bossReadiness ?? {};
+    effectiveEffects.bossReadiness = {
       ...existing,
       molten_fury: (existing.molten_fury ?? 0) + executionGain,
     };
   }
 
   let materialsGained: Partial<Record<MaterialId, number>> = {};
-  if (!died) {
+  if (!died && !failed) {
     if (activityId === "dungeon_irondeep" || activityId === "dungeon_whispering_crypts") {
       materialsGained = addMaterials(materialsGained, { iron_shards: 1 });
     }
@@ -505,7 +427,7 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
 
   // Loot drops
   const lootDropped: GearItem[] = [];
-  if (!died) {
+  if (!died && !failed) {
     for (const drop of def.outcomes.lootTable) {
       if (Math.random() < drop.chance) {
         if (drop.itemId !== undefined) {
@@ -524,8 +446,9 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
     }
   }
 
-  const xpGained = died ? 0 : roll(def.outcomes.xpMin, def.outcomes.xpMax);
-  const goldGained = died ? 0 : roll(def.outcomes.goldMin, def.outcomes.goldMax);
+  const noRewards = died || failed;
+  const xpGained = noRewards ? 0 : roll(def.outcomes.xpMin, def.outcomes.xpMax);
+  const goldGained = noRewards ? 0 : roll(def.outcomes.goldMin, def.outcomes.goldMax);
 
   const resolved: ResolvedActivity = {
     activityId,
@@ -534,6 +457,7 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
     goldSpent,
     lootDropped,
     died,
+    failed,
     appliedEffects: effectiveEffects,
     effectiveDeathRisk: finalDeathRisk,
     riskBand: riskBreakdown.riskBand,
@@ -549,30 +473,12 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
     materials: addMaterials(hero.materials, materialsGained),
   };
 
-  if (!died && isDungeonTier(def.progressionTier) && isTrackedDungeonActivity(activityId)) {
-    updatedHero = {
-      ...updatedHero,
-      secondary: {
-        ...updatedHero.secondary,
-        dungeonFamiliarity: {
-          ...updatedHero.secondary.dungeonFamiliarity,
-          [activityId]: updatedHero.secondary.dungeonFamiliarity[activityId] + 1,
-        },
-      },
-    };
-  }
-
   // Raid defeat tracking
-  if (activityId === "raid_molten_fury" && !died) {
+  const defeatedBoss = !died ? bossForRaidActivity(activityId) : null;
+  if (defeatedBoss !== null) {
     updatedHero = {
       ...updatedHero,
-      raidLockouts: { ...updatedHero.raidLockouts, molten_fury: hero.inGameDay },
-    };
-  }
-  if (activityId === "raid_eternal_throne" && !died) {
-    updatedHero = {
-      ...updatedHero,
-      raidLockouts: { ...updatedHero.raidLockouts, eternal_throne: hero.inGameDay },
+      raidLockouts: { ...updatedHero.raidLockouts, [defeatedBoss]: hero.inGameDay },
     };
   }
 
@@ -601,29 +507,31 @@ export function isActivityUnlocked(hero: Hero, def: ActivityDefinition, meta: Me
   if (cond.minLevel !== undefined && hero.level < cond.minLevel) {
     return false;
   }
-  if (cond.minCoreStats !== undefined) {
-    for (const [key, value] of Object.entries(cond.minCoreStats)) {
-      if (hero.coreStats[key as keyof Hero["coreStats"]] < value) {
+  if (cond.minTriangle !== undefined) {
+    for (const [key, value] of Object.entries(cond.minTriangle)) {
+      if (hero.triangle[key as TriangleKey] < value) {
         return false;
       }
     }
   }
-  if (cond.minPersonality !== undefined) {
-    for (const [key, value] of Object.entries(cond.minPersonality)) {
-      if (hero.personality[key as keyof Hero["personality"]] < value) {
+  if (cond.maxTriangle !== undefined) {
+    for (const [key, value] of Object.entries(cond.maxTriangle)) {
+      if (hero.triangle[key as TriangleKey] > value) {
         return false;
       }
     }
   }
-  if (cond.minReputation !== undefined) {
-    for (const [key, value] of Object.entries(cond.minReputation)) {
-      if (hero.secondary.reputation[key as keyof Hero["secondary"]["reputation"]] < value) {
-        return false;
-      }
-    }
+  if (cond.minRenown !== undefined && hero.renown < cond.minRenown) {
+    return false;
   }
-  if (cond.minBossKnowledge !== undefined) {
-    for (const [key, value] of Object.entries(cond.minBossKnowledge)) {
+  if (cond.minDaring !== undefined && hero.daring < cond.minDaring) {
+    return false;
+  }
+  if (cond.maxDaring !== undefined && hero.daring > cond.maxDaring) {
+    return false;
+  }
+  if (cond.minBossReadiness !== undefined) {
+    for (const [key, value] of Object.entries(cond.minBossReadiness)) {
       if (getBossReadiness(hero, key as BossId) < value) {
         return false;
       }
@@ -654,39 +562,39 @@ export function getActivityUnlockGaps(hero: Hero, def: ActivityDefinition, meta:
   if (cond.minLevel !== undefined && hero.level < cond.minLevel) {
     gaps.push(`Level ${cond.minLevel}`);
   }
-  if (cond.minCoreStats !== undefined) {
-    for (const [key, value] of Object.entries(cond.minCoreStats)) {
+  if (cond.minTriangle !== undefined) {
+    for (const [key, value] of Object.entries(cond.minTriangle)) {
       const need = value;
-      const current = hero.coreStats[key as keyof Hero["coreStats"]];
+      const current = hero.triangle[key as TriangleKey];
       if (current < need) {
         gaps.push(`${key} ${current}/${need}`);
       }
     }
   }
-  if (cond.minPersonality !== undefined) {
-    for (const [key, value] of Object.entries(cond.minPersonality)) {
+  if (cond.maxTriangle !== undefined) {
+    for (const [key, value] of Object.entries(cond.maxTriangle)) {
       const need = value;
-      const current = hero.personality[key as keyof Hero["personality"]];
-      if (current < need) {
-        gaps.push(`${key} ${current}/${need}`);
+      const current = hero.triangle[key as TriangleKey];
+      if (current > need) {
+        gaps.push(`${key} ${current} > ${need}`);
       }
     }
   }
-  if (cond.minReputation !== undefined) {
-    for (const [key, value] of Object.entries(cond.minReputation)) {
-      const need = value;
-      const current = hero.secondary.reputation[key as keyof Hero["secondary"]["reputation"]];
-      if (current < need) {
-        gaps.push(`${key} rep ${current}/${need}`);
-      }
-    }
+  if (cond.minRenown !== undefined && hero.renown < cond.minRenown) {
+    gaps.push(`renown ${hero.renown}/${cond.minRenown}`);
   }
-  if (cond.minBossKnowledge !== undefined) {
-    for (const [key, value] of Object.entries(cond.minBossKnowledge)) {
+  if (cond.minDaring !== undefined && hero.daring < cond.minDaring) {
+    gaps.push(`daring ${hero.daring}/${cond.minDaring}`);
+  }
+  if (cond.maxDaring !== undefined && hero.daring > cond.maxDaring) {
+    gaps.push(`daring ${hero.daring}/${cond.maxDaring} max`);
+  }
+  if (cond.minBossReadiness !== undefined) {
+    for (const [key, value] of Object.entries(cond.minBossReadiness)) {
       const need = value;
       const current = getBossReadiness(hero, key as BossId);
       if (current < need) {
-        gaps.push(`${key} knowledge ${Math.round(current)}/${need}`);
+        gaps.push(`${key} readiness ${Math.round(current)}/${need}`);
       }
     }
   }
