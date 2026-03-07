@@ -1,8 +1,8 @@
 import { ACTIVITIES, ACTIVITY_LIST } from "../../data/activities";
 import { MATERIAL_LABELS, RECIPE_DEFINITIONS } from "../../data/crafting";
-import { EVOLUTIONS, EVOLUTION_TIER_LABELS } from "../../data/evolutions";
+import { EVOLUTIONS } from "../../data/evolutions";
 import { RARITY_LABELS } from "../../data/rarity";
-import type { ActivityDefinition, ActivityId, GearSlot, MaterialId, RecipeId, RiskBand, VendorId } from "../../data/types";
+import type { ActivityDefinition, GearSlot, MaterialId, RecipeId, RiskBand, VendorId } from "../../data/types";
 import { useGameStore } from "../../store/gameStore";
 import { buildRiskHints, computeActivityRisk, isActivityUnlocked } from "../../game/activityResolver";
 import { getTopEvolutionRecommendations } from "../../game/evolutionChecker";
@@ -83,51 +83,6 @@ const FORGE_RECIPES_BY_TIER: Record<ForgeTier, Record<GearSlot, RecipeId>> = {
     offhand: "upgrade_purple_offhand",
   },
 };
-
-function prioritizeActivities(hero: ReturnType<typeof useGameStore.getState>["hero"], allUnlocked: ActivityDefinition[]): {
-  featured: ActivityDefinition[];
-  advanced: ActivityDefinition[];
-} {
-  if (hero === null) {
-    return { featured: [], advanced: [] };
-  }
-  const budget = hero.inGameDay <= 3 ? 5 : hero.inGameDay <= 8 ? 7 : Number.MAX_SAFE_INTEGER;
-  if (allUnlocked.length <= budget) {
-    return { featured: allUnlocked, advanced: [] };
-  }
-
-  const mandatoryIds: ActivityId[] = ["quest"];
-  const mandatory = allUnlocked.filter((def) => mandatoryIds.includes(def.id));
-  const dungeon = allUnlocked.find((def) => def.progressionTier === "early_dungeon" || def.progressionTier === "mid_dungeon");
-  const economy = allUnlocked.find((def) => def.category === "economic" && def.id !== "quest");
-  const knowledge = allUnlocked.find((def) => def.category === "knowledge");
-  const seeds = [...mandatory, ...(dungeon ? [dungeon] : []), ...(economy ? [economy] : []), ...(knowledge ? [knowledge] : [])];
-  const used = new Set(seeds.map((def) => def.id));
-
-  const trajectory = hero.triangle.war >= hero.triangle.wealth
-    ? (hero.triangle.wit > hero.triangle.war ? "knowledge" : "combat")
-    : "economic";
-
-  const scored = allUnlocked
-    .filter((def) => !used.has(def.id))
-    .map((def) => {
-      let score = 0;
-      if (def.category === trajectory) {
-        score += 4;
-      }
-      if (trajectory === "combat" && def.progressionTier !== "none") {
-        score += 2;
-      }
-      return { def, score };
-    })
-    .sort((a, b) => b.score - a.score)
-    .map((entry) => entry.def);
-
-  const featured = [...seeds, ...scored].slice(0, budget);
-  const featuredSet = new Set(featured.map((def) => def.id));
-  const advanced = allUnlocked.filter((def) => !featuredSet.has(def.id));
-  return { featured, advanced };
-}
 
 function formatDetailTooltip(def: ActivityDefinition, includeCoreStats: boolean): string | null {
   const detailLines: string[] = [];
@@ -246,7 +201,6 @@ export function PlanningScreen() {
     rerollVendor,
     getDailyRerollsRemaining,
   } = useGameStore();
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [vendorTab, setVendorTab] = useState<VendorId>("quartermaster");
   type VendorsForgeTab = "vendors" | "forge";
   const [vendorsForgeTab, setVendorsForgeTab] = useState<VendorsForgeTab | null>(null);
@@ -269,7 +223,6 @@ export function PlanningScreen() {
   const goldRemaining = hero.gold - plannedGoldSpend;
   const totalEnergyUsed = energyUsedToday + directEnergySpentToday;
   const energyRemaining = meta.maxEnergy - totalEnergyUsed;
-  const curated = prioritizeActivities(hero, availableActivities);
   const selectedRecipe = FORGE_RECIPES_BY_TIER[forgeTier][selectedForgeSlot];
   const recipe = RECIPE_DEFINITIONS[selectedRecipe];
   const vendorOffers = getVendorOffers(vendorTab);
@@ -317,7 +270,6 @@ export function PlanningScreen() {
                 <div className="bg-gray-900 border border-gray-600 rounded p-3 text-sm flex-1 min-w-[180px] min-h-[80px]" key={rec.evolutionId}>
                   <div className="flex items-center gap-2">
                     <span className="text-cyan-300 font-bold">{evo.name}</span>
-                    <span className="text-gray-500 text-xs">({EVOLUTION_TIER_LABELS[evo.tier as 1 | 2 | 3]})</span>
                   </div>
                   <p className="text-gray-300 text-xs mt-2 leading-relaxed">{rec.gapSummary}</p>
                   <p className="text-amber-400/90 text-xs mt-1 italic leading-relaxed">{rec.hint}</p>
@@ -537,62 +489,27 @@ export function PlanningScreen() {
       {/* Available activities */}
       <div className="space-y-2">
         <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest">Available Activities</h3>
-        <p className="text-gray-500 text-xs">Build your full day plan, then resolve everything at once.</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {curated.featured.map((def) => {
+          {availableActivities.map((def) => {
             const previewRisk = computeActivityRisk(hero, def.id, meta);
             return (
-            <ActivityCard
-              blockedReasons={[
-                ...(energyRemaining < def.energyCost ? [`energy ${energyRemaining}/${def.energyCost}`] : []),
-                ...(goldRemaining < (def.goldCost ?? 0) ? [`gold ${goldRemaining}/${def.goldCost ?? 0}`] : []),
-                ...getActivityUnlockGaps(def.id),
-              ]}
-              canUse={energyRemaining >= def.energyCost && goldRemaining >= (def.goldCost ?? 0) && isActivityUnlocked(hero, def, meta)}
-              def={def}
-              effectiveDeathRisk={previewRisk.finalRisk}
-              key={def.id}
-              onExecute={() => { planActivity(def.id); }}
-              riskBand={previewRisk.riskBand}
-              riskHints={buildRiskHints(def, previewRisk)}
-            />
+              <ActivityCard
+                blockedReasons={[
+                  ...(energyRemaining < def.energyCost ? [`energy ${energyRemaining}/${def.energyCost}`] : []),
+                  ...(goldRemaining < (def.goldCost ?? 0) ? [`gold ${goldRemaining}/${def.goldCost ?? 0}`] : []),
+                  ...getActivityUnlockGaps(def.id),
+                ]}
+                canUse={energyRemaining >= def.energyCost && goldRemaining >= (def.goldCost ?? 0) && isActivityUnlocked(hero, def, meta)}
+                def={def}
+                effectiveDeathRisk={previewRisk.finalRisk}
+                key={def.id}
+                onExecute={() => { planActivity(def.id); }}
+                riskBand={previewRisk.riskBand}
+                riskHints={buildRiskHints(def, previewRisk)}
+              />
             );
           })}
         </div>
-        {curated.advanced.length > 0 && (
-          <div className="mt-3">
-            <button
-              className="text-xs text-gray-400 hover:text-gray-200"
-              onClick={() => { setShowAdvanced((prev) => !prev); }}
-              type="button"
-            >
-              {showAdvanced ? "Hide" : "Show"} Advanced Activities ({curated.advanced.length})
-            </button>
-            {showAdvanced ? (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 mt-2">
-                {curated.advanced.map((def) => {
-                  const previewRisk = computeActivityRisk(hero, def.id, meta);
-                  return (
-                    <ActivityCard
-                      blockedReasons={[
-                        ...(energyRemaining < def.energyCost ? [`energy ${energyRemaining}/${def.energyCost}`] : []),
-                        ...(goldRemaining < (def.goldCost ?? 0) ? [`gold ${goldRemaining}/${def.goldCost ?? 0}`] : []),
-                        ...getActivityUnlockGaps(def.id),
-                      ]}
-                      canUse={energyRemaining >= def.energyCost && goldRemaining >= (def.goldCost ?? 0) && isActivityUnlocked(hero, def, meta)}
-                      def={def}
-                      effectiveDeathRisk={previewRisk.finalRisk}
-                      key={def.id}
-                      onExecute={() => { planActivity(def.id); }}
-                      riskBand={previewRisk.riskBand}
-                      riskHints={buildRiskHints(def, previewRisk)}
-                    />
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
-        )}
       </div>
 
       {/* Planned queue */}
