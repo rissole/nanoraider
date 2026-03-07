@@ -7,8 +7,8 @@ import { generateGear, randomHeroClass } from "./gearGenerator";
 const TRACKED_BOSSES: BossId[] = ["molten_fury", "eternal_throne"];
 
 export function createHero(name: string, meta: MetaProgression): Hero {
-  const startGold = (meta.evolutionBonuses.startGold ?? 0) + (meta.apUpgrades.includes("start_gold_100") ? 100 : 0);
-  const bossReadinessStart = meta.evolutionBonuses.bossReadinessBonus ?? 0;
+  const startGold = (meta.townspersonBonuses.startGold ?? 0) + (meta.apUpgrades.includes("start_gold_100") ? 100 : 0);
+  const bossReadinessStart = meta.townspersonBonuses.bossReadinessBonus ?? 0;
   const normalizedBank = normalizeBossReadinessBank(meta.bossReadinessBank, TRACKED_BOSSES);
   const inheritedReadiness = TRACKED_BOSSES.reduce<Record<BossId, number>>((acc, bossId) => {
     const base = normalizedBank[bossId];

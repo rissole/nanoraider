@@ -1,4 +1,4 @@
-import { AP_UPGRADES } from "../../data/evolutions";
+import { AP_UPGRADES } from "../../data/townspeople";
 import { useGameStore } from "../../store/gameStore";
 
 export function UpgradesScreen() {
@@ -23,14 +23,14 @@ export function UpgradesScreen() {
       <div className="bg-gray-900 border border-blue-800 rounded-lg p-4 text-center">
         <div className="text-blue-400 font-bold text-3xl">{meta.achievementPoints}</div>
         <div className="text-gray-400 text-sm">Achievement Points Available</div>
-        <div className="text-gray-500 text-xs mt-1">Earned by completing runs and unlocking legacy paths</div>
+        <div className="text-gray-500 text-xs mt-1">Earned by completing runs and recruiting outpost residents</div>
       </div>
 
       {/* Current max energy */}
       <div className="bg-gray-900 border border-yellow-800 rounded-lg p-4 text-center">
         <div className="text-yellow-400 font-bold text-3xl">⚡ {meta.maxEnergy}</div>
         <div className="text-gray-400 text-sm">Current Max Energy</div>
-        <div className="text-gray-500 text-xs mt-1">Base 50 + legacy path bonuses + AP upgrades</div>
+        <div className="text-gray-500 text-xs mt-1">Base 50 + outpost bonuses + AP upgrades</div>
       </div>
 
       {/* Upgrades list */}

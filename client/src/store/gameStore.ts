@@ -5,7 +5,7 @@ import type {
   BossId,
   DayResult,
   EconomyTransaction,
-  EvolutionId,
+  FilledTownsperson,
   GameScreen,
   Hero,
   HeroClass,
@@ -16,14 +16,15 @@ import type {
   RiskBand,
   ResolvedActivity,
   ResolvedDailyEvent,
+  TownspersonRoleId,
   VendorId,
   VendorOffer,
 } from "../data/types";
 import { DAILY_EVENTS, DAILY_EVENT_LIST } from "../data/nurture";
 import { getActivityUnlockGaps as getUnlockGapsForActivity, isActivityUnlocked, resolveActivity } from "../game/activityResolver";
-import { checkEvolutionOnDeath, stackEvolutionBonuses } from "../game/evolutionChecker";
+import { checkTownspersonOnDeath, stackTownspersonBonuses } from "../game/townspersonChecker";
 import { applyXp, createHero } from "../game/heroFactory";
-import { AP_UPGRADES } from "../data/evolutions";
+import { AP_UPGRADES } from "../data/townspeople";
 import { ACTIVITIES } from "../data/activities";
 import { RECIPE_DEFINITIONS, baseVendorTierUnlocks, defaultKnownRecipes, listVendorOffers } from "../data/crafting";
 import { GEAR_ITEMS } from "../data/gear";
@@ -87,9 +88,10 @@ export interface DeathSummary {
   gold: number;
   cause: "combat" | "old_age";
   totalXpGained: number;
-  evolutionUnlocked: EvolutionId | null;
+  townspersonUnlocked: TownspersonRoleId | null;
+  heroSurvived: boolean;
   whyUnlocked: string | null;
-  almostUnlocked: EvolutionId | null;
+  almostUnlocked: TownspersonRoleId | null;
   almostReason: string | null;
   energyBonusGranted: number;
   apGranted: number;
@@ -157,8 +159,8 @@ function buildInitialMeta(): MetaProgression {
     raidDeaths: 0,
     maxEnergy: BASE_ENERGY,
     achievementPoints: 0,
-    unlockedEvolutions: [],
-    evolutionBonuses: {
+    townspeople: [],
+    townspersonBonuses: {
       energyBonus: 0,
       startGold: 0,
       combatBonus: 0,
@@ -229,7 +231,7 @@ function rollDailyEvent(day: number): PendingDailyEvent | null {
   return { eventId: candidates[0].id };
 }
 
-const GAMESTORE_VERSION = 4;
+const GAMESTORE_VERSION = 5;
 
 export const useGameStore = create<GameState>()(
   persist(
@@ -577,7 +579,7 @@ export const useGameStore = create<GameState>()(
         if (hero === null) {
           return false;
         }
-        const discountPct = meta.evolutionBonuses.vendorDiscountPct ?? 0;
+        const discountPct = meta.townspersonBonuses.vendorDiscountPct ?? 0;
         const goldCost = applyDiscount(offer.costs.gold ?? 0, discountPct);
         const materialCosts = offer.costs.materials ?? {};
         if (hero.gold < goldCost || !canAffordMaterials(hero.materials, materialCosts)) {
@@ -652,7 +654,7 @@ export const useGameStore = create<GameState>()(
         if (recipe.requiresKnownRecipe === true && !hero.knownRecipes.includes(recipeId)) {
           return false;
         }
-        const goldCost = applyDiscount(recipe.goldCost, (meta.evolutionBonuses.recipeDiscountPct ?? 0) + meta.craftingEfficiency);
+        const goldCost = applyDiscount(recipe.goldCost, (meta.townspersonBonuses.recipeDiscountPct ?? 0) + meta.craftingEfficiency);
         if (hero.gold < goldCost) {
           return false;
         }
@@ -668,7 +670,7 @@ export const useGameStore = create<GameState>()(
         }, {});
         const currentInSlot = hero.gear[recipe.slot];
         const generated = generateGear(hero.heroClass, recipe.slot, recipe.rarity, hero.level, hero.gear);
-        const bonusPct = meta.evolutionBonuses.purpleCraftStatBonusPct ?? 0;
+        const bonusPct = meta.townspersonBonuses.purpleCraftStatBonusPct ?? 0;
         let upgradedItem = generated;
         if (recipe.rarity === "purple" && bonusPct > 0) {
           upgradedItem = { ...generated, power: Math.round(generated.power * (1 + bonusPct)) };
@@ -712,7 +714,7 @@ export const useGameStore = create<GameState>()(
 
         const newUpgrades = [...meta.apUpgrades, upgradeId as MetaProgression["apUpgrades"][number]];
         const energyBonus = newUpgrades.filter((id) => id === "energy_10").length * 10;
-        const stackedBonuses = stackEvolutionBonuses(meta.unlockedEvolutions);
+        const stackedBonuses = stackTownspersonBonuses(meta.townspeople);
         const newMaxEnergy = BASE_ENERGY + stackedBonuses.energyBonus + energyBonus;
 
         set({
@@ -790,11 +792,29 @@ function finalizeDeath(
   fatalActivity?: ResolvedActivity,
 ) {
   const { meta } = get();
-  const { unlocked, whyUnlocked, almostUnlocked, almostReason } = checkEvolutionOnDeath(hero, meta, defeatedRaids);
+  const { unlocked, whyUnlocked, almostUnlocked, almostReason } = checkTownspersonOnDeath(hero, meta, defeatedRaids);
 
   const apGained = AP_PER_RUN + Math.floor(hero.level / 5) * 10;
-  const newUnlocked = unlocked !== null ? [...meta.unlockedEvolutions, unlocked] : meta.unlockedEvolutions;
-  const stackedBonuses = stackEvolutionBonuses(newUnlocked);
+
+  const heroSnapshot: FilledTownsperson["hero"] = {
+    heroName: hero.name,
+    triangle: hero.triangle,
+    renown: hero.renown,
+    daring: hero.daring,
+    level: hero.level,
+    defeatedRaids,
+    dayReached: hero.inGameDay,
+  };
+
+  const newTownspeople: FilledTownsperson[] =
+    unlocked !== null
+      ? [
+          ...meta.townspeople,
+          { roleId: unlocked, hero: heroSnapshot, unlockedAtRun: meta.totalRuns + 1 },
+        ]
+      : meta.townspeople;
+
+  const stackedBonuses = stackTownspersonBonuses(newTownspeople);
   const apEnergyBonus = meta.apUpgrades.filter((id) => id === "energy_10").length * 10;
   const newMaxEnergy = BASE_ENERGY + stackedBonuses.energyBonus + apEnergyBonus;
 
@@ -814,19 +834,8 @@ function finalizeDeath(
       + (cause === "combat" && fatalActivity !== undefined && isLethalActivity(fatalActivity.activityId) ? 1 : 0),
     maxEnergy: newMaxEnergy,
     achievementPoints: meta.achievementPoints + apGained,
-    unlockedEvolutions: newUnlocked,
-    evolutionBonuses: {
-      energyBonus: stackedBonuses.energyBonus,
-      startGold: stackedBonuses.startGold,
-      combatBonus: stackedBonuses.combatBonus,
-      bossReadinessBonus: stackedBonuses.bossReadinessBonus,
-      knowledgeTransferMultiplier: stackedBonuses.knowledgeTransferMultiplier,
-      vendorDiscountPct: stackedBonuses.vendorDiscountPct,
-      recipeDiscountPct: stackedBonuses.recipeDiscountPct,
-      purpleCraftStatBonusPct: stackedBonuses.purpleCraftStatBonusPct,
-      brokerTierStart: stackedBonuses.brokerTierStart,
-      raidProvisionerUnlocked: stackedBonuses.raidProvisionerUnlocked,
-    },
+    townspeople: newTownspeople,
+    townspersonBonuses: stackedBonuses,
     bossReadinessBank: updatedReadinessBank,
     knownRecipes: Array.from(new Set([...meta.knownRecipes, ...hero.knownRecipes])),
     vendorTiersUnlocked: {
@@ -847,7 +856,8 @@ function finalizeDeath(
     gold: hero.gold,
     cause,
     totalXpGained: runXpTotal,
-    evolutionUnlocked: unlocked,
+    townspersonUnlocked: unlocked,
+    heroSurvived: unlocked !== null,
     whyUnlocked,
     almostUnlocked,
     almostReason,

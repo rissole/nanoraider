@@ -339,7 +339,7 @@ export function computeActivityRisk(hero: Hero, activityId: ActivityId, meta: Me
     knowledgeMitigation = (getBossReadiness(hero, "eternal_throne") / 100) * 0.28;
   }
 
-  const metaMitigation = Math.max(0, meta.evolutionBonuses.combatBonus ?? 0) * 0.25;
+  const metaMitigation = Math.max(0, meta.townspersonBonuses.combatBonus ?? 0) * 0.25;
   const levelAdjustment = computeLevelRiskAdjustment(hero, def);
 
   let agePenalty = 0;
@@ -396,7 +396,7 @@ export function resolveActivity(hero: Hero, activityId: ActivityId, meta: MetaPr
     ...(def.effects.bossReadiness !== undefined ? { bossReadiness: { ...def.effects.bossReadiness } } : {}),
   };
   if (def.category === "knowledge") {
-    const multiplier = meta.evolutionBonuses.knowledgeTransferMultiplier ?? 1;
+    const multiplier = meta.townspersonBonuses.knowledgeTransferMultiplier ?? 1;
     if (effectiveEffects.bossReadiness !== undefined) {
       for (const [bossId, baseGain] of Object.entries(effectiveEffects.bossReadiness)) {
         effectiveEffects.bossReadiness[bossId as BossId] = Math.round(baseGain * multiplier);

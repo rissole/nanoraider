@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { EVOLUTION_LIST, EVOLUTION_TIER_LABELS, EVOLUTIONS } from "../../data/evolutions";
+import { TOWNSPERSON_LIST, TOWNSPEOPLE } from "../../data/townspeople";
+import type { TownspersonBonuses } from "../../data/types";
 import { ACTIVITIES } from "../../data/activities";
 import { useGameStore } from "../../store/gameStore";
 
@@ -10,7 +11,7 @@ const CAUSE_LABELS = {
 
 export function DeathScreen() {
   const { deathSummary, meta, goTo, startHeroCreation } = useGameStore();
-  const [phase, setPhase] = useState<"stats" | "evolution" | "bonuses">("stats");
+  const [phase, setPhase] = useState<"stats" | "outpost" | "bonuses">("stats");
 
   if (deathSummary === null) {
     goTo("main_menu");
@@ -22,27 +23,37 @@ export function DeathScreen() {
   const fatalActivityName = summary.fatalActivityId !== null ? ACTIVITIES[summary.fatalActivityId].name : null;
   const moltenReadiness = summary.bossReadinessSnapshot["molten_fury"];
 
-  const evolutionDef = summary.evolutionUnlocked !== null ? EVOLUTIONS[summary.evolutionUnlocked] : null;
-  const almostDef = summary.almostUnlocked !== null ? EVOLUTIONS[summary.almostUnlocked] : null;
+  const townspersonDef = summary.townspersonUnlocked !== null ? TOWNSPEOPLE[summary.townspersonUnlocked] : null;
+  const almostDef = summary.almostUnlocked !== null ? TOWNSPEOPLE[summary.almostUnlocked] : null;
 
   return (
     <div className="min-h-screen p-4 max-w-xl mx-auto space-y-4">
-      {/* Death header */}
+      {/* Death / Survival header */}
       <div className="text-center py-6 space-y-2">
-        <div className={`text-4xl ${causeInfo.color}`}>{causeInfo.icon}</div>
-        <h2 className="text-3xl font-bold text-white">{summary.heroName} has fallen</h2>
-        <div className={`font-bold ${causeInfo.color}`}>{causeInfo.label} · Day {summary.inGameDay}</div>
+        {summary.heroSurvived ? (
+          <>
+            <div className="text-4xl text-yellow-400">🏠</div>
+            <h2 className="text-3xl font-bold text-yellow-300">{summary.heroName} survived!</h2>
+            <div className="text-yellow-400 font-bold">Joins the Outpost as {townspersonDef?.name ?? "a resident"}</div>
+          </>
+        ) : (
+          <>
+            <div className={`text-4xl ${causeInfo.color}`}>{causeInfo.icon}</div>
+            <h2 className="text-3xl font-bold text-white">{summary.heroName} has fallen</h2>
+            <div className={`font-bold ${causeInfo.color}`}>{causeInfo.label} · Day {summary.inGameDay}</div>
+          </>
+        )}
       </div>
 
       {/* Phase tabs */}
       <div className="flex bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
-        {(["stats", "evolution", "bonuses"] as const).map((p) => (
+        {(["stats", "outpost", "bonuses"] as const).map((p) => (
           <button
             className={`flex-1 py-2 text-sm font-bold transition-colors ${phase === p ? "bg-gray-700 text-white" : "text-gray-500 hover:text-gray-300"}`}
             key={p}
             onClick={() => { setPhase(p); }}
           >
-            {p === "stats" ? "Legacy" : p === "evolution" ? "Path" : "Rewards"}
+            {p === "stats" ? "Legacy" : p === "outpost" ? "Outpost" : "Rewards"}
           </button>
         ))}
       </div>
@@ -91,36 +102,31 @@ export function DeathScreen() {
         </div>
       )}
 
-      {/* Phase: Legacy Path */}
-      {phase === "evolution" && (
+      {/* Phase: Outpost */}
+      {phase === "outpost" && (
         <div className="space-y-3">
-          {evolutionDef !== null ? (
+          {townspersonDef !== null ? (
             <div className="bg-gray-900 border-2 border-yellow-500 rounded-lg p-5 space-y-4">
               <div className="text-center space-y-1">
-                <div className="text-xs text-yellow-400 uppercase tracking-widest font-bold">Legacy Path Unlocked!</div>
-                <div className="text-3xl font-bold text-white">{evolutionDef.name}</div>
-                <div className="text-yellow-400 text-sm">{EVOLUTION_TIER_LABELS[evolutionDef.tier]}</div>
+                <div className="text-xs text-yellow-400 uppercase tracking-widest font-bold">Hero Survived!</div>
+                <div className="text-3xl font-bold text-white">{summary.heroName}</div>
+                <div className="text-yellow-300 text-lg font-bold">{townspersonDef.name}</div>
+                <div className="text-yellow-400 text-sm capitalize">{townspersonDef.raidGate === "none" ? "Outpost Resident" : `${townspersonDef.raidGate.replace(/_/g, " ")} Veteran`}</div>
               </div>
-              <p className="text-gray-300 text-sm text-center italic">{evolutionDef.lore}</p>
+              <p className="text-gray-300 text-sm text-center italic">{townspersonDef.lore}</p>
               {summary.whyUnlocked !== null && (
                 <div className="bg-gray-800 rounded p-3 text-sm text-gray-300">
-                  <span className="text-gray-500 text-xs uppercase tracking-widest block mb-1">Why you unlocked it</span>
+                  <span className="text-gray-500 text-xs uppercase tracking-widest block mb-1">Why they survived</span>
                   {summary.whyUnlocked}
-                </div>
-              )}
-              {evolutionDef.unlocksPath.length > 0 && (
-                <div className="text-xs text-gray-400">
-                  <span className="font-bold text-gray-300">Opens paths to:</span>{" "}
-                  {evolutionDef.unlocksPath.map((id) => EVOLUTIONS[id].name).join(", ")}
                 </div>
               )}
             </div>
           ) : (
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-5 space-y-3 text-center">
-              <div className="text-gray-400 text-4xl">?</div>
-              <div className="text-gray-300 font-bold">No Legacy Path This Run</div>
+              <div className="text-gray-400 text-4xl">⚰</div>
+              <div className="text-gray-300 font-bold">Your Hero Falls to the Graveyard</div>
               <p className="text-gray-500 text-sm">
-                You didn&apos;t meet the threshold for any legacy path. Each run still builds your legacy.
+                Not every hero survives to tell their tale. Each run still shapes future adventurers.
               </p>
             </div>
           )}
@@ -134,16 +140,16 @@ export function DeathScreen() {
             </div>
           )}
 
-          {/* Collection progress */}
+          {/* Outpost progress */}
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Legacy Path Collection</span>
-              <span className="text-purple-400 font-bold">{meta.unlockedEvolutions.length} / {EVOLUTION_LIST.length}</span>
+              <span className="text-gray-400">Outpost Residents</span>
+              <span className="text-yellow-400 font-bold">{meta.townspeople.length} / {TOWNSPERSON_LIST.length}</span>
             </div>
             <div className="mt-2 h-2 bg-gray-800 rounded overflow-hidden">
               <div
-                className="h-full bg-purple-500"
-                style={{ width: `${(meta.unlockedEvolutions.length / EVOLUTION_LIST.length) * 100}%` }}
+                className="h-full bg-yellow-500"
+                style={{ width: `${(meta.townspeople.length / TOWNSPERSON_LIST.length) * 100}%` }}
               />
             </div>
           </div>
@@ -166,10 +172,10 @@ export function DeathScreen() {
                 <span className="text-gray-300 text-sm">Achievement Points</span>
                 <span className="text-blue-400 font-bold">+{summary.apGranted} → {meta.achievementPoints} total</span>
               </div>
-              {summary.evolutionUnlocked !== null && evolutionDef !== null && (
+              {summary.townspersonUnlocked !== null && townspersonDef !== null && (
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-sm">{evolutionDef.name} Bonus Energy</span>
-                  <span className="text-purple-400 font-bold">+{evolutionDef.bonuses.energyBonus}</span>
+                  <span className="text-gray-300 text-sm">{townspersonDef.name} Bonus Energy</span>
+                  <span className="text-yellow-400 font-bold">+{townspersonDef.bonuses.energyBonus}</span>
                 </div>
               )}
             </div>
@@ -177,15 +183,17 @@ export function DeathScreen() {
 
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-2">
             <h3 className="text-gray-300 text-xs font-bold uppercase tracking-widest">All Active Bonuses</h3>
-            {meta.unlockedEvolutions.length === 0 ? (
-              <p className="text-gray-600 text-sm">Unlock legacy paths to gain legacy bonuses.</p>
+            {meta.townspeople.length === 0 ? (
+              <p className="text-gray-600 text-sm">Recruit townspeople to gain permanent bonuses.</p>
             ) : (
-              meta.unlockedEvolutions.map((id) => {
-                const evo = EVOLUTIONS[id];
+              meta.townspeople.map((filled) => {
+                const role = TOWNSPEOPLE[filled.roleId];
                 return (
-                  <div className="text-sm" key={id}>
-                    <span className="text-purple-400 font-bold">{evo.name}:</span>{" "}
-                    <span className="text-gray-400">{formatBonuses(evo)}</span>
+                  <div className="text-sm" key={filled.roleId}>
+                    <span className="text-yellow-400 font-bold">{role.name}</span>
+                    <span className="text-gray-500 text-xs"> ({filled.hero.heroName})</span>
+                    {": "}
+                    <span className="text-gray-400">{formatBonuses(role.bonuses)}</span>
                   </div>
                 );
               })
@@ -206,7 +214,7 @@ export function DeathScreen() {
           className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold py-3 rounded-lg border border-gray-600 transition-colors"
           onClick={() => { goTo("collection"); }}
         >
-          ◈ Collection
+          🏠 Outpost
         </button>
       </div>
     </div>
@@ -241,58 +249,36 @@ function PersonalityBar({ stat, value }: { stat: string; value: number }) {
   );
 }
 
-function formatBonuses(evo: {
-  bonuses: {
-    energyBonus: number;
-    startGold?: number;
-    combatBonus?: number;
-    bossKnowledgeBonus?: number;
-    knowledgeTransferMultiplier?: number;
-    vendorDiscountPct?: number;
-    recipeDiscountPct?: number;
-    purpleCraftStatBonusPct?: number;
-    brokerTierStart?: number;
-    raidProvisionerUnlocked?: boolean;
-  };
-}): string {
+function formatBonuses(bonuses: TownspersonBonuses): string {
   const parts: string[] = [];
-  const b = evo.bonuses;
-  if (b.energyBonus > 0) {
-    parts.push(`+${b.energyBonus} max energy`);
+  if (bonuses.energyBonus > 0) {
+    parts.push(`+${bonuses.energyBonus} max energy`);
   }
-  const startGold = b.startGold ?? 0;
-  if (startGold > 0) {
-    parts.push(`+${startGold}g start gold`);
+  if ((bonuses.startGold ?? 0) > 0) {
+    parts.push(`+${bonuses.startGold ?? 0}g start gold`);
   }
-  const combatBonus = b.combatBonus ?? 0;
-  if (combatBonus > 0) {
-    parts.push(`+${Math.round(combatBonus * 100)}% combat`);
+  if ((bonuses.combatBonus ?? 0) > 0) {
+    parts.push(`+${Math.round((bonuses.combatBonus ?? 0) * 100)}% combat`);
   }
-  const bossKnowledgeBonus = b.bossKnowledgeBonus ?? 0;
-  if (bossKnowledgeBonus > 0) {
-    parts.push(`+${Math.round(bossKnowledgeBonus * 100)}% boss knowledge`);
+  if ((bonuses.bossReadinessBonus ?? 0) > 0) {
+    parts.push(`+${Math.round((bonuses.bossReadinessBonus ?? 0) * 100)}% boss readiness`);
   }
-  const knowledgeTransferMultiplier = b.knowledgeTransferMultiplier ?? 1;
-  if (knowledgeTransferMultiplier > 1) {
-    parts.push(`${knowledgeTransferMultiplier}x study gains`);
+  if ((bonuses.knowledgeTransferMultiplier ?? 1) > 1) {
+    parts.push(`${bonuses.knowledgeTransferMultiplier ?? 1}x study gains`);
   }
-  const vendorDiscountPct = b.vendorDiscountPct ?? 0;
-  if (vendorDiscountPct > 0) {
-    parts.push(`${Math.round(vendorDiscountPct * 100)}% vendor discount`);
+  if ((bonuses.vendorDiscountPct ?? 0) > 0) {
+    parts.push(`${Math.round((bonuses.vendorDiscountPct ?? 0) * 100)}% vendor discount`);
   }
-  const recipeDiscountPct = b.recipeDiscountPct ?? 0;
-  if (recipeDiscountPct > 0) {
-    parts.push(`${Math.round(recipeDiscountPct * 100)}% recipe discount`);
+  if ((bonuses.recipeDiscountPct ?? 0) > 0) {
+    parts.push(`${Math.round((bonuses.recipeDiscountPct ?? 0) * 100)}% recipe discount`);
   }
-  const purpleCraftStatBonusPct = b.purpleCraftStatBonusPct ?? 0;
-  if (purpleCraftStatBonusPct > 0) {
-    parts.push(`${Math.round(purpleCraftStatBonusPct * 100)}% purple craft`);
+  if ((bonuses.purpleCraftStatBonusPct ?? 0) > 0) {
+    parts.push(`${Math.round((bonuses.purpleCraftStatBonusPct ?? 0) * 100)}% purple craft`);
   }
-  const brokerTierStart = b.brokerTierStart ?? 1;
-  if (brokerTierStart > 1) {
-    parts.push(`broker tier ${brokerTierStart}`);
+  if ((bonuses.brokerTierStart ?? 1) > 1) {
+    parts.push(`broker tier ${bonuses.brokerTierStart ?? 1}`);
   }
-  if (b.raidProvisionerUnlocked === true) {
+  if (bonuses.raidProvisionerUnlocked === true) {
     parts.push("raid provisioner");
   }
   return parts.join(", ");

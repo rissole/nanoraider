@@ -212,24 +212,21 @@ export interface RecipeDefinition {
   requiresKnownRecipe?: boolean;
 }
 
-// ─── Evolution ───────────────────────────────────────────────────────────────
+// ─── Townspeople ─────────────────────────────────────────────────────────────
 
-export type EvolutionId =
-  | "berserker"
-  | "merchant"
-  | "scholar"
-  | "raid_legend"
-  | "guardian"
-  | "theorycrafter"
-  | "socialite"
-  | "warlord"
-  | "dungeon_master"
-  | "guildmaster"
-  | "treasure_hunter"
-  | "raid_leader";
-export type EvolutionTier = 1 | 2 | 3;
+export type TownspersonRoleId =
+  | "battlemaster"
+  | "quartermaster"
+  | "lorekeeper"
+  | "trailblazer"
+  | "herald"
+  | "forgemaster"
+  | "warchief"
+  | "siegebreaker";
 
-export interface EvolutionUnlockCondition {
+export type RaidGate = "none" | "molten_fury" | "eternal_throne";
+
+export interface TownspersonUnlockCondition {
   minTriangle?: Partial<Record<TriangleKey, number>>;
   maxTriangle?: Partial<Record<TriangleKey, number>>;
   minRenown?: number;
@@ -240,20 +237,18 @@ export interface EvolutionUnlockCondition {
   mustDefeatRaids?: BossId[];
 }
 
-export interface EvolutionDefinition {
-  id: EvolutionId;
+export interface TownspersonDefinition {
+  id: TownspersonRoleId;
   name: string;
-  tier: EvolutionTier;
+  raidGate: RaidGate;
   description: string;
   lore: string;
-  prerequisites: EvolutionId[]; // must be already unlocked in collection
-  unlockCondition: EvolutionUnlockCondition;
-  bonuses: EvolutionBonuses;
-  hint: string; // shown when locked
-  unlocksPath: EvolutionId[]; // evolutions this is a prereq for
+  unlockCondition: TownspersonUnlockCondition;
+  bonuses: TownspersonBonuses;
+  hint: string;
 }
 
-export interface EvolutionBonuses {
+export interface TownspersonBonuses {
   energyBonus: number; // permanent max energy increase
   startGold?: number; // gold on new run start
   combatBonus?: number; // % damage increase (0.1 = 10%)
@@ -264,6 +259,22 @@ export interface EvolutionBonuses {
   purpleCraftStatBonusPct?: number; // additive output stat bonus for purple crafts
   brokerTierStart?: VendorTier; // starting broker tier access
   raidProvisionerUnlocked?: boolean; // access to raid provisioner vendor
+}
+
+export interface TownspersonHeroSnapshot {
+  heroName: string;
+  triangle: BuildTriangle;
+  renown: number;
+  daring: number;
+  level: number;
+  defeatedRaids: BossId[];
+  dayReached: number;
+}
+
+export interface FilledTownsperson {
+  roleId: TownspersonRoleId;
+  hero: TownspersonHeroSnapshot;
+  unlockedAtRun: number;
 }
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
@@ -379,8 +390,8 @@ export interface MetaProgression {
   raidDeaths: number;
   maxEnergy: number; // starts at 50, grows permanently
   achievementPoints: number;
-  unlockedEvolutions: EvolutionId[]; // Pokédex collection
-  evolutionBonuses: EvolutionBonuses; // stacked from all unlocked evolutions
+  townspeople: FilledTownsperson[]; // hero survivors in the outpost
+  townspersonBonuses: TownspersonBonuses; // stacked from all filled townsperson roles
   bossReadinessBank: Partial<Record<BossId, number>>; // persists across runs
   vendorTiersUnlocked: Partial<Record<VendorId, VendorTier>>;
   knownRecipes: RecipeId[];

@@ -1,11 +1,11 @@
 import { ACTIVITIES, ACTIVITY_LIST } from "../../data/activities";
 import { MATERIAL_LABELS, RECIPE_DEFINITIONS } from "../../data/crafting";
-import { EVOLUTIONS } from "../../data/evolutions";
+import { TOWNSPEOPLE } from "../../data/townspeople";
 import { RARITY_LABELS } from "../../data/rarity";
 import type { ActivityDefinition, GearSlot, MaterialId, RecipeId, RiskBand, VendorId } from "../../data/types";
 import { useGameStore } from "../../store/gameStore";
 import { buildRiskHints, computeActivityRisk, isActivityUnlocked } from "../../game/activityResolver";
-import { getTopEvolutionRecommendations } from "../../game/evolutionChecker";
+import { getTopTownspersonRecommendations } from "../../game/townspersonChecker";
 import { isLethalActivity } from "../../game/activityMeta";
 import { HeroStatus } from "../HeroStatus";
 import { useMemo, useState } from "react";
@@ -210,8 +210,8 @@ export function PlanningScreen() {
     () => hero !== null ? ACTIVITY_LIST.filter((def) => isActivityUnlocked(hero, def, meta)) : null,
     [hero, meta],
   );
-  const evolutionRecommendations = useMemo(
-    () => (hero !== null ? getTopEvolutionRecommendations(hero, meta, [], 3) : []),
+  const townspersonRecommendations = useMemo(
+    () => (hero !== null ? getTopTownspersonRecommendations(hero, meta, [], 3) : []),
     [hero, meta],
   );
 
@@ -227,7 +227,7 @@ export function PlanningScreen() {
   const recipe = RECIPE_DEFINITIONS[selectedRecipe];
   const vendorOffers = getVendorOffers(vendorTab);
   const rerollsRemaining = getDailyRerollsRemaining();
-  const discountedRecipeGold = Math.max(0, Math.round(recipe.goldCost * (1 - (meta.evolutionBonuses.recipeDiscountPct ?? 0) - meta.craftingEfficiency)));
+  const discountedRecipeGold = Math.max(0, Math.round(recipe.goldCost * (1 - (meta.townspersonBonuses.recipeDiscountPct ?? 0) - meta.craftingEfficiency)));
   const hasKnownRecipe = recipe.requiresKnownRecipe !== true || hero.knownRecipes.includes(selectedRecipe);
   const materialChecks = (Object.keys(recipe.materialsCost) as MaterialId[]).map((id) => {
     const required = recipe.materialsCost[id] ?? 0;
@@ -251,25 +251,25 @@ export function PlanningScreen() {
   return (
     <div className="min-h-screen p-4 space-y-4 max-w-2xl mx-auto">
       {/* Evolution recommendations - top of page */}
-      {evolutionRecommendations.length > 0 && (
+      {townspersonRecommendations.length > 0 && (
         <div className="bg-gray-800/80 border border-cyan-600 rounded-lg p-4">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-cyan-200 text-xs font-bold uppercase tracking-widest">Legacy Targets</h3>
+            <h3 className="text-cyan-200 text-xs font-bold uppercase tracking-widest">Outpost Targets</h3>
             <button
               className="text-gray-400 hover:text-gray-200 text-sm"
               onClick={() => { goTo("collection"); }}
             >
-              ◈ Collection
+              🏠 Outpost
             </button>
           </div>
-          <p className="text-gray-400 text-xs mb-3">Paths to pursue this run</p>
+          <p className="text-gray-400 text-xs mb-3">Roles to aim for this run</p>
           <div className="flex gap-3 flex-wrap">
-            {evolutionRecommendations.map((rec) => {
-              const evo = EVOLUTIONS[rec.evolutionId];
+            {townspersonRecommendations.map((rec) => {
+              const role = TOWNSPEOPLE[rec.roleId];
               return (
-                <div className="bg-gray-900 border border-gray-600 rounded p-3 text-sm flex-1 min-w-[180px] min-h-[80px]" key={rec.evolutionId}>
+                <div className="bg-gray-900 border border-gray-600 rounded p-3 text-sm flex-1 min-w-[180px] min-h-[80px]" key={rec.roleId}>
                   <div className="flex items-center gap-2">
-                    <span className="text-cyan-300 font-bold">{evo.name}</span>
+                    <span className="text-cyan-300 font-bold">{role.name}</span>
                   </div>
                   <p className="text-gray-300 text-xs mt-2 leading-relaxed">{rec.gapSummary}</p>
                   <p className="text-amber-400/90 text-xs mt-1 italic leading-relaxed">{rec.hint}</p>
@@ -283,12 +283,12 @@ export function PlanningScreen() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-yellow-400 font-bold text-lg">Day {hero.inGameDay} Planning</h2>
-        {evolutionRecommendations.length === 0 && (
+        {townspersonRecommendations.length === 0 && (
           <button
             className="text-gray-400 hover:text-gray-200 text-sm"
             onClick={() => { goTo("collection"); }}
           >
-            ◈ Collection
+            🏠 Outpost
           </button>
         )}
       </div>
@@ -338,7 +338,7 @@ export function PlanningScreen() {
           <div className="grid grid-cols-1 gap-2">
             {vendorOffers.length === 0 && <div className="text-xs text-gray-500">No offers unlocked for this vendor yet.</div>}
             {vendorOffers.map((offer) => {
-              const goldCost = Math.max(0, Math.round((offer.costs.gold ?? 0) * (1 - (meta.evolutionBonuses.vendorDiscountPct ?? 0))));
+              const goldCost = Math.max(0, Math.round((offer.costs.gold ?? 0) * (1 - (meta.townspersonBonuses.vendorDiscountPct ?? 0))));
               const materialCostParts = Object.entries(offer.costs.materials ?? {}).map(([id, amount]) => `${amount} ${MATERIAL_LABELS[id as keyof typeof MATERIAL_LABELS]}`);
               const hasMaterials = Object.entries(offer.costs.materials ?? {}).every(([id, amount]) => (hero.materials[id as keyof typeof hero.materials] ?? 0) >= amount);
               const canBuy = goldRemaining >= goldCost && hasMaterials && energyRemaining >= 1;
@@ -391,7 +391,7 @@ export function PlanningScreen() {
             {FORGE_SLOT_ORDER.map((slot) => {
               const slotRecipeId = FORGE_RECIPES_BY_TIER[forgeTier][slot];
               const slotRecipe = RECIPE_DEFINITIONS[slotRecipeId];
-              const slotGold = Math.max(0, Math.round(slotRecipe.goldCost * (1 - (meta.evolutionBonuses.recipeDiscountPct ?? 0) - meta.craftingEfficiency)));
+              const slotGold = Math.max(0, Math.round(slotRecipe.goldCost * (1 - (meta.townspersonBonuses.recipeDiscountPct ?? 0) - meta.craftingEfficiency)));
               const slotKnown = slotRecipe.requiresKnownRecipe !== true || hero.knownRecipes.includes(slotRecipeId);
               const slotMaterialChecks = (Object.keys(slotRecipe.materialsCost) as MaterialId[]).map((id) => ({
                 id,
